@@ -9,7 +9,7 @@ memo_py
    :target: https://travis-ci.org/borntyping/cookiecutter-pypackage-minimal
    :alt: Latest Travis CI build status
 
-An exact modelling framework for stochastic processes with and without **memo**ry in **Py**thon.
+An exact modelling framework for stochastic processes with and without **memo**\ ry in **Py**\ thon.
 
 Usage
 -----
