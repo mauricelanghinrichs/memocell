@@ -14,7 +14,7 @@ def read(filename):
 
 
 setup(
-    name="memo_py",
+    name="memo_py", # memo<rho>y
     version="0.1.0",
     url="https://github.com/mauricelanghinrichs/memo_py.git",
     license='MIT',
@@ -25,19 +25,24 @@ setup(
     description="An exact modelling framework for stochastic processes with and without memory in Python.",
     long_description=read("README.rst"),
 
-    packages=find_packages(exclude=('tests',)),
+    packages=find_packages('memo_py', exclude=('tests',)),
 
-    install_requires=[],
+    # package dependendies
+    # note that emcee==2.2.1 is required to be able to use PTSampler method
+    install_requires=['numpy>=1.14.1', 'sympy>=1.1.1', 'networkx>=2.2',
+                        'scipy>=1.0.0', 'corner>=2.0.1', 'emcee==2.2.1',
+                        'matplotlib>=2.1.2'],
+
+    # run pytest with "$ python setup.py pytest" in this directory
+    test_suite='tests',
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
 
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
