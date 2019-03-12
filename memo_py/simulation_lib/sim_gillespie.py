@@ -219,8 +219,8 @@ class GillespieSim(object):
         reac_event_fct_str += '\treturn nodes_state'
 
         # print for visualisation
-        print(prop_arr_str)
-        print(reac_event_fct_str)
+        # print(prop_arr_str)
+        # print(reac_event_fct_str)
 
         # execute function to return it afterwards
         exec(reac_event_fct_str)

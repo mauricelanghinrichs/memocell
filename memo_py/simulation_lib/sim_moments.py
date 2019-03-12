@@ -4,6 +4,10 @@ from sympy import sympify
 from sympy import Function
 from sympy import diff
 
+import numpy as np
+
+from scipy.integrate import odeint
+
 class MomentsSim(object):
     """docstring for ."""
     def __init__(self, net):
@@ -30,12 +34,34 @@ class MomentsSim(object):
         self.theta_replaceable = list()
         self.theta_replaceable_dict = dict()
 
+        # numerical values for theta parameters (in order as in self.theta_replaceable or
+        # self.net.net_theta_symbolic, together with self.net.net_rates_identifier)
+        self.theta_numeric = list()
+
         # instantiate variables for the partial differential equation (pde)
         # and the differential equations for the moments
         self.moment_pde = None
         self.moment_eqs = None
 
-    # NOTE: use master thesis scripts
+        # instantiate objects the ordinary differential system (ode) for the moments
+        self.moment_eqs_template_str = None
+        self.moment_system = None
+
+        # instantiate objects for storing the indices of the ode system/ moments
+        # of the hidden Markov layer that belong to a certain main network moment
+        self.mean_ind = None
+        self.var_ind_intra = None
+        self.var_ind_inter = None
+        self.cov_ind = None
+
+        # instantiate objects for the number of mean, variance and covariance equations
+        # given the nodes in the main network and the kind of moment simulations
+        # (first only (mean_only=True) or first and second moments)
+        self.num_means = None
+        self.num_vars = None
+        self.num_covs = None
+
+
     def prepare_moment_simulation(self):
         """docstring for ."""
 
@@ -62,27 +88,31 @@ class MomentsSim(object):
         # derive differential equations for the moments (E(X), E(X (X-1)), E(X Y))
         self.moment_eqs = self.derive_moment_eqs(self.moment_pde, self.moment_order_hidden, self.moment_aux_vars, self.moment_aux_vars_dict, self.theta_replaceable)
 
+        # for moments in the main network, collect the nodes of the hidden network for summation
+        (self.num_means, self.mean_ind, self.num_vars, self.var_ind_intra, self.var_ind_inter,
+            self.num_covs, self.cov_ind) = self.get_indices_for_solution_readout(self.moment_order_main, self.moment_order_hidden)
+
+        # setup an executable string for the simuation of the moment equations
+        self.setup_executable_moment_eqs_template(self.moment_eqs)
+
+
     def moment_simulation(self, initial_values_dict, theta_values_order, time_values):
         """docstring for ."""
 
         ### TODO: maybe use getter/setter attributes or similar to only rerun these
         ### lines when initial_values_order or theta_values_order have changed
-
-
         # process user given initial values to hidden nodes
         initial_values = self.process_initial_values_order(self.moment_order_hidden,
                                                             initial_values_dict,
                                                             self.net.net_nodes_identifier,
                                                             type='centric_mean_only')
 
-        # create an executable string setting the numerical values of the rates (as theta identifiers)
-        theta_numeric_exec = self.create_theta_numeric_exec(self.net.net_theta_symbolic, theta_values_order)
-
-
+        # setting the numerical values of the rates (as theta identifiers and in symbolic theta order)
+        self.theta_numeric = theta_values_order
         ###
 
-
-        return None
+        # simulate the network, given initial_values, time points and parameters (theta)
+        return self.forward_pass(initial_values, time_values, self.theta_numeric)
 
     @staticmethod
     def derive_moment_order_main(node_order, mean_only):
@@ -276,19 +306,27 @@ class MomentsSim(object):
 
         return moment_eqs
 
-    # TODO: adapt
-    def get_indices_for_solution_readout(self, moment_order, moment_order_main):
-        # NOTE: do not use the pure numbers! these are nodes; it could also be 2, 3, 0, 1, (2, 2), (2, 3), ... (is considered)
+    @staticmethod
+    def get_indices_for_solution_readout(moment_order_main, moment_order_hidden):
+        """docstring for ."""
 
-        # count the numbers of mean, var and covar moment equations for the main nodes (not intermediate nodes)
+        # count the numbers of mean, var and covar moment equations for the main nodes
         # 'val' in the following are the tuples describing the moments,
-        # i.e. first moment of node 0 is ('0',), second moment between node 0 and 1 is either ('0', '1') or ('1', '0')
-        mean_match = [val for val in moment_order_main if len(val)==1]
+        # i.e. first moment of node 'Z_0' is ('Z_0',), second moment between node 'Z_0' and 'Z_1' is
+        # due to string sorting always ('Z_0', 'Z_1')
+        mean_match = [val for val in moment_order_main[0] if len(val)==1]
         num_means = len(mean_match)
-        var_match = [val for val in moment_order_main if len(val)==2 if val[0]==val[1]]
+        var_match = [val for val in moment_order_main[1] if val[0]==val[1]]
         num_vars = len(var_match)
-        cov_match = [val for val in moment_order_main if len(val)==2 if val[0]!=val[1]]
+        cov_match = [val for val in moment_order_main[1] if val[0]!=val[1]]
         num_covs = len(cov_match)
+
+        # print(mean_match)
+        # print(num_means)
+        # print(var_match)
+        # print(num_vars)
+        # print(cov_match)
+        # print(num_covs)
 
         # cast the numpy arrays which store the index information
         # means are just the first moments (second axis dimension = 1)
@@ -296,25 +334,24 @@ class MomentsSim(object):
 
         # variances are composed of two or three moments (second axis dimension = 2 or 3)
         # intra (two moments) if it is a real variance (=self-covariance) of a node belonging to the set of a given main node
-        # e.g.: Var(0_00_0) = Cov(0_00_0, 0_00_0)
+        # e.g.: Var(Z_0__module_1__0) = Cov(Z_0__module_1__0, Z_0__module_1__0)
         # inter (three moments) if it is an actual covariance of two different nodes, but both belonging to the same set of a given main node
-        # e.g.: Cov(0_00_0, 0_00_1)
+        # e.g.: Cov(Z_0__module_1__0, Z_0__module_1__1)
         var_ind_intra = np.zeros((num_vars, 2), dtype=object)
         var_ind_inter = np.zeros((num_vars, 3), dtype=object)
 
         # covariances are composed of three moments (second axis dimension = 3)
         # NOTE: these are actual covariances of different nodes, since we do not
         # allow shared intermediate nodes (which would belong to two different main nodes)
-        # e.g.: Cov(0_00_0, 1_11_0)
+        # e.g.: Cov(Z_0__module_1__0, Z_1__module_2__0)
         cov_ind = np.zeros((num_covs, 3), dtype=object)
 
         # set the mean indices
         mean_match_tup_list = list()
         for i in range(num_means):
             mean_match_tup = tuple()
-            for ind, val in enumerate(moment_order):
-                if len(val)==1:
-                    if mean_match[i][0]==val[0].split('_')[0]:
+            for ind, val in enumerate(moment_order_hidden[0]):
+                    if mean_match[i][0]==val[0].split('__')[0]:
                         mean_match_tup += (ind, )
 
             mean_ind[i, 0] = mean_match_tup
@@ -327,24 +364,23 @@ class MomentsSim(object):
             var_inter_match_tup = ()
             var_inter_mean1_match_tup = ()
             var_inter_mean2_match_tup = ()
-            for ind, val in enumerate(moment_order):
-                # ask for variances and covariances
-                if len(val)==2:
-                    # ask for the set of nodes belonging to main node with index i
-                    if var_match[i][0]==val[0].split('_')[0] and var_match[i][1]==val[1].split('_')[0]:
-                        # intra variances
-                        if val[0]==val[1]:
-                            var_intra_match_tup += (ind, )
-                        # inter variances (an actual covariance)
-                        elif val[0]!=val[1]:
-                            var_inter_match_tup += (ind, )
-                            # get the corresponding two means
-                            for ind_2, val_2 in enumerate(moment_order):
-                                if len(val_2)==1:
-                                    if val[0]==val_2[0]:
-                                        var_inter_mean1_match_tup += (ind_2, )
-                                    elif val[1]==val_2[0]:
-                                        var_inter_mean2_match_tup += (ind_2, )
+            for ind, val in enumerate(moment_order_hidden[1]):
+                # ask for the set of nodes belonging to main node with index i
+                if var_match[i][0]==val[0].split('__')[0] and var_match[i][1]==val[1].split('__')[0]:
+                    # intra variances
+                    if val[0]==val[1]:
+                        # number of mean equations is added to the index (' + len(moment_order_hidden[0])')
+                        var_intra_match_tup += (ind + len(moment_order_hidden[0]), )
+                    # inter variances (an actual covariance)
+                    elif val[0]!=val[1]:
+                        # number of mean equations is added to the index (' + len(moment_order_hidden[0])')
+                        var_inter_match_tup += (ind + len(moment_order_hidden[0]), )
+                        # get the corresponding two means
+                        for ind_2, val_2 in enumerate(moment_order_hidden[0]):
+                            if val[0]==val_2[0]:
+                                var_inter_mean1_match_tup += (ind_2, )
+                            elif val[1]==val_2[0]:
+                                var_inter_mean2_match_tup += (ind_2, )
 
             var_ind_intra[i, 0] = var_intra_match_tup
             var_ind_intra[i, 1] = mean_match_tup_list[i]
@@ -353,32 +389,39 @@ class MomentsSim(object):
             var_ind_inter[i, 1] = var_inter_mean1_match_tup
             var_ind_inter[i, 2] = var_inter_mean2_match_tup
 
+
         # set the covariance indices
         for i in range(num_covs):
             cov_match_tup = ()
 
             cov_mean1_match_tup = ()
             cov_mean2_match_tup = ()
-            for ind, val in enumerate(moment_order):
-                # ask for variances and covariances
-                if len(val)==2:
-                    # ask for covariances which are between the sets of the two main nodes
-                    if cov_match[i][0]==val[0].split('_')[0] and cov_match[i][1]==val[1].split('_')[0]:
-                        if val[0]!=val[1]:
-                            cov_match_tup += (ind, )
-                            # get the corresponding two means
-                            for ind_2, val_2 in enumerate(moment_order):
-                                if len(val_2)==1:
-                                    if val[0]==val_2[0]:
-                                        cov_mean1_match_tup += (ind_2, )
-                                    elif val[1]==val_2[0]:
-                                        cov_mean2_match_tup += (ind_2, )
+            for ind, val in enumerate(moment_order_hidden[1]):
+                # ask for covariances which are between the sets of the two main nodes
+                if cov_match[i][0]==val[0].split('__')[0] and cov_match[i][1]==val[1].split('__')[0]:
+                    if val[0]!=val[1]:
+                        # number of mean equations is added to the index (' + len(moment_order_hidden[0])')
+                        cov_match_tup += (ind + len(moment_order_hidden[0]), )
+                        # get the corresponding two means
+                        for ind_2, val_2 in enumerate(moment_order_hidden[0]):
+                                if val[0]==val_2[0]:
+                                    cov_mean1_match_tup += (ind_2, )
+                                elif val[1]==val_2[0]:
+                                    cov_mean2_match_tup += (ind_2, )
 
             cov_ind[i, 0] = cov_match_tup
             cov_ind[i, 1] = cov_mean1_match_tup
             cov_ind[i, 2] = cov_mean2_match_tup
 
+        # print(mean_ind)
+        #
+        # print(var_ind_intra)
+        # print(var_ind_inter)
+        #
+        # print(cov_ind)
+
         return num_means, mean_ind, num_vars, var_ind_intra, var_ind_inter, num_covs, cov_ind
+
 
     @staticmethod
     def process_initial_values_order(moment_order_hidden, initial_values_dict, net_nodes_identifier, type=None):
@@ -446,47 +489,50 @@ class MomentsSim(object):
         else:
             raise ValueError('Type \'centric_mean_only\' expected for processing initial values.')
 
-    # TODO: adapt
-    def setup_ode_system(self, sym_params, moment_order, moment_eqs):
-            # NOTE:
-            # 1. ode_sys is a highly dynamic function (different networks have different ode equations)
-            # 2. ode_sys is the most evaluated function in this script, so it should be fast
-            # => although it is hard to read, we therefore create the whole function with exec() methods
-            # after its creation, it serves like a static function which was specifically implemented for a given network
+    def setup_executable_moment_eqs_template(self, moment_eqs):
+        """docstring for ."""
 
-        # eventually, we relabel the moment equations to obtain a form suitable for odeint
-        odeint_moment_eqs = self.relabel_moment_eqs(sym_params, moment_order, moment_eqs)
+        # print(moment_eqs)
+
+        # NOTE:
+        # 1. moment_system is a highly dynamic function (different networks have different ode equations)
+        # 2. moment_system is the most evaluated function in this script, so it should be fast
+        # => we therefore create the whole function with exec() methods
+        # after its creation, it serves like a static function which was specifically implemented for a given network
 
         # first function line
-        str_for_exec = 'def _ode_sys_template(y, time, theta):\n'
+        str_for_exec = 'def _moment_eqs_template(m, time, theta):\n'
 
-        # lines with the moment equations in an odeint-suitable form, i.e. y0 = ...; y1 = ...; ...
-        for eq in odeint_moment_eqs:
-            str_for_exec += '\t' + eq
+        # lines with the moment equations in an odeint-suitable form, i.e. m0 = ...; m1 = ...; ...
+        for i, eq in enumerate(moment_eqs):
+            str_for_exec += '\t' f'm{i} = ' + eq + '\n'
 
-        # a line which returns the calculated y_i's, i.e. 'return y0, y1, y2, ...'
-        str_for_exec += '\treturn ' + ', '.join(['y{0}'.format(i) for i in range(len(moment_order))])
+        # a line which returns the calculated m_i's, i.e. 'return m0, m1, m2, ...'
+        str_for_exec += '\treturn ' + ', '.join([f'm{i}' for i in range(len(moment_eqs))])
 
         # save this string to self
-        self.ode_sys_template_str = str_for_exec
+        self.moment_eqs_template_str = str_for_exec
 
         # this string is now executed for once and stored (via eval) as a function in this class
         # print(str_for_exec) # uncomment this for visualisation
         exec(str_for_exec)
-        self.ode_sys = eval('_ode_sys_template')
-
-    # TODO: adapt
+        self.moment_system = eval('_moment_eqs_template')
 
     # the forward_pass triggers one integration of the ode system yielding a solution of the different moments over time
     # the solution depends on the initial condition (init) and the parameters (theta) of the ode system
     # afterwards the means (more precisely the expectation), variances and covariances are computed by using the appropriate moment solutions
     # NOTE: in some cases we use explicitly that np.sum([]) = 0 (on any empty array), e.g. when there are no inter variances
-    def forward_pass(self, init, time_arr, theta, num_time_points):
+    def forward_pass(self, init, time_arr, theta):
+        """docstring for ."""
 
-        sol = odeint(self.ode_sys, init, time_arr, args=(theta, ))
+        # number of time points
+        num_time_points = len(time_arr)
 
+        # here python's scipy ode integrator is used
+        sol = odeint(self.moment_system, init, time_arr, args=(theta, ))
+
+        # NOTE: the rules for summation follow preceding theoretical derivations
         # NOTE: idea: the self.mean_ind[i, 0] stuff now has to give tuples and then np.sum() over the higher dimensional array
-        # NOTE: see jupyter notebook notes
         mean = np.zeros((self.num_means, num_time_points))
         for i in range(self.num_means):
             mean[i, :] = np.sum(sol[:, self.mean_ind[i, 0]], axis=1)

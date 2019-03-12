@@ -2,6 +2,7 @@
 from .network import Network
 from .simulation_lib.sim_gillespie import GillespieSim
 from .simulation_lib.sim_moments import MomentsSim
+import numpy as np
 
 class Simulation(object):
     """docstring for ."""
@@ -37,6 +38,15 @@ class Simulation(object):
 
         # check user input for the simulation_type
         self.validate_simulation_type_input(simulation_type)
+
+        # check user input for the initial values
+        self.validate_initial_values_input(self.net.net_nodes_identifier, simulation_type, initial_values)
+
+        # check user input for the rate parameters (theta)
+        self.validate_theta_values_input(self.net.net_rates_identifier, theta_values)
+
+        # check user input for the time values
+        self.validate_time_values_input(time_values)
 
         # read out initial_values and theta_values (dictionaries) according to node or theta order
         # initial_values_order = [initial_values[self.net.net_nodes_identifier[node_id]]
@@ -77,10 +87,6 @@ class Simulation(object):
 
             # run and return a simulation
             return self.sim_gillespie.gillespie_simulation(initial_values, theta_values_order, time_values)
-
-
-    #
-
 
     # # NOTE: put in init?
     # def parametrise(self, rate_values, validate_rate_values=False):
@@ -183,7 +189,47 @@ class Simulation(object):
         return network
 
     @staticmethod
-    def validate_rate_values_input():
+    def validate_initial_values_input(net_nodes_identifier, simulation_type, initial_values):
         """docstring for ."""
-        # TODO: implement
-        pass
+
+        # check for correct user input for the initial values
+        if isinstance(initial_values, dict):
+            if set(net_nodes_identifier.values()) - set(['env']) == set(initial_values.keys()):
+                if ((simulation_type=='gillespie' and all(isinstance(val, int) for val in initial_values.values())) or
+                    (simulation_type=='moments' and all(isinstance(val, float) for val in initial_values.values()))):
+                    pass
+                else:
+                    raise ValueError('Initial values are expected to provide integer or float values for Gillespie or Moment simulations, respectively.')
+            else:
+                raise ValueError('Initial values are expected to provide a set of keys identical to the nodes of the main network.')
+        else:
+            raise TypeError('Initial values are expected to be provided as a dictionary.')
+
+    @staticmethod
+    def validate_theta_values_input(net_rates_identifier, theta_values):
+        """docstring for ."""
+
+        # check for correct user input for the rate parameters (theta)
+        if isinstance(theta_values, dict):
+            if set(net_rates_identifier.values()) == set(theta_values.keys()):
+                if all(isinstance(val, float) for val in theta_values.values()):
+                    pass
+                else:
+                    raise ValueError('Rate parameters (theta) are expected to provide float values.')
+            else:
+                raise ValueError('Rate parameters (theta) are expected to provide a set of keys identical to the symbolic network parameters (theta).')
+        else:
+            raise TypeError('Rate parameters (theta) are expected to be provided as a dictionary.')
+
+    @staticmethod
+    def validate_time_values_input(time_values):
+        """docstring for ."""
+
+        # check for correct user input for the time values
+        if isinstance(time_values, np.ndarray):
+            if time_values.ndim == 1:
+                pass
+            else:
+                raise ValueError('Times values are expected to be provided as a numpy array with shape \'(n, )\' with n being the number of values.')
+        else:
+            raise TypeError('Times values are expected to be provided as a numpy array.')
