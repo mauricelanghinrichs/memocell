@@ -5,7 +5,11 @@ import warnings
 class Network(object):
     """docstring for ."""
 
-    def __init__(self):
+    def __init__(self, net_name):
+        # set a name for a Network class instance
+        self.validate_net_name_input(net_name)
+        self.net_name = net_name
+
         # initialise the main network as networkx DiGraph
         self.net_main = nx.DiGraph()
 
@@ -269,6 +273,13 @@ class Network(object):
         # return a dictionary with nodes as values for node identifiers as keys
         return dict(zip(ident_nodes_list, nodes_sorted))
 
+    @staticmethod
+    def validate_net_name_input(net_name):
+        # validate user input for network name
+        if isinstance(net_name, str):
+            pass
+        else:
+            raise TypeError('A string is expected for the network name.')
 
     # validate the user input to define the network structure
     @staticmethod

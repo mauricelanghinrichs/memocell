@@ -15,9 +15,16 @@ class Simulation(object):
         self.sim_moments = MomentsSim(self.net)
         self.sim_gillespie = GillespieSim(self.net)
 
-        # create booleans to execute simulation preparations only once
-        self.sim_moments_prep_exist = False
-        self.sim_gillespie_prep_exist = False
+        # instantiate object for the time values for simulations
+        self.sim_time_values = None
+
+        # # create booleans to execute simulation preparations only once
+        # self.sim_moments_prep_exist = False
+        # self.sim_gillespie_prep_exist = False
+
+        # instantiate object to store results of latest moment and gillespie simulation
+        self.sim_moments_res = None
+        self.sim_gillespie_res = None
 
 
 # TODO: need input
@@ -33,60 +40,154 @@ class Simulation(object):
 # - sym_params (in the right order with values)
 # - init_cond (in the right order with values)
 
-    def simulate(self, simulation_type, initial_values, theta_values, time_values, **kwargs):
+    def simulate(self, simulation_type, initial_values, theta_values, time_values, estimate_mode=False, **kwargs):
         """docstring for ."""
 
-        # check user input for the simulation_type
-        self.validate_simulation_type_input(simulation_type)
+        # if simulations are done on its own (estimate_mode=False)
+        # user input has to be checked and theta values have to be ordered
+        if not estimate_mode:
+            # check user input for the simulation_type
+            self.validate_simulation_type_input(simulation_type)
 
-        # check user input for the initial values
-        self.validate_initial_values_input(self.net.net_nodes_identifier, simulation_type, initial_values)
+            # check user input for the initial values
+            self.validate_initial_values_input(self.net.net_nodes_identifier, simulation_type, initial_values)
 
-        # check user input for the rate parameters (theta)
-        self.validate_theta_values_input(self.net.net_rates_identifier, theta_values)
+            # check user input for the rate parameters (theta)
+            self.validate_theta_values_input(self.net.net_rates_identifier, theta_values)
 
-        # check user input for the time values
-        self.validate_time_values_input(time_values)
+            # check user input for the time values
+            self.validate_time_values_input(time_values)
+            self.sim_time_values = time_values
 
-        # read out initial_values and theta_values (dictionaries) according to node or theta order
-        # initial_values_order = [initial_values[self.net.net_nodes_identifier[node_id]]
-        #                         for node_id,  in self.net.net_main_node_order[0] if node_id!='Z_env']
-        theta_values_order = [theta_values[self.net.net_rates_identifier[rate_id]]
-                                for rate_id in self.net.net_theta_symbolic]
+            # read out initial_values and theta_values (dictionaries) according to node or theta order
+            # initial_values_order = [initial_values[self.net.net_nodes_identifier[node_id]]
+            #                         for node_id,  in self.net.net_main_node_order[0] if node_id!='Z_env']
+            theta_values_order = [theta_values[self.net.net_rates_identifier[rate_id]]
+                                    for rate_id in self.net.net_theta_symbolic]
+
+        # in the estimate_mode (call of simulation class from estimation class),
+        # some steps can be skipped as speed up
+        else:
+            # pass time_values without validation
+            self.sim_time_values = time_values
+
+            # theta_values are already ordered in this case
+            theta_values_order = theta_values
+
 
         # ask for simulation_type and run respective class methods (Moments or Gillespie)
         if simulation_type=='moments':
 
             # the first time a Moments simulation is run, preparations have to be done
-            if not self.sim_moments_prep_exist:
+            if not self.sim_moments.moments_preparation_exists:
 
                 # read out kwargs to see if first moments / mean only shall be computed
                 # else the first and second moments will be generated
                 try:
-                    self.sim_moments.moment_mean_only = kwargs['moment_mean_only'] if isinstance(kwargs['moment_mean_only'], bool) else False
+                    moment_mean_only = kwargs['moment_mean_only'] if isinstance(kwargs['moment_mean_only'], bool) else False
                 except:
-                    self.sim_moments.moment_mean_only = False
+                    moment_mean_only = False
 
                 # actual preparatory computations
-                self.sim_moments.prepare_moment_simulation()
-                self.sim_moments_prep_exist = True
+                self.sim_moments.prepare_moment_simulation(mean_only=moment_mean_only, estimate_mode=estimate_mode)
 
-
-
-            # run and return a simulation
-            return self.sim_moments.moment_simulation(initial_values, theta_values_order, time_values)
+            # run, store and return a simulation
+            self.sim_moments_res = self.sim_moments.moment_simulation(initial_values, theta_values_order, self.sim_time_values)
+            return self.sim_moments_res
 
         elif simulation_type=='gillespie':
 
             # the first time a Gillespie simulation is run, preparations have to be done
-            if not self.sim_gillespie_prep_exist:
+            if not self.sim_gillespie.gillespie_preparation_exists:
                 self.sim_gillespie.prepare_gillespie_simulation()
-                self.sim_gillespie_prep_exist = True
 
             # NOTE: maybe add kwargs for automatic multiple simulations, N = ...
 
-            # run and return a simulation
-            return self.sim_gillespie.gillespie_simulation(initial_values, theta_values_order, time_values)
+            # run, store and return a simulation
+            self.sim_gillespie_res = self.sim_gillespie.gillespie_simulation(initial_values, theta_values_order, self.sim_time_values)
+            return self.sim_gillespie_res
+
+
+    ### plotting helper functions
+    def line_evolv_mean(self, settings):
+        """docstring for ."""
+
+        moment_order_main_mean = self.sim_moments.moment_order_main[0]
+        net_nodes_identifier = self.net.net_nodes_identifier
+
+        x_arr = self.sim_time_values
+        y_arr = np.zeros((len(moment_order_main_mean), len(self.sim_time_values)))
+        attributes = dict()
+
+        for i, (node_id, ) in enumerate(moment_order_main_mean):
+            y_arr[i, :] = self.sim_moments_res[0][i]
+
+            node_settings = settings[net_nodes_identifier[node_id]]
+            attributes[i] = (node_settings['label'], node_settings['color'])
+
+        return x_arr, y_arr, attributes
+
+
+    def line_evolv_variance(self, settings):
+        """docstring for ."""
+
+        moment_order_main_var = [(node1_id, node2_id) for (node1_id, node2_id) in self.sim_moments.moment_order_main[1] if node1_id==node2_id]
+        net_nodes_identifier = self.net.net_nodes_identifier
+
+        x_arr = self.sim_time_values
+        y_arr = np.zeros((len(moment_order_main_var), len(self.sim_time_values)))
+        attributes = dict()
+
+        for i, (node1_id, node2_id) in enumerate(moment_order_main_var):
+            y_arr[i, :] = self.sim_moments_res[1][i]
+
+            node_settings = settings[(net_nodes_identifier[node1_id], net_nodes_identifier[node2_id])]
+            attributes[i] = (node_settings['label'], node_settings['color'])
+
+        return x_arr, y_arr, attributes
+
+
+    def line_evolv_covariance(self, settings):
+        """docstring for ."""
+
+        moment_order_main_cov = [(node1_id, node2_id) for (node1_id, node2_id) in self.sim_moments.moment_order_main[1] if node1_id!=node2_id]
+        net_nodes_identifier = self.net.net_nodes_identifier
+
+        x_arr = self.sim_time_values
+        y_arr = np.zeros((len(moment_order_main_cov), len(self.sim_time_values)))
+        attributes = dict()
+
+        for i, (node1_id, node2_id) in enumerate(moment_order_main_cov):
+            y_arr[i, :] = self.sim_moments_res[2][i]
+
+            try:
+                node_settings = settings[(net_nodes_identifier[node1_id], net_nodes_identifier[node2_id])]
+            except:
+                node_settings = settings[(net_nodes_identifier[node2_id], net_nodes_identifier[node1_id])]
+
+            attributes[i] = (node_settings['label'], node_settings['color'])
+
+        return x_arr, y_arr, attributes
+
+
+    def line_evolv_counts(self, settings):
+        """docstring for ."""
+
+        gillespie_order_main = self.sim_gillespie.net_main_node_order_without_env
+        net_nodes_identifier = self.net.net_nodes_identifier
+
+        x_arr = self.sim_gillespie_res[0]
+        y_arr = np.zeros((len(gillespie_order_main), len(x_arr)))
+        attributes = dict()
+
+        for i, node_id in enumerate(gillespie_order_main):
+            y_arr[i, :] = self.sim_gillespie_res[1][i, :]
+
+            node_settings = settings[net_nodes_identifier[node_id]]
+            attributes[i] = (node_settings['label'], node_settings['color'])
+
+        return x_arr, y_arr, attributes
+    ###
 
     # # NOTE: put in init?
     # def parametrise(self, rate_values, validate_rate_values=False):

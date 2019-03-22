@@ -25,6 +25,10 @@ class GillespieSim(object):
         self.sim_gill_reaction_update_exec = None
         self.sim_gill_reaction_number = None
 
+        # initialise boolean to handle the preparation step that has to be
+        # executed once before a simulation
+        self.gillespie_preparation_exists = False
+
 
     def prepare_gillespie_simulation(self):
         """docstring for ."""
@@ -39,7 +43,8 @@ class GillespieSim(object):
                             self.net_hidden_node_order_without_env, self.net_hidden_edges,
                             self.create_propensities_update_str, self.create_node_state_update_str)
 
-
+        # once this function has run preparations are done
+        self.gillespie_preparation_exists = True
 
 
     def gillespie_simulation(self, initial_values_dict, theta_values_order, time_values):
@@ -47,28 +52,31 @@ class GillespieSim(object):
 
         ### TODO: maybe use getter/setter attributes or similar to only rerun these
         ### lines when initial_values_order or theta_values_order have changed
-        # create an executable string setting the numerical values of the rates (as theta identifiers)
-        theta_numeric_exec = self.create_theta_numeric_exec(self.net.net_theta_symbolic, theta_values_order)
 
-        # process user given initial values to hidden nodes
-        initial_values = self.process_initial_values_order(self.net_hidden_node_order_without_env,
-                                                            initial_values_dict,
-                                                            self.net.net_nodes_identifier)
-        ###
+        # only able to run a simulation, once preparations are done
+        if self.gillespie_preparation_exists:
+            # create an executable string setting the numerical values of the rates (as theta identifiers)
+            theta_numeric_exec = self.create_theta_numeric_exec(self.net.net_theta_symbolic, theta_values_order)
 
-        # run the actual gillespie algorithm (first reaction method)
-        sim_gill_sol = self.gill_first_reaction_method_sim_alg(time_values, initial_values, theta_numeric_exec,
-                                                self.sim_gill_propensities_eval, self.sim_gill_reaction_number,
-                                                self.sim_gill_reaction_update_exec)
+            # process user given initial values to hidden nodes
+            initial_values = self.process_initial_values_order(self.net_hidden_node_order_without_env,
+                                                                initial_values_dict,
+                                                                self.net.net_nodes_identifier)
+            ###
 
-        # interpolate the random times obtained in the simulation for a fixed time values
-        sim_gill_sol_expl_time = self.exact_interpolation(sim_gill_sol, time_values)
+            # run the actual gillespie algorithm (first reaction method)
+            sim_gill_sol = self.gill_first_reaction_method_sim_alg(time_values, initial_values, theta_numeric_exec,
+                                                    self.sim_gill_propensities_eval, self.sim_gill_reaction_number,
+                                                    self.sim_gill_reaction_update_exec)
 
-        # add up all hidden nodes corresponding to their respective main node
-        sim_gill_sol_expl_time_main = self.sum_up_nodes(self.net_main_node_order_without_env,
-                                                    self.net_hidden_node_order_without_env,
-                                                    sim_gill_sol_expl_time)
-        return sim_gill_sol_expl_time_main
+            # interpolate the random times obtained in the simulation for a fixed time values
+            sim_gill_sol_expl_time = self.exact_interpolation(sim_gill_sol, time_values)
+
+            # add up all hidden nodes corresponding to their respective main node
+            sim_gill_sol_expl_time_main = self.sum_up_nodes(self.net_main_node_order_without_env,
+                                                        self.net_hidden_node_order_without_env,
+                                                        sim_gill_sol_expl_time)
+            return sim_gill_sol_expl_time_main
 
     # TODO: implement direct method or other algorithms that might be more efficient
     @staticmethod

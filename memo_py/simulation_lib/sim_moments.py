@@ -22,6 +22,14 @@ class MomentsSim(object):
         # specified through upper level class Simulation
         self.moment_mean_only = None
 
+        # boolean to indicate whether simulation is called from estimation class or not
+        # specified through upper level class Simulation
+        self.moment_estimation_mode = None
+
+        # initialise boolean to handle the preparation step that has to be
+        # executed once before a simulation
+        self.moments_preparation_exists = False
+
         # instantiate moment order lists
         self.moment_order_main = list()
         self.moment_order_hidden = list()
@@ -29,6 +37,10 @@ class MomentsSim(object):
         # instantiate objects for auxiliary variables
         self.moment_aux_vars = list()
         self.moment_aux_vars_dict = dict()
+
+        # instantiate object for initial values for the moments
+        self.moment_initial_values = None
+        self.moment_initial_values_exist = False
 
         # instantiate objects for string-replaceable symbolic parameters (theta notation)
         self.theta_replaceable = list()
@@ -62,8 +74,11 @@ class MomentsSim(object):
         self.num_covs = None
 
 
-    def prepare_moment_simulation(self):
+    def prepare_moment_simulation(self, mean_only=False, estimate_mode=False):
         """docstring for ."""
+        # set information for mean_only and estimation modes
+        self.moment_mean_only = mean_only
+        self.moment_estimation_mode = estimate_mode
 
         # derive an order of the moments
         self.moment_order_main = self.derive_moment_order_main(self.net.net_main_node_order, self.moment_mean_only)
@@ -93,26 +108,46 @@ class MomentsSim(object):
             self.num_covs, self.cov_ind) = self.get_indices_for_solution_readout(self.moment_order_main, self.moment_order_hidden)
 
         # setup an executable string for the simuation of the moment equations
-        self.setup_executable_moment_eqs_template(self.moment_eqs)
+        self.moment_system = self.setup_executable_moment_eqs_template(self.moment_eqs)
 
+        # once this function has run preparations are done
+        self.moments_preparation_exists = True
 
     def moment_simulation(self, initial_values_dict, theta_values_order, time_values):
         """docstring for ."""
 
         ### TODO: maybe use getter/setter attributes or similar to only rerun these
         ### lines when initial_values_order or theta_values_order have changed
-        # process user given initial values to hidden nodes
-        initial_values = self.process_initial_values_order(self.moment_order_hidden,
-                                                            initial_values_dict,
-                                                            self.net.net_nodes_identifier,
-                                                            type='centric_mean_only')
 
-        # setting the numerical values of the rates (as theta identifiers and in symbolic theta order)
-        self.theta_numeric = theta_values_order
-        ###
+        # check if preparation was executed
+        if self.moments_preparation_exists:
 
-        # simulate the network, given initial_values, time points and parameters (theta)
-        return self.forward_pass(initial_values, time_values, self.theta_numeric)
+            # if not in estimation_mode, process user given initial values to hidden nodes
+            if not self.moment_estimation_mode:
+                self.moment_initial_values = self.process_initial_values_order(self.moment_order_hidden,
+                                                                    initial_values_dict,
+                                                                    self.net.net_nodes_identifier,
+                                                                    type='centric_mean_only')
+                self.moment_initial_values_exist = True
+
+            # if in estimation_mode, process user given initial values to hidden nodes only the first time
+            else:
+                if self.moment_initial_values_exist:
+                    pass
+                else:
+                    # process user given initial values to hidden nodes
+                    self.moment_initial_values = self.process_initial_values_order(self.moment_order_hidden,
+                                                                        initial_values_dict,
+                                                                        self.net.net_nodes_identifier,
+                                                                        type='centric_mean_only')
+                    self.moment_initial_values_exist = True
+
+            # setting the numerical values of the rates (as theta identifiers and in symbolic theta order)
+            self.theta_numeric = theta_values_order
+            ###
+
+            # simulate the network, given initial_values, time points and parameters (theta)
+            return self.forward_pass(self.moment_initial_values, time_values, theta_values_order)
 
     @staticmethod
     def derive_moment_order_main(node_order, mean_only):
@@ -516,7 +551,7 @@ class MomentsSim(object):
         # this string is now executed for once and stored (via eval) as a function in this class
         # print(str_for_exec) # uncomment this for visualisation
         exec(str_for_exec)
-        self.moment_system = eval('_moment_eqs_template')
+        return eval('_moment_eqs_template')
 
     # the forward_pass triggers one integration of the ode system yielding a solution of the different moments over time
     # the solution depends on the initial condition (init) and the parameters (theta) of the ode system
