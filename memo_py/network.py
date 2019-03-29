@@ -1,5 +1,6 @@
 
 import networkx as nx
+from copy import deepcopy
 import warnings
 
 class Network(object):
@@ -273,8 +274,126 @@ class Network(object):
         # return a dictionary with nodes as values for node identifiers as keys
         return dict(zip(ident_nodes_list, nodes_sorted))
 
+
+    ### plotting helper function
+    def draw_main_network_graph(self, node_settings, edge_settings):
+        """docstring for ."""
+
+        # set layout_engine for main networks
+        layout_engine = 'dot' # 'dot', 'neato', 'circo'
+
+        # deepcopy network to have a copy for creating the graphviz network
+        net_main_graphviz = deepcopy(self.net_main)
+
+        # node settings
+        for node in net_main_graphviz.nodes():
+            # general
+            net_main_graphviz.nodes[node]['style'] = 'filled'
+            net_main_graphviz.nodes[node]['penwidth'] = 2.0
+            net_main_graphviz.nodes[node]['color'] = 'grey35'
+            net_main_graphviz.nodes[node]['fontcolor'] = 'white'
+            net_main_graphviz.nodes[node]['fixedsize'] = True
+
+            # user
+            net_main_graphviz.nodes[node]['fillcolor'] = node_settings[self.net_nodes_identifier[node]]['color']
+            node_label = node_settings[self.net_nodes_identifier[node]]['label']
+            net_main_graphviz.nodes[node]['label'] = node_label # f'<<I>{node_label}</I>>' # html based italic
+            net_main_graphviz.nodes[node]['fontsize'] = node_settings[self.net_nodes_identifier[node]]['fontsize']
+
+        # edge settings
+        for node1_id, node2_id, edge_inf in net_main_graphviz.edges(data=True):
+            edge = (node1_id, node2_id)
+
+            # general
+            net_main_graphviz.edges[edge]['arrowsize'] = 1.0
+            net_main_graphviz.edges[edge]['penwidth'] = 2.0
+            net_main_graphviz.edges[edge]['color'] = 'grey35'
+            net_main_graphviz.edges[edge]['fontcolor'] = 'grey60'
+
+            # user
+            sym_rate = edge_inf['module_rate_symbol']
+            edge_label = edge_settings[sym_rate]['label']
+            net_main_graphviz.edges[edge]['label'] = edge_label # f'<<I>{edge_label}</I>>' # html based italic
+            net_main_graphviz.edges[edge]['fontsize'] = edge_settings[sym_rate]['fontsize']
+            edge_color = edge_settings[sym_rate]['color']
+            if edge_color!=None:
+                net_main_graphviz.edges[edge]['color'] = edge_color
+
+        # set general font and styles of the graph
+        net_main_graphviz.graph['graph'] = {'fontname': 'Helvetica'}
+        net_main_graphviz.graph['node'] = {'fontname': 'Helvetica', 'shape': 'circle'}# , 'fontsize': 16}
+        net_main_graphviz.graph['edge'] = {'fontname': 'Helvetica'}
+
+        return (net_main_graphviz, layout_engine)
+
+    def draw_hidden_network_graph(self, node_settings, edge_settings):
+        """docstring for ."""
+
+        # set layout_engine for hidden networks
+        layout_engine = 'neato' # 'dot', 'neato', 'circo'
+
+        # deepcopy network to have a copy for creating the graphviz network
+        net_hidden_graphviz = deepcopy(self.net_hidden)
+
+        # node settings
+        for node in net_hidden_graphviz.nodes():
+
+            # read out
+            node_main = node.split('__')[0]
+            node_centric = node.split('__')[1]=='centric'
+
+            # general
+            net_hidden_graphviz.nodes[node]['style'] = 'filled' if node_centric else 'filled, dashed'
+            net_hidden_graphviz.nodes[node]['penwidth'] = 2.0
+            net_hidden_graphviz.nodes[node]['color'] = 'grey35'
+            net_hidden_graphviz.nodes[node]['fontcolor'] = 'white'
+            net_hidden_graphviz.nodes[node]['fixedsize'] = True
+
+            # user
+            net_hidden_graphviz.nodes[node]['fillcolor'] = node_settings[self.net_nodes_identifier[node_main]]['color']
+            if node_centric:
+                node_label = node_settings[self.net_nodes_identifier[node_main]]['label']
+                net_hidden_graphviz.nodes[node]['label'] = node_label # f'<<I>{node_label}</I>>' # html based italic
+                net_hidden_graphviz.nodes[node]['fontsize'] = node_settings[self.net_nodes_identifier[node_main]]['fontsize']
+            else:
+                net_hidden_graphviz.nodes[node]['label'] = node.split('__')[2]
+                # net_hidden_graphviz.nodes[node]['fontsize'] = node_settings[self.net_nodes_identifier[node_main]]['size']
+
+        # edge settings
+        for node1_id, node2_id, edge_inf in net_hidden_graphviz.edges(data=True):
+            edge = (node1_id, node2_id)
+
+            # general
+            net_hidden_graphviz.edges[edge]['arrowsize'] = 1.0
+            net_hidden_graphviz.edges[edge]['penwidth'] = 2.0
+            net_hidden_graphviz.edges[edge]['color'] = 'grey35'
+            net_hidden_graphviz.edges[edge]['fontcolor'] = 'grey60'
+
+            # user
+            sym_rate = edge_inf['module_rate_symbol']
+            module_steps = edge_inf['module_steps']
+            edge_label = edge_settings[sym_rate]['label']
+            if edge_label!='':
+                net_hidden_graphviz.edges[edge]['label'] = f' {module_steps} {edge_label} ' # f'<<I>{edge_label}</I>>' # html based italic
+                net_hidden_graphviz.edges[edge]['fontsize'] = edge_settings[sym_rate]['fontsize']
+
+            edge_color = edge_settings[sym_rate]['color']
+            if edge_color!=None:
+                net_main_graphviz.edges[edge]['color'] = edge_color
+
+        # set general font and styles of the graph
+        net_hidden_graphviz.graph['graph'] = {'fontname': 'Helvetica'}
+        net_hidden_graphviz.graph['node'] = {'fontname': 'Helvetica', 'shape': 'circle'}# , 'fontsize': 16}
+        net_hidden_graphviz.graph['edge'] = {'fontname': 'Helvetica'}
+
+        return (net_hidden_graphviz, layout_engine)
+
+    ###
+
     @staticmethod
     def validate_net_name_input(net_name):
+        """docstring for ."""
+
         # validate user input for network name
         if isinstance(net_name, str):
             pass

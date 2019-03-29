@@ -1,3 +1,4 @@
+
 import io
 import os
 import re
@@ -28,10 +29,10 @@ setup(
     packages=find_packages('memo_py', exclude=('tests',)),
 
     # package dependendies
-    # note that emcee==2.2.1 is required to be able to use PTSampler method
+    # NOTE: emcee==2.2.1 is required to be able to use PTSampler method
     install_requires=['numpy>=1.14.1', 'sympy>=1.1.1', 'networkx>=2.2',
                         'scipy>=1.0.0', 'corner>=2.0.1', 'emcee==2.2.1',
-                        'matplotlib>=2.1.2'],
+                        'matplotlib>=2.1.2', 'cycler>=0.10.0'],
 
     # run pytest with "$ python setup.py pytest" in this directory
     test_suite='tests',

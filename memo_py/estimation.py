@@ -5,6 +5,7 @@ from .simulation import Simulation
 
 from emcee import PTSampler
 import numpy as np
+import warnings
 
 # TODO: user input validation?
 
@@ -23,6 +24,9 @@ class Estimation(object):
         self.data_mean_values = None
         self.data_var_values = None
         self.data_cov_values = None
+
+        # instantiate object for time values as the data, but more intermediate points
+        self.data_time_values_dense = None
 
         # ###### INTERMEDIATE SOLUTION TO TEST THIS CLASS
         # # function to load and return data, specified with the input variables
@@ -77,6 +81,14 @@ class Estimation(object):
 
         # initialise bool to pass estimate_mode=True to simulation methods
         self.net_simulation_estimate_mode = True
+
+        # instantiate object to store best-fit simulation
+        self.net_simulation_bestfit = None
+        self.net_simulation_bestfit_exists = False
+
+        # instantiate object to store best-fit simulation with confidence band
+        self.net_simulation_confidence_band = None
+        self.net_simulation_confidence_band_exists = False
         ###
 
         ### bayesian (bay) inference related settings
@@ -190,9 +202,10 @@ class Estimation(object):
     def get_confidence_bounds(self, samples_at_temperature1):
         """docstring for ."""
 
-        # the 5th, 50th and 95th percentiles of parameter distributions are extracted
-        # params_conf then contains the tuple (median (50th), lower bound (5th), upper bound (95th))
-        params_conf = tuple(map(lambda v: (v[1], v[0], v[2]), zip(*np.percentile(samples_at_temperature1, [5, 50, 95], axis=0))))
+        # the 2.5th, 50th and 97.5th percentiles of parameter distributions are extracted
+        # params_conf then contains the tuple (median (50th), lower bound (2.5th), upper bound (97.5th))
+        # to provide a 95%-confidence interval
+        params_conf = tuple(map(lambda v: (v[1], v[0], v[2]), zip(*np.percentile(samples_at_temperature1, [2.5, 50, 97.5], axis=0))))
         return params_conf
 
     def compute_model_evidence(self, sampler):
@@ -228,6 +241,9 @@ class Estimation(object):
 
         ### initialise data
         self.data_time_values = self.data.data_time_values
+        self.data_time_values_dense = np.linspace(np.min(self.data_time_values),
+                                                            np.max(self.data_time_values),
+                                                            endpoint=True, num=1000)
 
         (self.data_mean_values,
         self.data_var_values,
@@ -284,7 +300,7 @@ class Estimation(object):
     def log_likelihood(self, theta_values, initial_values, time_values, mean_data, var_data, cov_data):
         """docstring for ."""
 
-        # NOTE: in the bayesian framework employed here the likelihood is the
+        # NOTE: in the bayesian framework employed here, the likelihood is the
         # probability of the data, given a model (structure) and model parameters;
         # the log_likelihood is theoretically based on iid normally distributed error values
         # (data = model + error); thus, effectively, the log_likelihood depends
@@ -393,6 +409,84 @@ class Estimation(object):
         return (data_mean_ordered, data_var_ordered, data_cov_ordered)
 
     ### plotting helper functions
+    def compute_bestfit_simulation(self):
+        """docstring for ."""
+
+        # run a simulation with best-fit values (here we used median/50th percentile of
+        # one-dimensional parameter densities)
+        if self.net_simulation.sim_moments.moment_system=='reset':
+            self.net_simulation.sim_moments.set_moment_eqs_from_template_after_reset()
+
+        self.net_simulation_bestfit = self.net_simulation.simulate(self.net_simulation_type, self.net_initial_values,
+                                                                        self.bay_est_params_median, self.data_time_values_dense,
+                                                                        moment_mean_only=self.net_simulation_mean_only,
+                                                                        estimate_mode=self.net_simulation_estimate_mode)
+
+        self.net_simulation_bestfit_exists = True
+
+
+    def compute_simulation_confidence_band(self, num_sim_ensemble=5000):
+        """docstring for ."""
+
+        # TODO: has to be improved! store model simuations from mcmc and use here again!
+        # NOTE: we would need the data blobs functionality which is currently
+        # only available for the EnsembleSampler but unfortunately not for the PTSampler
+
+        if self.net_simulation.sim_moments.moment_system=='reset':
+            self.net_simulation.sim_moments.set_moment_eqs_from_template_after_reset()
+
+        # take at least 5000 simulations to calculate confidence bands
+        num_sim_ensemble = max(num_sim_ensemble, 5000)
+
+        # raise warning if posterior samples are less than drawn samples for sim_ensemble
+        if self.bay_est_samples_temp1.shape[0]<=num_sim_ensemble:
+            warnings.warn(f'There are less than {num_sim_ensemble} parameter posterior samples to compute model confidence bands from. Consider increasing depth of MCMC sampling.')
+
+
+        # recompute the model simulations for a random selection of posterior sample
+        # i.e. we obtain different model trajectories according to the parameter posterior distribution
+        inds = np.array(range(0, self.bay_est_samples_temp1.shape[0]))
+        inds_random_selection = np.random.choice(inds, size=(num_sim_ensemble), replace=True)
+        theta_ensemble = self.bay_est_samples_temp1[inds_random_selection, :]
+
+        print('start')
+        sim_ensemble = [self.net_simulation.simulate(self.net_simulation_type, self.net_initial_values,
+                                                                        theta, self.data_time_values_dense,
+                                                                        moment_mean_only=self.net_simulation_mean_only,
+                                                                        estimate_mode=self.net_simulation_estimate_mode)
+                                                                        for theta in theta_ensemble]
+        print('end')
+        # then we compute the statistic of the sampled trajectories (means, variances, covariances)
+        # and the corresponding 2.5th and 97.5th percentiles for 95%-confidence band (both for all time points)
+        mean_samples = np.array([sim[0] for sim in sim_ensemble])
+        mean_percentiles = np.percentile(mean_samples, (2.5, 97.5), axis=0)
+        mean_lower_bound = mean_percentiles[0, :, :]
+        mean_upper_bound = mean_percentiles[1, :, :]
+
+        var_samples = np.array([sim[1] for sim in sim_ensemble])
+        var_percentiles = np.percentile(var_samples, (2.5, 97.5), axis=0)
+        var_lower_bound = var_percentiles[0, :, :]
+        var_upper_bound = var_percentiles[1, :, :]
+
+        cov_samples = np.array([sim[2] for sim in sim_ensemble])
+        cov_percentiles = np.percentile(cov_samples, (2.5, 97.5), axis=0)
+        cov_lower_bound = cov_percentiles[0, :, :]
+        cov_upper_bound = cov_percentiles[1, :, :]
+
+        # store the information for the confidence band
+        # with structure:
+        # list index 0 for mean vs. var vs. cov
+        # list index 1 for lower vs. upper
+        # then numpy array with shape=(number of means, vars or covs; #time_values)
+        self.net_simulation_confidence_band = [
+        [mean_lower_bound, mean_upper_bound],
+        [var_lower_bound, var_upper_bound],
+        [cov_lower_bound, cov_upper_bound]
+        ]
+
+        self.net_simulation_confidence_band_exists = True
+
+
     def dots_w_bars_parameters(self, settings):
         """docstring for ."""
 
@@ -418,10 +512,399 @@ class Estimation(object):
         labels = [settings[self.net.net_rates_identifier[theta_id]]['label'] for theta_id in self.net.net_theta_symbolic]
         return samples, labels
 
+
     def samples_chains_parameters(self):
         """docstring for ."""
 
         return self.bay_mcmc_sampler, self.bay_mcmc_num_temps, self.bay_mcmc_sampling_steps, self.bay_mcmc_num_walkers, self.bay_mcmc_num_dim
+
+
+    def line_evolv_bestfit_mean(self, settings):
+        """docstring for ."""
+
+        if not self.net_simulation_bestfit_exists:
+            self.compute_bestfit_simulation()
+        mean_m, __, __  = self.net_simulation_bestfit
+
+        moment_order_main_mean = self.net_simulation.sim_moments.moment_order_main[0]
+        net_nodes_identifier = self.net.net_nodes_identifier
+
+        x_arr = self.data_time_values_dense
+        y_arr = np.zeros((len(moment_order_main_mean), len(x_arr)))
+        attributes = dict()
+
+        for i, (node_id, ) in enumerate(moment_order_main_mean):
+            y_arr[i, :] = mean_m[i]
+
+            node_settings = settings[net_nodes_identifier[node_id]]
+            attributes[i] = (node_settings['label'], node_settings['color'])
+
+        return x_arr, y_arr, attributes
+
+
+    def dots_w_bars_and_line_evolv_bestfit_mean_data(self, settings):
+        """docstring for ."""
+
+        if not self.net_simulation_bestfit_exists:
+            self.compute_bestfit_simulation()
+        mean_m, __, __  = self.net_simulation_bestfit
+
+        moment_order_main_mean = self.net_simulation.sim_moments.moment_order_main[0]
+        net_nodes_identifier = self.net.net_nodes_identifier
+
+        x_arr_line = self.data_time_values_dense
+        y_line = np.zeros((len(moment_order_main_mean), len(x_arr_line)))
+
+        x_arr_dots = self.data_time_values
+        y_dots_err = np.zeros((len(self.data.data_mean_order), self.data.data_num_time_values, 2))
+
+        attributes = dict()
+
+        for i, (node_id, ) in enumerate(moment_order_main_mean):
+            y_line[i, :] = mean_m[i]
+
+            y_dots_err[i, :, 0] = self.data_mean_values[0, i, :] # mean statistic
+            y_dots_err[i, :, 1] = self.data_mean_values[1, i, :] # standard error
+
+            node_settings = settings[net_nodes_identifier[node_id]]
+            attributes[i] = (node_settings['label'], node_settings['color'])
+
+        return x_arr_dots, x_arr_line, y_dots_err, y_line, attributes
+
+
+    def line_w_band_evolv_mean_confidence(self, settings, num_sim_ensemble=5000):
+        """docstring for ."""
+
+        # compute the best-fit simulation and confidence bands in case they do not exist already
+        if not self.net_simulation_bestfit_exists:
+            self.compute_bestfit_simulation()
+
+        if not self.net_simulation_confidence_band_exists:
+            self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
+
+        mean_m, __, __  = self.net_simulation_bestfit
+        mean_band = self.net_simulation_confidence_band[0]
+
+        moment_order_main_mean = self.net_simulation.sim_moments.moment_order_main[0]
+        net_nodes_identifier = self.net.net_nodes_identifier
+
+        x_arr = self.data_time_values_dense
+        y_line = np.zeros((len(moment_order_main_mean), len(x_arr)))
+        y_lower = np.zeros((len(moment_order_main_mean), len(x_arr)))
+        y_upper = np.zeros((len(moment_order_main_mean), len(x_arr)))
+        attributes = dict()
+
+        for i, (node_id, ) in enumerate(moment_order_main_mean):
+            y_line[i, :] = mean_m[i]
+            y_lower[i, :] = mean_band[0][i, :]
+            y_upper[i, :] = mean_band[1][i, :]
+
+            node_settings = settings[net_nodes_identifier[node_id]]
+            attributes[i] = (node_settings['label'], node_settings['color'])
+
+        return x_arr, y_line, y_lower, y_upper, attributes
+
+
+    def dots_w_bars_and_line_w_band_evolv_mean_confidence(self, settings, num_sim_ensemble=5000):
+        """docstring for ."""
+
+        # compute the best-fit simulation and confidence bands in case they do not exist already
+        if not self.net_simulation_bestfit_exists:
+            self.compute_bestfit_simulation()
+
+        if not self.net_simulation_confidence_band_exists:
+            self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
+
+        mean_m, __, __  = self.net_simulation_bestfit
+        mean_band = self.net_simulation_confidence_band[0]
+
+        moment_order_main_mean = self.net_simulation.sim_moments.moment_order_main[0]
+        net_nodes_identifier = self.net.net_nodes_identifier
+
+        x_arr_dots = self.data_time_values
+        x_arr_line = self.data_time_values_dense
+        y_dots_err = np.zeros((len(self.data.data_mean_order), self.data.data_num_time_values, 2))
+        y_line = np.zeros((len(moment_order_main_mean), len(self.data_time_values_dense)))
+        y_lower = np.zeros((len(moment_order_main_mean), len(self.data_time_values_dense)))
+        y_upper = np.zeros((len(moment_order_main_mean), len(self.data_time_values_dense)))
+        attributes = dict()
+
+        for i, (node_id, ) in enumerate(moment_order_main_mean):
+            y_line[i, :] = mean_m[i]
+            y_lower[i, :] = mean_band[0][i, :]
+            y_upper[i, :] = mean_band[1][i, :]
+
+            y_dots_err[i, :, 0] = self.data_mean_values[0, i, :] # mean statistic
+            y_dots_err[i, :, 1] = self.data_mean_values[1, i, :] # standard error
+
+            node_settings = settings[net_nodes_identifier[node_id]]
+            attributes[i] = (node_settings['label'], node_settings['color'])
+
+        return x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes
+
+
+    def line_evolv_bestfit_variance(self, settings):
+        """docstring for ."""
+
+        if not self.net_simulation_bestfit_exists:
+            self.compute_bestfit_simulation()
+        __, var_m, __  = self.net_simulation_bestfit
+
+        moment_order_main_var = [(node1_id, node2_id) for (node1_id, node2_id) in self.net_simulation.sim_moments.moment_order_main[1] if node1_id==node2_id]
+        net_nodes_identifier = self.net.net_nodes_identifier
+
+        x_arr = self.data_time_values_dense
+        y_arr = np.zeros((len(moment_order_main_var), len(x_arr)))
+        attributes = dict()
+
+        for i, (node1_id, node2_id) in enumerate(moment_order_main_var):
+            y_arr[i, :] = var_m[i]
+
+            node_settings = settings[(net_nodes_identifier[node1_id], net_nodes_identifier[node2_id])]
+            attributes[i] = (node_settings['label'], node_settings['color'])
+
+        return x_arr, y_arr, attributes
+
+
+    def dots_w_bars_and_line_evolv_bestfit_variance_data(self, settings):
+        """docstring for ."""
+
+        if not self.net_simulation_bestfit_exists:
+            self.compute_bestfit_simulation()
+        __, var_m, __  = self.net_simulation_bestfit
+
+        moment_order_main_var = [(node1_id, node2_id) for (node1_id, node2_id) in self.net_simulation.sim_moments.moment_order_main[1] if node1_id==node2_id]
+        net_nodes_identifier = self.net.net_nodes_identifier
+
+        x_arr_line = self.data_time_values_dense
+        y_line = np.zeros((len(moment_order_main_var), len(x_arr_line)))
+
+        x_arr_dots = self.data_time_values
+        y_dots_err = np.zeros((len(self.data.data_variance_order), self.data.data_num_time_values, 2))
+
+        attributes = dict()
+
+        for i, (node1_id, node2_id) in enumerate(moment_order_main_var):
+            y_line[i, :] = var_m[i]
+
+            y_dots_err[i, :, 0] = self.data_var_values[0, i, :] # var statistic
+            y_dots_err[i, :, 1] = self.data_var_values[1, i, :] # standard error
+
+            node_settings = settings[(net_nodes_identifier[node1_id], net_nodes_identifier[node2_id])]
+            attributes[i] = (node_settings['label'], node_settings['color'])
+
+        return x_arr_dots, x_arr_line, y_dots_err, y_line, attributes
+
+
+    def line_w_band_evolv_variance_confidence(self, settings, num_sim_ensemble=5000):
+        """docstring for ."""
+
+        # compute the best-fit simulation and confidence bands in case they do not exist already
+        if not self.net_simulation_bestfit_exists:
+            self.compute_bestfit_simulation()
+
+        if not self.net_simulation_confidence_band_exists:
+            self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
+
+        __, var_m, __  = self.net_simulation_bestfit
+        var_band = self.net_simulation_confidence_band[1]
+
+        moment_order_main_var = [(node1_id, node2_id) for (node1_id, node2_id) in self.net_simulation.sim_moments.moment_order_main[1] if node1_id==node2_id]
+        net_nodes_identifier = self.net.net_nodes_identifier
+
+        x_arr = self.data_time_values_dense
+        y_line = np.zeros((len(moment_order_main_var), len(x_arr)))
+        y_lower = np.zeros((len(moment_order_main_var), len(x_arr)))
+        y_upper = np.zeros((len(moment_order_main_var), len(x_arr)))
+        attributes = dict()
+
+        for i, (node1_id, node2_id) in enumerate(moment_order_main_var):
+            y_line[i, :] = var_m[i]
+            y_lower[i, :] = var_band[0][i, :]
+            y_upper[i, :] = var_band[1][i, :]
+
+            node_settings = settings[(net_nodes_identifier[node1_id], net_nodes_identifier[node2_id])]
+            attributes[i] = (node_settings['label'], node_settings['color'])
+
+        return x_arr, y_line, y_lower, y_upper, attributes
+
+
+    def dots_w_bars_and_line_w_band_evolv_variance_confidence(self, settings, num_sim_ensemble=5000):
+        """docstring for ."""
+
+        # compute the best-fit simulation and confidence bands in case they do not exist already
+        if not self.net_simulation_bestfit_exists:
+            self.compute_bestfit_simulation()
+
+        if not self.net_simulation_confidence_band_exists:
+            self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
+
+        __, var_m, __  = self.net_simulation_bestfit
+        var_band = self.net_simulation_confidence_band[1]
+
+        moment_order_main_var = [(node1_id, node2_id) for (node1_id, node2_id) in self.net_simulation.sim_moments.moment_order_main[1] if node1_id==node2_id]
+        net_nodes_identifier = self.net.net_nodes_identifier
+
+        x_arr_dots = self.data_time_values
+        x_arr_line = self.data_time_values_dense
+        y_dots_err = np.zeros((len(self.data.data_variance_order), self.data.data_num_time_values, 2))
+        y_line = np.zeros((len(moment_order_main_var), len(self.data_time_values_dense)))
+        y_lower = np.zeros((len(moment_order_main_var), len(self.data_time_values_dense)))
+        y_upper = np.zeros((len(moment_order_main_var), len(self.data_time_values_dense)))
+        attributes = dict()
+
+        for i, (node1_id, node2_id) in enumerate(moment_order_main_var):
+            y_line[i, :] = var_m[i]
+            y_lower[i, :] = var_band[0][i, :]
+            y_upper[i, :] = var_band[1][i, :]
+
+            y_dots_err[i, :, 0] = self.data_var_values[0, i, :] # var statistic
+            y_dots_err[i, :, 1] = self.data_var_values[1, i, :] # standard error
+
+            node_settings = settings[(net_nodes_identifier[node1_id], net_nodes_identifier[node2_id])]
+            attributes[i] = (node_settings['label'], node_settings['color'])
+
+        return x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes
+
+
+    def line_evolv_bestfit_covariance(self, settings):
+        """docstring for ."""
+
+        if not self.net_simulation_bestfit_exists:
+            self.compute_bestfit_simulation()
+        __, __, cov_m  = self.net_simulation_bestfit
+
+        moment_order_main_cov = [(node1_id, node2_id) for (node1_id, node2_id) in self.net_simulation.sim_moments.moment_order_main[1] if node1_id!=node2_id]
+        net_nodes_identifier = self.net.net_nodes_identifier
+
+        x_arr = self.data_time_values_dense
+        y_arr = np.zeros((len(moment_order_main_cov), len(x_arr)))
+        attributes = dict()
+
+        for i, (node1_id, node2_id) in enumerate(moment_order_main_cov):
+            y_arr[i, :] = cov_m[i]
+
+            try:
+                node_settings = settings[(net_nodes_identifier[node1_id], net_nodes_identifier[node2_id])]
+            except:
+                node_settings = settings[(net_nodes_identifier[node2_id], net_nodes_identifier[node1_id])]
+
+            attributes[i] = (node_settings['label'], node_settings['color'])
+
+        return x_arr, y_arr, attributes
+
+
+    def dots_w_bars_and_line_evolv_bestfit_covariance_data(self, settings):
+        """docstring for ."""
+
+        if not self.net_simulation_bestfit_exists:
+            self.compute_bestfit_simulation()
+        __, __, cov_m  = self.net_simulation_bestfit
+
+        moment_order_main_cov = [(node1_id, node2_id) for (node1_id, node2_id) in self.net_simulation.sim_moments.moment_order_main[1] if node1_id!=node2_id]
+        net_nodes_identifier = self.net.net_nodes_identifier
+
+        x_arr_line = self.data_time_values_dense
+        y_line = np.zeros((len(moment_order_main_cov), len(x_arr_line)))
+
+        x_arr_dots = self.data_time_values
+        y_dots_err = np.zeros((len(self.data.data_covariance_order), self.data.data_num_time_values, 2))
+
+        attributes = dict()
+
+        for i, (node1_id, node2_id) in enumerate(moment_order_main_cov):
+            y_line[i, :] = cov_m[i]
+
+            y_dots_err[i, :, 0] = self.data_cov_values[0, i, :] # cov statistic
+            y_dots_err[i, :, 1] = self.data_cov_values[1, i, :] # standard error
+
+            try:
+                node_settings = settings[(net_nodes_identifier[node1_id], net_nodes_identifier[node2_id])]
+            except:
+                node_settings = settings[(net_nodes_identifier[node2_id], net_nodes_identifier[node1_id])]
+
+            attributes[i] = (node_settings['label'], node_settings['color'])
+
+        return x_arr_dots, x_arr_line, y_dots_err, y_line, attributes
+
+
+    def line_w_band_evolv_covariance_confidence(self, settings, num_sim_ensemble=5000):
+        """docstring for ."""
+
+        # compute the best-fit simulation and confidence bands in case they do not exist already
+        if not self.net_simulation_bestfit_exists:
+            self.compute_bestfit_simulation()
+
+        if not self.net_simulation_confidence_band_exists:
+            self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
+
+        __, __, cov_m  = self.net_simulation_bestfit
+        cov_band = self.net_simulation_confidence_band[2]
+
+        moment_order_main_cov = [(node1_id, node2_id) for (node1_id, node2_id) in self.net_simulation.sim_moments.moment_order_main[1] if node1_id!=node2_id]
+        net_nodes_identifier = self.net.net_nodes_identifier
+
+        x_arr = self.data_time_values_dense
+        y_line = np.zeros((len(moment_order_main_cov), len(x_arr)))
+        y_lower = np.zeros((len(moment_order_main_cov), len(x_arr)))
+        y_upper = np.zeros((len(moment_order_main_cov), len(x_arr)))
+        attributes = dict()
+
+        for i, (node1_id, node2_id) in enumerate(moment_order_main_cov):
+            y_line[i, :] = cov_m[i]
+            y_lower[i, :] = cov_band[0][i, :]
+            y_upper[i, :] = cov_band[1][i, :]
+
+            try:
+                node_settings = settings[(net_nodes_identifier[node1_id], net_nodes_identifier[node2_id])]
+            except:
+                node_settings = settings[(net_nodes_identifier[node2_id], net_nodes_identifier[node1_id])]
+
+            attributes[i] = (node_settings['label'], node_settings['color'])
+
+        return x_arr, y_line, y_lower, y_upper, attributes
+
+
+    def dots_w_bars_and_line_w_band_evolv_covariance_confidence(self, settings, num_sim_ensemble=5000):
+        """docstring for ."""
+
+        # compute the best-fit simulation and confidence bands in case they do not exist already
+        if not self.net_simulation_bestfit_exists:
+            self.compute_bestfit_simulation()
+
+        if not self.net_simulation_confidence_band_exists:
+            self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
+
+        __, __, cov_m  = self.net_simulation_bestfit
+        cov_band = self.net_simulation_confidence_band[2]
+
+        moment_order_main_cov = [(node1_id, node2_id) for (node1_id, node2_id) in self.net_simulation.sim_moments.moment_order_main[1] if node1_id!=node2_id]
+        net_nodes_identifier = self.net.net_nodes_identifier
+
+        x_arr_dots = self.data_time_values
+        x_arr_line = self.data_time_values_dense
+        y_dots_err = np.zeros((len(self.data.data_covariance_order), self.data.data_num_time_values, 2))
+        y_line = np.zeros((len(moment_order_main_cov), len(self.data_time_values_dense)))
+        y_lower = np.zeros((len(moment_order_main_cov), len(self.data_time_values_dense)))
+        y_upper = np.zeros((len(moment_order_main_cov), len(self.data_time_values_dense)))
+        attributes = dict()
+
+        for i, (node1_id, node2_id) in enumerate(moment_order_main_cov):
+            y_line[i, :] = cov_m[i]
+            y_lower[i, :] = cov_band[0][i, :]
+            y_upper[i, :] = cov_band[1][i, :]
+
+            y_dots_err[i, :, 0] = self.data_cov_values[0, i, :] # cov statistic
+            y_dots_err[i, :, 1] = self.data_cov_values[1, i, :] # standard error
+
+            try:
+                node_settings = settings[(net_nodes_identifier[node1_id], net_nodes_identifier[node2_id])]
+            except:
+                node_settings = settings[(net_nodes_identifier[node2_id], net_nodes_identifier[node1_id])]
+
+            attributes[i] = (node_settings['label'], node_settings['color'])
+
+        return x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes
     ###
 
     @staticmethod

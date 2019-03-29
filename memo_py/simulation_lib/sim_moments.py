@@ -76,6 +76,9 @@ class MomentsSim(object):
 
     def prepare_moment_simulation(self, mean_only=False, estimate_mode=False):
         """docstring for ."""
+
+        print('shouldnt go here')
+        
         # set information for mean_only and estimation modes
         self.moment_mean_only = mean_only
         self.moment_estimation_mode = estimate_mode
@@ -552,6 +555,19 @@ class MomentsSim(object):
         # print(str_for_exec) # uncomment this for visualisation
         exec(str_for_exec)
         return eval('_moment_eqs_template')
+
+
+    def set_moment_eqs_from_template_after_reset(self):
+        """docstring for ."""
+
+        # this string is now executed for once and stored (via eval) as a function in this class
+        # print(str_for_exec) # uncomment this for visualisation
+        exec(self.moment_eqs_template_str)
+
+        if self.moment_system=='reset':
+            self.moment_system = eval('_moment_eqs_template')
+        else:
+            print('Moment system was not in \'reset\' mode.')
 
     # the forward_pass triggers one integration of the ode system yielding a solution of the different moments over time
     # the solution depends on the initial condition (init) and the parameters (theta) of the ode system
