@@ -1,4 +1,8 @@
 
+# TODO: remove this when version check is no longer needed
+import sympy
+#
+
 from sympy import var
 from sympy import sympify
 from sympy import Function
@@ -285,7 +289,7 @@ class MomentsSim(object):
         # create a list of tuples for replacement ((old str, new str))
         replace_tuples = list()
 
-        # # NOTE: that below our alpha-numerical ordering of z_vars coincides with sympy's ordering
+        # NOTE: that below our alpha-numerical ordering of z_vars coincides with sympy's ordering
         count_i = 0
         for z_var in moment_order_1st_vars:
             string_deriv = f'Derivative(F({z_vars_str}), {z_var})'
@@ -295,7 +299,15 @@ class MomentsSim(object):
             count_i += 1
 
         for z_var1, z_var2 in moment_order_2nd_vars:
-            string_deriv = f'Derivative(F({z_vars_str}), {z_var1}, {z_var2})'
+            # TODO: check if all similar to old version and update sympy (>=1.3)
+            if z_var1==z_var2:
+                if sympy.__version__=='1.1.1':
+                    print('hello 1.1.1')
+                    string_deriv = f'Derivative(F({z_vars_str}), {z_var1}, {z_var2})'
+                else:
+                    string_deriv = f'Derivative(F({z_vars_str}), ({z_var1}, 2))'
+            else:
+                string_deriv = f'Derivative(F({z_vars_str}), {z_var1}, {z_var2})'
             string_subs = f'm_{count_i}_q'
             replace_tuples.append((string_deriv, string_subs))
 
@@ -313,7 +325,16 @@ class MomentsSim(object):
         # else replace third order derivatives
         else:
             inner_F = ', '.join(len(moment_aux_vars)*['1.0'])
-            replace_tuples.append((f'Derivative(F({inner_F}), 1.0, 1.0, 1.0)', 'const'))
+
+            # TODO: check if all similar to old version and update sympy (>=1.3)
+            if sympy.__version__=='1.1.1':
+                replace_tuples.append((f'Derivative(F({inner_F}), 1.0, 1.0, 1.0)', 'const'))
+                print('hello 1.1.1')
+            else:
+                replace_tuples.append((f'Derivative(F({inner_F}), 1.0, 1.0, 1.0)', 'const'))
+                replace_tuples.append((f'Derivative(F({inner_F}), (1.0, 2), 1.0)', 'const'))
+                replace_tuples.append((f'Derivative(F({inner_F}), 1.0, (1.0, 2))', 'const'))
+                replace_tuples.append((f'Derivative(F({inner_F}), (1.0, 3))', 'const'))
 
         # replace the plain probability generating function by one (since probabilities sum up to one)
         inner_F = ', '.join(len(moment_aux_vars)*['1.0'])
@@ -352,6 +373,7 @@ class MomentsSim(object):
                 eq = eq.replace(*tup)
             moment_eqs[i] = eq
 
+        print(moment_eqs)
         return moment_eqs
 
     @staticmethod
