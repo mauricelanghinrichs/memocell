@@ -25,13 +25,20 @@ class GillespieSim(object):
         self.sim_gill_reaction_update_exec = None
         self.sim_gill_reaction_number = None
 
+        # instantiate objects for summation indices from hidden network
+        # nodes to simulation variables
+        self.summation_indices_nodes = None
+        self.summation_indices_variables = None
+
         # initialise boolean to handle the preparation step that has to be
         # executed once before a simulation
         self.gillespie_preparation_exists = False
 
 
-    def prepare_gillespie_simulation(self):
+    def prepare_gillespie_simulation(self, variables_order, variables_identifier):
         """docstring for ."""
+
+        # TODO: implement variables_order, variables_identifier feature
 
         # preparations to be able to run gillespie simulations
         # 1) an evaluable numpy array to calculate propensities (sim_gill_propensities_eval)
@@ -42,6 +49,15 @@ class GillespieSim(object):
             self.sim_gill_reaction_number) = self.define_gill_fct(
                             self.net_hidden_node_order_without_env, self.net_hidden_edges,
                             self.create_propensities_update_str, self.create_node_state_update_str)
+
+        self.summation_indices_nodes = self.create_node_summation_indices(self.net_main_node_order_without_env,
+                                                    self.net_hidden_node_order_without_env)
+
+        self.summation_indices_variables = self.create_variables_summation_indices(
+                                                    variables_order,
+                                                    variables_identifier,
+                                                    self.net_main_node_order_without_env,
+                                                    self.net.net_nodes_identifier)
 
         # once this function has run preparations are done
         self.gillespie_preparation_exists = True
@@ -73,10 +89,15 @@ class GillespieSim(object):
             sim_gill_sol_expl_time = self.exact_interpolation(sim_gill_sol, time_values)
 
             # add up all hidden nodes corresponding to their respective main node
-            sim_gill_sol_expl_time_main = self.sum_up_nodes(self.net_main_node_order_without_env,
-                                                        self.net_hidden_node_order_without_env,
+            sim_gill_sol_expl_time_main = self.summation_main_nodes(
+                                                        self.summation_indices_nodes,
                                                         sim_gill_sol_expl_time)
-            return sim_gill_sol_expl_time_main
+
+            # add main nodes to obtain results for simulation variables
+            sim_gill_sol_expl_time_variables = self.summation_simulation_variables(
+                                                        self.summation_indices_variables,
+                                                        sim_gill_sol_expl_time_main)
+            return sim_gill_sol_expl_time_variables
 
     # TODO: implement direct method or other algorithms that might be more efficient
     @staticmethod
@@ -333,15 +354,8 @@ class GillespieSim(object):
         return [time_array_explicit, nodes_array_explicit]
 
     @staticmethod
-    def sum_up_nodes(main_node_order, hidden_node_order, sim_sol_expl_time):
+    def create_node_summation_indices(main_node_order, hidden_node_order):
         """docstring for ."""
-
-        # print(main_node_order)
-        # print(hidden_node_order)
-        # pre allocate results array (sim_sol_expl_time_main_nodes)
-        num_main_nodes = len(main_node_order)
-        num_time_points = sim_sol_expl_time[0].shape[0]
-        sim_sol_expl_time_main_nodes = np.zeros((num_main_nodes, num_time_points))
 
         # for each main node, find indices of corresponding hidden nodes
         sum_tuple_main = list()
@@ -354,9 +368,72 @@ class GillespieSim(object):
                     tup_i += (node_ind, )
             sum_tuple_main.append(tup_i)
 
+        return sum_tuple_main
+
+    @staticmethod
+    def summation_main_nodes(sum_tuple_main, sim_sol_expl_time):
+        """docstring for ."""
+
+        # pre allocate results array (sim_sol_expl_time_main_nodes)
+        num_time_points = sim_sol_expl_time[0].shape[0]
+        sim_sol_expl_time_main_nodes = np.zeros((len(sum_tuple_main), num_time_points))
+
         # print(sum_tuple_main)
         # for each main node, add up corresponding hidden nodes to sim_sol_expl_time_main_nodes
-        for main_node_ind in range(len(main_node_order)):
+        for main_node_ind in range(len(sum_tuple_main)):
             sim_sol_expl_time_main_nodes[main_node_ind, :] = np.sum(sim_sol_expl_time[1][sum_tuple_main[main_node_ind], :], axis=0)
 
         return [sim_sol_expl_time[0], sim_sol_expl_time_main_nodes]
+
+
+    @staticmethod
+    def create_variables_summation_indices(variables_order,
+                                            variables_identifier,
+                                            net_main_node_order_without_env,
+                                            net_nodes_identifier):
+        """docstring for ."""
+
+        # inverse the node identifier dictionary
+        net_nodes_identifier_inv = {val: key for key, val in net_nodes_identifier.items()}
+
+        # with this, create new dict with variables identifiers and node identifiers ('Z_<int>' nomenclature)
+        # e.g., {'V_0': ('W_t', ('Y_t', 'X_t')), 'V_1': ('X_t', ('X_t',)), 'V_2': ('Y_t', ('Y_t',))}
+        # becomes {'V_0': ('W_t', ('Z_0', 'Z_1')), 'V_1': ('X_t', ('Z_0',)), 'V_2': ('Y_t', ('Z_1',))}
+        variables_node_identifier = dict()
+        for key, value in variables_identifier.items():
+            variable_nodes = value[1]
+            variable_nodes_ident = tuple(sorted([net_nodes_identifier_inv[node] for node in variable_nodes]))
+            variables_node_identifier[key] = (value[0], variable_nodes_ident)
+
+        # loop over variable identifiers
+        sum_tuple_variables = list()
+        for var in variables_order[0]:
+            tup_i = tuple()
+
+            # obtain the nodes identifier for each variable
+            variable_id = var[0]
+            variable_nodes_id = variables_node_identifier[variable_id][1]
+
+            # for a given node identifier, look up its index in the moment solution
+            for node_id in variable_nodes_id:
+                ind_node_id = net_main_node_order_without_env.index(node_id)
+                tup_i += (ind_node_id, )
+
+            sum_tuple_variables.append(tup_i)
+
+        return sum_tuple_variables
+
+    @staticmethod
+    def summation_simulation_variables(sum_tuple_variables, sim_sol_expl_time_main_nodes):
+        """docstring for ."""
+
+        # pre allocate results array (sim_sol_expl_time_sim_variables)
+        num_time_points = sim_sol_expl_time_main_nodes[0].shape[0]
+        sim_sol_expl_time_sim_variables = np.zeros((len(sum_tuple_variables), num_time_points))
+
+        # print(sum_tuple_variables)
+        # for each simulation output variable, add up corresponding main nodes to sim_sol_expl_time_sim_variables
+        for variable_ind in range(len(sum_tuple_variables)):
+            sim_sol_expl_time_sim_variables[variable_ind, :] = np.sum(sim_sol_expl_time_main_nodes[1][sum_tuple_variables[variable_ind], :], axis=0)
+
+        return [sim_sol_expl_time_main_nodes[0], sim_sol_expl_time_sim_variables]

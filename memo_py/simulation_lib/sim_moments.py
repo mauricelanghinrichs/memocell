@@ -4,8 +4,8 @@ from sympy import sympify
 from sympy import Function
 from sympy import diff
 
+import itertools
 import numpy as np
-
 from scipy.integrate import odeint
 
 class MomentsSim(object):
@@ -61,24 +61,24 @@ class MomentsSim(object):
 
         # instantiate objects for storing the indices of the ode system/ moments
         # of the hidden Markov layer that belong to a certain main network moment
-        self.mean_ind = None
-        self.var_ind_intra = None
-        self.var_ind_inter = None
-        self.cov_ind = None
+        self.moment_mean_ind = None
+        self.moment_var_ind_intra = None
+        self.moment_var_ind_inter = None
+        self.moment_cov_ind = None
 
         # instantiate objects for the number of mean, variance and covariance equations
         # given the nodes in the main network and the kind of moment simulations
         # (first only (mean_only=True) or first and second moments)
-        self.num_means = None
-        self.num_vars = None
-        self.num_covs = None
+        self.moment_num_means = None
+        self.moment_num_vars = None
+        self.moment_num_covs = None
 
 
-    def prepare_moment_simulation(self, mean_only=False, estimate_mode=False):
+    def prepare_moment_simulation(self, variables_order, variables_identifier, mean_only=False, estimate_mode=False):
         """docstring for ."""
 
-        print('shouldnt go here')
-        
+        print('should go here just once (prepare_moment_simulation)')
+
         # set information for mean_only and estimation modes
         self.moment_mean_only = mean_only
         self.moment_estimation_mode = estimate_mode
@@ -107,11 +107,21 @@ class MomentsSim(object):
         self.moment_eqs = self.derive_moment_eqs(self.moment_pde, self.moment_order_hidden, self.moment_aux_vars, self.moment_aux_vars_dict, self.theta_replaceable)
 
         # for moments in the main network, collect the nodes of the hidden network for summation
-        (self.num_means, self.mean_ind, self.num_vars, self.var_ind_intra, self.var_ind_inter,
-            self.num_covs, self.cov_ind) = self.get_indices_for_solution_readout(self.moment_order_main, self.moment_order_hidden)
+        (self.moment_num_means, self.moment_mean_ind, self.moment_num_vars,
+        self.moment_var_ind_intra, self.moment_var_ind_inter, self.moment_num_covs,
+        self.moment_cov_ind) = self.get_indices_for_solution_readout(self.moment_order_main, self.moment_order_hidden)
 
         # setup an executable string for the simuation of the moment equations
         self.moment_system = self.setup_executable_moment_eqs_template(self.moment_eqs)
+
+        # TODO: variables feature
+        (self.variables_num_means, self.variables_mean_ind,
+        self.variables_num_vars, self.variables_var_ind,
+        self.variables_num_covs, self.variables_cov_ind) = self.get_indices_for_moment_readout(
+                                                                        variables_order,
+                                                                        variables_identifier,
+                                                                        self.moment_order_main,
+                                                                        self.net.net_nodes_identifier)
 
         # once this function has run preparations are done
         self.moments_preparation_exists = True
@@ -460,6 +470,133 @@ class MomentsSim(object):
 
         return num_means, mean_ind, num_vars, var_ind_intra, var_ind_inter, num_covs, cov_ind
 
+    @staticmethod
+    def get_indices_for_moment_readout(variables_order,
+                                            variables_identifier,
+                                            moment_order_main,
+                                            net_nodes_identifier):
+        """docstring for ."""
+
+        # inverse the node identifier dictionary
+        net_nodes_identifier_inv = {val: key for key, val in net_nodes_identifier.items()}
+
+        # with this, create new dict with variables identifiers and node identifiers ('Z_<int>' nomenclature)
+        # e.g., {'V_0': ('W_t', ('Y_t', 'X_t')), 'V_1': ('X_t', ('X_t',)), 'V_2': ('Y_t', ('Y_t',))}
+        # becomes {'V_0': ('W_t', ('Z_0', 'Z_1')), 'V_1': ('X_t', ('Z_0',)), 'V_2': ('Y_t', ('Z_1',))}
+        variables_node_identifier = dict()
+        for key, value in variables_identifier.items():
+            variable_nodes = value[1]
+            variable_nodes_ident = tuple(sorted([net_nodes_identifier_inv[node] for node in variable_nodes]))
+            variables_node_identifier[key] = (value[0], variable_nodes_ident)
+
+        # read out the order of means, vars, covs and their occurrences in
+        # variable identifier notation ('V_<int>') from variables order
+        variables_mean_match = [val for val in variables_order[0] if len(val)==1]
+        variables_num_means = len(variables_mean_match)
+        variables_var_match = [val for val in variables_order[1] if val[0]==val[1]]
+        variables_num_vars = len(variables_var_match)
+        variables_cov_match = [val for val in variables_order[1] if val[0]!=val[1]]
+        variables_num_covs = len(variables_cov_match)
+
+        # re-load the moment order of the moment solutions in node
+        # identifier notation ('Z_<int>')
+        moment_mean_match = [val for val in moment_order_main[0] if len(val)==1]
+        moment_var_match = [val for val in moment_order_main[1] if val[0]==val[1]]
+        moment_cov_match = [val for val in moment_order_main[1] if val[0]!=val[1]]
+
+        # preallocate numpy array object to later assign tuples to sum over from moment solutions;
+        # the second axis has two dimensions for var and cov (index=0 to obtain
+        # node variances, index=1 to obtain node covariances)
+        variables_mean_ind = np.zeros((variables_num_means, 1), dtype=object)
+        variables_var_ind = np.zeros((variables_num_vars, 2), dtype=object)
+        variables_cov_ind = np.zeros((variables_num_covs, 2), dtype=object)
+
+        # set the mean indices; for a given variable V = Z0 + ... + Zn it
+        # holds that E(V) = E(Z0) + ... + E(Zn), thus we collect all nodes
+        # belonging to variable V here
+        for ind_var, var in enumerate(variables_mean_match):
+            mean_match_tup = tuple()
+
+            # obtain the nodes identifier for each variable
+            variable_id = var[0]
+            variable_nodes_id = variables_node_identifier[variable_id][1]
+
+            # for a given node identifier, look up its index in the moment solution
+            for node_id in variable_nodes_id:
+                ind_node_id = moment_mean_match.index((node_id, ))
+                mean_match_tup += (ind_node_id, )
+
+            variables_mean_ind[ind_var, 0] = mean_match_tup
+
+        # set the variance indices; for a given variable V = Z0 + ... + Zn it
+        # holds that Var(V) = Cov(V, V) = sum(i=0 to n, Var(Zi)) + sum(over (i,j) i!=j, Cov(Zi, Zj))
+        for ind_var, var in enumerate(variables_var_match):
+            var_intra_match_tup = () # for sum(i=0 to n, Var(Zi))
+            var_inter_match_tup = () # for sum(over (i,j) i!=j, Cov(Zi, Zj))
+
+            # obtain the nodes identifier for each variable
+            variable_id = var[0] # == var[1]
+            variable_nodes_id = variables_node_identifier[variable_id][1]
+
+            # create a cartesian product to get all node_id's tuple combinations;
+            # order is removed by sorted(), e.g. ('Z_1', 'Z_0') == ('Z_0', 'Z_1')
+            # (since covariances are symmetric)
+            product = [tuple(sorted(tup)) for tup in itertools.product(variable_nodes_id, variable_nodes_id)]
+
+            # loop over tuple combinations and add variances and covariances, respectively
+            for tup in product:
+                # intra variances, actual variances
+                if tup[0]==tup[1]:
+                    var_intra_match_tup += (moment_var_match.index(tup), )
+
+                # inter variances, actual covariances
+                elif tup[0]!=tup[1]:
+                    var_inter_match_tup += (moment_cov_match.index(tup), )
+
+            # NOTE: indices can appear multiple times and numpy sum
+            # will also add a certain axis multiple times accordingly
+            variables_var_ind[ind_var, 0] = var_intra_match_tup
+            variables_var_ind[ind_var, 1] = var_inter_match_tup
+
+        # set the covariance indices; for given variable V1 = Z0 + ... + Zn and
+        # V2 = W0 + ... + Wm it holds that
+        # Cov(V1, V2) = sum(over (i, j), Cov(Zi, Wj))
+        # = sum((i, j) with Zi==Wj, Var(Zi)) + sum((i, j) with Zi!=Wj, Cov(Zi, Wj))
+        for ind_var, var in enumerate(variables_cov_match):
+            cov_intra_match_tup = () # for sum((i, j) with Zi==Wj, Var(Zi))
+            cov_inter_match_tup = () # for sum((i, j) with Zi!=Wj, Cov(Zi, Wj))
+
+            # obtain the nodes identifier for each variable
+            # here we have two variables V1 and V2 for a covariance Cov(V1, V2)
+            variable_id_1 = var[0]
+            variable_id_2 = var[1]
+            variable_nodes_id_1 = variables_node_identifier[variable_id_1][1]
+            variable_nodes_id_2 = variables_node_identifier[variable_id_2][1]
+
+            # create a cartesian product to get tuple combinations between the
+            # node identifiers between variables V1 and V2;
+            # order is removed by sorted(), e.g. ('Z_1', 'Z_0') == ('Z_0', 'Z_1')
+            # (since covariances are symmetric)
+            product = [tuple(sorted(tup)) for tup in itertools.product(variable_nodes_id_1, variable_nodes_id_2)]
+
+            for tup in product:
+                # intra covariances, actual variances
+                if tup[0]==tup[1]:
+                    cov_intra_match_tup += (moment_var_match.index(tup), )
+
+                # inter covariances, actual covariances
+                elif tup[0]!=tup[1]:
+                    cov_inter_match_tup += (moment_cov_match.index(tup), )
+
+            # NOTE: indices can appear multiple times and numpy sum
+            # will also add a certain axis multiple times accordingly
+            variables_cov_ind[ind_var, 0] = cov_intra_match_tup
+            variables_cov_ind[ind_var, 1] = cov_inter_match_tup
+
+        return (variables_num_means, variables_mean_ind,
+        variables_num_vars, variables_var_ind,
+        variables_num_covs, variables_cov_ind)
+
 
     @staticmethod
     def process_initial_values_order(moment_order_hidden, initial_values_dict, net_nodes_identifier, type=None):
@@ -582,24 +719,44 @@ class MomentsSim(object):
         # here python's scipy ode integrator is used
         sol = odeint(self.moment_system, init, time_arr, args=(theta, ))
 
+        ### sum up hidden layer to main layer nodes
         # NOTE: the rules for summation follow preceding theoretical derivations
         # NOTE: idea: the self.mean_ind[i, 0] stuff now has to give tuples and then np.sum() over the higher dimensional array
-        mean = np.zeros((self.num_means, num_time_points))
-        for i in range(self.num_means):
-            mean[i, :] = np.sum(sol[:, self.mean_ind[i, 0]], axis=1)
+        mean = np.zeros((self.moment_num_means, num_time_points))
+        for i in range(self.moment_num_means):
+            mean[i, :] = np.sum(sol[:, self.moment_mean_ind[i, 0]], axis=1)
 
-        var_intra = np.zeros((self.num_vars, num_time_points))
-        var_inter = np.zeros((self.num_vars, num_time_points))
-        for i in range(self.num_vars):
-            var_intra[i, :] = np.sum(sol[:, self.var_ind_intra[i, 0]] + sol[:, self.var_ind_intra[i, 1]] - sol[:, self.var_ind_intra[i, 1]]**2, axis=1)
-            var_inter[i, :] = 2.0 * np.sum(sol[:, self.var_ind_inter[i, 0]] - sol[:, self.var_ind_inter[i, 1]] * sol[:, self.var_ind_inter[i, 2]], axis=1)
+        var_intra = np.zeros((self.moment_num_vars, num_time_points))
+        var_inter = np.zeros((self.moment_num_vars, num_time_points))
+        for i in range(self.moment_num_vars):
+            var_intra[i, :] = np.sum(sol[:, self.moment_var_ind_intra[i, 0]] + sol[:, self.moment_var_ind_intra[i, 1]] - sol[:, self.moment_var_ind_intra[i, 1]]**2, axis=1)
+            var_inter[i, :] = 2.0 * np.sum(sol[:, self.moment_var_ind_inter[i, 0]] - sol[:, self.moment_var_ind_inter[i, 1]] * sol[:, self.moment_var_ind_inter[i, 2]], axis=1)
         var = var_intra + var_inter
 
-        cov = np.zeros((self.num_covs, num_time_points))
-        for i in range(self.num_covs):
-            cov[i, :] = np.sum(sol[:, self.cov_ind[i, 0]] - sol[:, self.cov_ind[i, 1]] * sol[:, self.cov_ind[i, 2]], axis=1)
+        cov = np.zeros((self.moment_num_covs, num_time_points))
+        for i in range(self.moment_num_covs):
+            cov[i, :] = np.sum(sol[:, self.moment_cov_ind[i, 0]] - sol[:, self.moment_cov_ind[i, 1]] * sol[:, self.moment_cov_ind[i, 2]], axis=1)
+        ###
 
-        return mean, var, cov
+        ### sum up or reorder solution to obtain the simulation variables output
+        # TODO: here
+        variables_mean = np.zeros((self.variables_num_means, num_time_points))
+        variables_var = np.zeros((self.variables_num_vars, num_time_points))
+        variables_cov = np.zeros((self.variables_num_covs, num_time_points))
+
+        for i in range(self.variables_num_means):
+            variables_mean[i, :] = np.sum(mean[self.variables_mean_ind[i, 0], :], axis=0)
+
+        for i in range(self.variables_num_vars):
+            variables_var[i, :] = (np.sum(var[self.variables_var_ind[i, 0], :], axis=0) +
+                                    np.sum(cov[self.variables_var_ind[i, 1], :], axis=0))
+
+        for i in range(self.variables_num_covs):
+            variables_cov[i, :] = (np.sum(var[self.variables_cov_ind[i, 0], :], axis=0) +
+                                    np.sum(cov[self.variables_cov_ind[i, 1], :], axis=0))
+        ###
+
+        return variables_mean, variables_var, variables_cov
 
     ### helper functions for the derive_pde method
     @staticmethod

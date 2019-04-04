@@ -249,7 +249,7 @@ class Network(object):
         # create a list of neutral rate identifiers 'theta_<integer>'
         ident_rates_list = [f'theta_{i}' for i in range(len(rates_sorted))]
 
-        # return a dictionary with rate_symbol's as values for rate identifiers  as keys
+        # return a dictionary with rate_symbol's as values for rate identifiers as keys
         return dict(zip(ident_rates_list, rates_sorted))
 
     @staticmethod

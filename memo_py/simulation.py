@@ -18,13 +18,18 @@ class Simulation(object):
         # instantiate object for the time values for simulations
         self.sim_time_values = None
 
-        # # create booleans to execute simulation preparations only once
-        # self.sim_moments_prep_exist = False
-        # self.sim_gillespie_prep_exist = False
+        # instantiate objects for the (current) simulation output variables
+        self.sim_variables = None
+        self.sim_variables_identifier = None
+        self.sim_variables_order = None
+
 
         # instantiate object to store results of latest moment and gillespie simulation
         self.sim_moments_res = None
         self.sim_gillespie_res = None
+
+        # instantiate object to indicate mean only mode in case of moment simulations
+        self.moment_mean_only = None
 
 
 # TODO: need input
@@ -40,7 +45,7 @@ class Simulation(object):
 # - sym_params (in the right order with values)
 # - init_cond (in the right order with values)
 
-    def simulate(self, simulation_type, initial_values, theta_values, time_values, estimate_mode=False, **kwargs):
+    def simulate(self, simulation_type, initial_values, theta_values, time_values, simulation_variables, estimate_mode=False, **kwargs):
         """docstring for ."""
 
         # if simulations are done on its own (estimate_mode=False)
@@ -65,6 +70,17 @@ class Simulation(object):
             theta_values_order = [theta_values[self.net.net_rates_identifier[rate_id]]
                                     for rate_id in self.net.net_theta_symbolic]
 
+            # read out kwargs to see if first moments / mean only shall be computed
+            # else the first and second moments will be generated
+            if simulation_type=='moments':
+                try:
+                    self.moment_mean_only = kwargs['moment_mean_only'] if isinstance(kwargs['moment_mean_only'], bool) else False
+                except:
+                    self.moment_mean_only = False
+            # set to True in case of gillespie simulations
+            else:
+                self.moment_mean_only = True
+
         # in the estimate_mode (call of simulation class from estimation class),
         # some steps can be skipped as speed up
         else:
@@ -74,6 +90,19 @@ class Simulation(object):
             # theta_values are already ordered in this case
             theta_values_order = theta_values
 
+        # upon change of simulation output variables, or when provided for the first time,
+        # set up object for the order and identification of the simulation variables
+        if self.sim_variables!=simulation_variables:
+            print('should not go here in estimation mode')
+
+            # this method sets self.sim_variables, self.sim_variables_identifier
+            # and self.sim_variables_order
+            self.prepare_simulation_variables(simulation_variables)
+
+            # reset preparations for moments or gillespie simulation to force a re-run
+            # upon change of simulation variables
+            self.sim_moments.moments_preparation_exists = False
+            self.sim_gillespie.gillespie_preparation_exists = False
 
         # ask for simulation_type and run respective class methods (Moments or Gillespie)
         if simulation_type=='moments':
@@ -81,15 +110,11 @@ class Simulation(object):
             # the first time a Moments simulation is run, preparations have to be done
             if not self.sim_moments.moments_preparation_exists:
 
-                # read out kwargs to see if first moments / mean only shall be computed
-                # else the first and second moments will be generated
-                try:
-                    moment_mean_only = kwargs['moment_mean_only'] if isinstance(kwargs['moment_mean_only'], bool) else False
-                except:
-                    moment_mean_only = False
-
                 # actual preparatory computations
-                self.sim_moments.prepare_moment_simulation(mean_only=moment_mean_only, estimate_mode=estimate_mode)
+                self.sim_moments.prepare_moment_simulation(self.sim_variables_order,
+                                                                self.sim_variables_identifier,
+                                                                mean_only=self.moment_mean_only,
+                                                                estimate_mode=estimate_mode)
 
             # run, store and return a simulation
             self.sim_moments_res = self.sim_moments.moment_simulation(initial_values, theta_values_order, self.sim_time_values)
@@ -98,8 +123,10 @@ class Simulation(object):
         elif simulation_type=='gillespie':
 
             # the first time a Gillespie simulation is run, preparations have to be done
+            # TODO: implement new variables feature
             if not self.sim_gillespie.gillespie_preparation_exists:
-                self.sim_gillespie.prepare_gillespie_simulation()
+                self.sim_gillespie.prepare_gillespie_simulation(self.sim_variables_order,
+                                                                self.sim_variables_identifier)
 
             # NOTE: maybe add kwargs for automatic multiple simulations, N = ...
 
@@ -108,22 +135,83 @@ class Simulation(object):
             return self.sim_gillespie_res
 
 
+    def prepare_simulation_variables(self, simulation_variables):
+        """docstring for ."""
+
+        print('should only go here once (prepare_simulation_variables)')
+        # validate the user input information
+        self.sim_variables = self.validate_simulation_variables_input(simulation_variables, self.net.net_nodes_identifier)
+
+        # create unique identifiers for the simulation variables ('V_<integer>')
+        self.sim_variables_identifier = self.create_variables_identifiers(self.sim_variables)
+
+        # create an order of variable identifiers for a sequence (list index=0)
+        # and sequence of unique pairs (list index=1)
+        self.sim_variables_order = self.create_variables_order(self.sim_variables_identifier, self.moment_mean_only)
+
+
+    @staticmethod
+    def create_variables_identifiers(variables):
+        """docstring for ."""
+
+        # get all user provided output simulation variables as (key, value) tuples
+        # remove duplicates and sort tuples
+        variables_sorted = sorted(set([(var, variables[var]) for var in variables.keys()]))
+
+        # create a list of neutral rate identifiers 'V_<integer>' (V for variable)
+        ident_variables_list = [f'V_{i}' for i in range(len(variables_sorted))]
+
+        # return a dictionary with user provided variable tuples as values for variable identifiers as keys
+        return dict(zip(ident_variables_list, variables_sorted))
+
+
+    @staticmethod
+    def create_variables_order(variables_identifier, mean_only):
+        """docstring for ."""
+
+        variable_order = list()
+
+        # the variables (neutral identifiers) are sorted() to have the same
+        # deterministic sequence of nodes for any identical set of variables
+        variables_identifiers = sorted(variables_identifier.keys())
+
+        # an order for each variable for a simulation output
+        # e.g., used to define the order of the first moments
+        variable_order.append([(var_id, ) for var_id in variables_identifiers])
+
+        if not mean_only:
+            # an order for all pairs of variables (symmetric pairs are only added once)
+            # ['V_0', 'V_1'] would give [('V_0', 'V_0'), ('V_0', 'V_1'), ('V_1', 'V_1')]
+            # e.g., used to define the order of the second moments
+            variable_order.append([(variables_identifiers[i], variables_identifiers[j])
+                                    for i in range(len(variables_identifiers))
+                                    for j in range(len(variables_identifiers))
+                                    if i<=j])
+        else:
+            variable_order.append([])
+
+        return variable_order
+
+
     ### plotting helper functions
     def line_evolv_mean(self, settings):
         """docstring for ."""
 
-        moment_order_main_mean = self.sim_moments.moment_order_main[0]
-        net_nodes_identifier = self.net.net_nodes_identifier
+        sim_variables_order_mean = self.sim_variables_order[0]
+        sim_variables_identifier = self.sim_variables_identifier
+
+        print(self.sim_variables_identifier)
+        print(self.sim_variables_order)
 
         x_arr = self.sim_time_values
-        y_arr = np.zeros((len(moment_order_main_mean), len(self.sim_time_values)))
+        y_arr = np.zeros((len(sim_variables_order_mean), len(self.sim_time_values)))
         attributes = dict()
 
-        for i, (node_id, ) in enumerate(moment_order_main_mean):
+        for i, (variable_id, ) in enumerate(sim_variables_order_mean):
             y_arr[i, :] = self.sim_moments_res[0][i]
 
-            node_settings = settings[net_nodes_identifier[node_id]]
-            attributes[i] = (node_settings['label'], node_settings['color'])
+            variable_settings = settings[sim_variables_identifier[variable_id][0]]
+            attributes[i] = (variable_settings['label'], variable_settings['color'])
 
         return x_arr, y_arr, attributes
 
@@ -131,18 +219,18 @@ class Simulation(object):
     def line_evolv_variance(self, settings):
         """docstring for ."""
 
-        moment_order_main_var = [(node1_id, node2_id) for (node1_id, node2_id) in self.sim_moments.moment_order_main[1] if node1_id==node2_id]
-        net_nodes_identifier = self.net.net_nodes_identifier
+        sim_variables_order_var = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.sim_variables_order[1] if variable1_id==variable2_id]
+        sim_variables_identifier = self.sim_variables_identifier
 
         x_arr = self.sim_time_values
-        y_arr = np.zeros((len(moment_order_main_var), len(self.sim_time_values)))
+        y_arr = np.zeros((len(sim_variables_order_var), len(self.sim_time_values)))
         attributes = dict()
 
-        for i, (node1_id, node2_id) in enumerate(moment_order_main_var):
+        for i, (variable1_id, variable2_id) in enumerate(sim_variables_order_var):
             y_arr[i, :] = self.sim_moments_res[1][i]
 
-            node_settings = settings[(net_nodes_identifier[node1_id], net_nodes_identifier[node2_id])]
-            attributes[i] = (node_settings['label'], node_settings['color'])
+            variable_settings = settings[(sim_variables_identifier[variable1_id][0], sim_variables_identifier[variable2_id][0])]
+            attributes[i] = (variable_settings['label'], variable_settings['color'])
 
         return x_arr, y_arr, attributes
 
@@ -150,22 +238,22 @@ class Simulation(object):
     def line_evolv_covariance(self, settings):
         """docstring for ."""
 
-        moment_order_main_cov = [(node1_id, node2_id) for (node1_id, node2_id) in self.sim_moments.moment_order_main[1] if node1_id!=node2_id]
-        net_nodes_identifier = self.net.net_nodes_identifier
+        sim_variables_order_cov = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.sim_variables_order[1] if variable1_id!=variable2_id]
+        sim_variables_identifier = self.sim_variables_identifier
 
         x_arr = self.sim_time_values
-        y_arr = np.zeros((len(moment_order_main_cov), len(self.sim_time_values)))
+        y_arr = np.zeros((len(sim_variables_order_cov), len(self.sim_time_values)))
         attributes = dict()
 
-        for i, (node1_id, node2_id) in enumerate(moment_order_main_cov):
+        for i, (variable1_id, variable2_id) in enumerate(sim_variables_order_cov):
             y_arr[i, :] = self.sim_moments_res[2][i]
 
             try:
-                node_settings = settings[(net_nodes_identifier[node1_id], net_nodes_identifier[node2_id])]
+                variable_settings = settings[(sim_variables_identifier[variable1_id][0], sim_variables_identifier[variable2_id][0])]
             except:
-                node_settings = settings[(net_nodes_identifier[node2_id], net_nodes_identifier[node1_id])]
+                variable_settings = settings[(sim_variables_identifier[variable2_id][0], sim_variables_identifier[variable1_id][0])]
 
-            attributes[i] = (node_settings['label'], node_settings['color'])
+            attributes[i] = (variable_settings['label'], variable_settings['color'])
 
         return x_arr, y_arr, attributes
 
@@ -173,18 +261,18 @@ class Simulation(object):
     def line_evolv_counts(self, settings):
         """docstring for ."""
 
-        gillespie_order_main = self.sim_gillespie.net_main_node_order_without_env
-        net_nodes_identifier = self.net.net_nodes_identifier
+        sim_variables_order_main = [var for (var, ) in self.sim_variables_order[0]]
+        sim_variables_identifier = self.sim_variables_identifier
 
         x_arr = self.sim_gillespie_res[0]
-        y_arr = np.zeros((len(gillespie_order_main), len(x_arr)))
+        y_arr = np.zeros((len(sim_variables_order_main), len(x_arr)))
         attributes = dict()
 
-        for i, node_id in enumerate(gillespie_order_main):
+        for i, node_id in enumerate(sim_variables_order_main):
             y_arr[i, :] = self.sim_gillespie_res[1][i, :]
 
-            node_settings = settings[net_nodes_identifier[node_id]]
-            attributes[i] = (node_settings['label'], node_settings['color'])
+            variable_settings = settings[sim_variables_identifier[node_id][0]]
+            attributes[i] = (variable_settings['label'], variable_settings['color'])
 
         return x_arr, y_arr, attributes
     ###
@@ -264,6 +352,30 @@ class Simulation(object):
     #         raise TypeError('Simulation type is not a string.')
     #     else:
     #         raise ValueError('Unknown simulation type: \'moments\' or \'gillespie\' are expected.')
+
+    @staticmethod
+    def validate_simulation_variables_input(variables, net_nodes_identifier):
+        """docstring for ."""
+
+        # validate variables user input
+        if not isinstance(variables, dict):
+            raise TypeError('A dictionary for the variables is expected.')
+
+        if not all(isinstance(key, str) for key in variables.keys()):
+            raise TypeError('Strings are expected as keys of the variables dictionary.')
+
+        if not all(isinstance(val, tuple) for val in variables.values()):
+            raise TypeError('Tuples are expected as values of the variables dictionary.')
+
+        if not all(isinstance(string, str) for tup in variables.values() for string in tup):
+            raise TypeError('Tuples of strings are expected as values of the variables dictionary.')
+
+        net_nodes_without_env = set(net_nodes_identifier.values()) - set(['env'])
+        if not all(set(val).issubset(net_nodes_without_env) for val in variables.values()):
+            raise ValueError('Strings in the tuple as value of the variables dictionary have to be nodes of the network.')
+
+        return variables
+
 
     @staticmethod
     def validate_simulation_type_input(simulation_type):

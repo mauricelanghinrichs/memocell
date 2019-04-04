@@ -67,7 +67,7 @@ def select_models(input_dict, multiprocessing=True):
         results = pool.map(net_estimation, pool_inputs)
 
     # unparallelised version
-    # NOTE: turning off multiprocessing facilitates debugging
+    # NOTE: turning off multiprocessing might facilitate debugging
     else:
         results = list()
         for input_var in pool_inputs:
