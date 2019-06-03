@@ -200,9 +200,6 @@ class Simulation(object):
         sim_variables_order_mean = self.sim_variables_order[0]
         sim_variables_identifier = self.sim_variables_identifier
 
-        print(self.sim_variables_identifier)
-        print(self.sim_variables_order)
-
         x_arr = self.sim_time_values
         y_arr = np.zeros((len(sim_variables_order_mean), len(self.sim_time_values)))
         attributes = dict()

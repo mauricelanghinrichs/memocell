@@ -3,10 +3,12 @@
 import numpy as np
 from networkx.drawing.nx_agraph import to_agraph
 import matplotlib.pyplot as plt
-import graphviz
 import corner
 from cycler import cycler
 import os
+
+# NOTE: mark as comment for cluster computations
+import graphviz
 
 
 class Plots(object):
@@ -68,7 +70,7 @@ class Plots(object):
 
         # update or set basic figure settings
         # NOTE: Helvetica Neue has to be installed, otherwise default font is used
-        # plt.rcParams.update({'figure.autolayout': True})
+        plt.rcParams.update({'figure.autolayout': True})
         plt.rcParams.update({'figure.figsize': (8, 5)})
         plt.rcParams.update({'font.size': 14})
         plt.rcParams['font.family'] = 'Helvetica Neue'

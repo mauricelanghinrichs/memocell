@@ -26,7 +26,7 @@ setup(
     description="An exact modelling framework for stochastic processes with and without memory in Python.",
     long_description=read("README.rst"),
 
-    packages=find_packages('memo_py', exclude=('tests',)),
+    packages=find_packages(exclude=('tests',)),
 
     # package dependendies
     # NOTE: emcee==2.2.1 is required to be able to use PTSampler method

@@ -12,7 +12,10 @@ import warnings
 class Estimation(object):
     """docstring for ."""
 
-    def __init__(self, network, data):
+    def __init__(self, est_name, network, data):
+
+        # set the name of the estimation object
+        self.est_name = est_name
 
         # validate network input (has to be instance of Network class) and instantiate
         self.net = self.validate_network_input(network)
@@ -398,11 +401,11 @@ class Estimation(object):
         model_mean = [sim_variables_identifier[variable][0] for variable, in sim_variables_order[0]]
         model_var = [(sim_variables_identifier[variable1][0], sim_variables_identifier[variable2][0]) for variable1, variable2 in sim_variables_order[1] if variable1==variable2]
         model_cov = [(sim_variables_identifier[variable1][0], sim_variables_identifier[variable2][0]) for variable1, variable2 in sim_variables_order[1] if variable1!=variable2]
-        print(sim_variables_order)
-        print(sim_variables_identifier)
-        print(model_mean)
-        print(model_var)
-        print(model_cov)
+        # print(sim_variables_order)
+        # print(sim_variables_identifier)
+        # print(model_mean)
+        # print(model_var)
+        # print(model_cov)
 
         # loop over the mean order of the model to sort data accordingly
         for i, model_inf in enumerate(model_mean):

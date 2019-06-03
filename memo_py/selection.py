@@ -16,7 +16,7 @@ import numpy as np
 from multiprocessing import Pool
 
 
-def select_models(input_dict, multiprocessing=True):
+def select_models(input_dict, multiprocessing={'do': True, 'num_processes': None}):
     """docstring for ."""
     ### this is the top-level function of this script to handle the set of
     ### networks/models for parameter and evidence estimation;
@@ -57,10 +57,13 @@ def select_models(input_dict, multiprocessing=True):
 
     # if __name__ == '__main__': # TODO: is this needed somewhere?
     # parallelised version
-    if multiprocessing:
+    if multiprocessing['do']:
+        # read out number of processes (None if mp.cpu_count() should be used)
+        num_processes = multiprocessing['num_processes']
+
         # create a pool for multiprocessing to run the estimation for the models
         # this automatically searches for the maximal possible computer cores to use
-        pool = Pool()
+        pool = Pool(processes=num_processes)
 
         # in parallelised loop, run for each network (item in pool_inputs) the net_estimation funtion
         # 'results' receives the original order
@@ -92,7 +95,8 @@ def net_estimation(input_var):
     net.structure(m_topology)
 
     # conduct the estimation via the Estimation class
-    est = Estimation(net, d_data)
+    est_name = 'est_' + m_name
+    est = Estimation(est_name, net, d_data)
     est.estimate(m_setup, d_mcmc_setup)
 
     # reset the eval() function 'moment_system' to prevent pickling error
@@ -101,7 +105,7 @@ def net_estimation(input_var):
 
     # return the instance 'est' of the Estimation class
     # 'est' can be read out to obtain the estimation results
-    print(f'{m_name} done')
+    print(f'{est_name} done')
     return est
 
 
@@ -118,7 +122,7 @@ def dots_w_bars_evidence(estimation_instances, settings):
 
         y_arr_err[i, :] = np.array([log_evid, log_evid_err, log_evid_err])
 
-        est_setting = settings[est_i.net.net_name]
+        est_setting = settings[est_i.est_name]
         attributes[i] = (est_setting['label'], est_setting['color'])
         x_ticks.append(est_setting['label'])
 

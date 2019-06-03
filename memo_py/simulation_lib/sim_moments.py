@@ -373,7 +373,7 @@ class MomentsSim(object):
                 eq = eq.replace(*tup)
             moment_eqs[i] = eq
 
-        print(moment_eqs)
+        # print(moment_eqs)
         return moment_eqs
 
     @staticmethod
