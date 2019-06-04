@@ -67,9 +67,9 @@ class Simulation(object):
             # read out initial_values and theta_values (dictionaries) according to node or theta order
             # initial_values_order = [initial_values[self.net.net_nodes_identifier[node_id]]
             #                         for node_id,  in self.net.net_main_node_order[0] if node_id!='Z_env']
-            theta_values_order = [theta_values[self.net.net_rates_identifier[rate_id]]
-                                    for rate_id in self.net.net_theta_symbolic]
-
+            theta_values_order = np.array([theta_values[self.net.net_rates_identifier[rate_id]]
+                                    for rate_id in self.net.net_theta_symbolic])
+            
             # read out kwargs to see if first moments / mean only shall be computed
             # else the first and second moments will be generated
             if simulation_type=='moments':
