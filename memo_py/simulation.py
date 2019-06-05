@@ -69,7 +69,7 @@ class Simulation(object):
             #                         for node_id,  in self.net.net_main_node_order[0] if node_id!='Z_env']
             theta_values_order = np.array([theta_values[self.net.net_rates_identifier[rate_id]]
                                     for rate_id in self.net.net_theta_symbolic])
-            
+
             # read out kwargs to see if first moments / mean only shall be computed
             # else the first and second moments will be generated
             if simulation_type=='moments':
@@ -93,7 +93,6 @@ class Simulation(object):
         # upon change of simulation output variables, or when provided for the first time,
         # set up object for the order and identification of the simulation variables
         if self.sim_variables!=simulation_variables:
-            print('should not go here in estimation mode')
 
             # this method sets self.sim_variables, self.sim_variables_identifier
             # and self.sim_variables_order
@@ -138,7 +137,6 @@ class Simulation(object):
     def prepare_simulation_variables(self, simulation_variables):
         """docstring for ."""
 
-        print('should only go here once (prepare_simulation_variables)')
         # validate the user input information
         self.sim_variables = self.validate_simulation_variables_input(simulation_variables, self.net.net_nodes_identifier)
 

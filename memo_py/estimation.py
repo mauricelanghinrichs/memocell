@@ -5,6 +5,7 @@ from .simulation import Simulation
 
 from emcee import PTSampler
 import numpy as np
+from tqdm import tqdm
 import warnings
 
 # TODO: delete after run time analysis
@@ -15,10 +16,11 @@ import time
 class Estimation(object):
     """docstring for ."""
 
-    def __init__(self, est_name, network, data):
+    def __init__(self, est_name, network, data, est_iter=None):
 
-        # set the name of the estimation object
+        # set the name of the estimation object and iteration number (optional)
         self.est_name = est_name
+        self.est_iter = est_iter
 
         # validate network input (has to be instance of Network class) and instantiate
         self.net = self.validate_network_input(network)
@@ -148,61 +150,61 @@ class Estimation(object):
 
         # initialise estimation
         # (set up network, simulation and sampling properties)
-        print('initialise estimation ...')
         self.initialise_estimation(network_setup, mcmc_setup)
 
         # execute the sampling for the estimation of parameters and model evidence
-        print('run estimation ...')
         self.run_estimation()
 
-        print(f"""results:\n
-        \t theta confidence: {self.bay_est_params_conf}\n
-        \t theta medians: {self.bay_est_params_median}\n
-        \t log evidence: {self.bay_est_log_evidence}\n
-        \t log evidence error: {self.bay_est_log_evidence_error}""")
+        # print(f"""results:\n
+        # \t theta confidence: {self.bay_est_params_conf}\n
+        # \t theta medians: {self.bay_est_params_median}\n
+        # \t log evidence: {self.bay_est_log_evidence}\n
+        # \t log evidence error: {self.bay_est_log_evidence_error}""")
 
 
 
     def run_estimation(self):
         """docstring for ."""
-        counter = 0
 
-        # NOTE: the very first burn in step can take a while since preparations for the
-        # moment calculations have to be done
-        bay_mcmc_sampler = self.bay_mcmc_sampler
-        # burn in a few steps
-        print('   burn in ...')
-        for p, lnprob, lnlike in bay_mcmc_sampler.sample(self.bay_mcmc_initial_theta, iterations=self.bay_mcmc_burn_in_steps):
-            counter += 1
-            print(counter)
-            pass
-        bay_mcmc_sampler.reset()
+        # for progress bar
+        total_sampling_steps = self.bay_mcmc_burn_in_steps + self.bay_mcmc_sampling_steps
+        with tqdm(total=total_sampling_steps, desc='{est: <{width}}'.format(est=self.est_name, width=16), position=self.est_iter+1) as pbar:
 
-        # actual sampling
-        # the last (p, lnprob, lnlike) values from the burn in are used here for the start
-        print('   sampling ...')
-        for p, lnprob, lnlike in bay_mcmc_sampler.sample(p, lnprob0=lnprob,
-                                                   lnlike0=lnlike,
-                                                   iterations=self.bay_mcmc_sampling_steps, thin=1):
-            counter += 1
-            print(counter)
-            pass
+            # NOTE: the very first burn in step can take a while since preparations for the
+            # moment calculations have to be done
+            bay_mcmc_sampler = self.bay_mcmc_sampler
+            # burn in a few steps
+            for p, lnprob, lnlike in bay_mcmc_sampler.sample(self.bay_mcmc_initial_theta, iterations=self.bay_mcmc_burn_in_steps):
 
-        self.bay_mcmc_sampler = bay_mcmc_sampler
+                # update progress bar
+                pbar.update(1)
+                pass
+            bay_mcmc_sampler.reset()
 
-        print('   finalise ...')
-        # the samples used for parameter estimation are at standard temperature = 1
-        # i.e. beta=1/temperature=1, i.e. index = 0 (see following print command)
-        # print(self.mcmc_sampler.betas)
-        self.bay_est_samples_temp1 = self.bay_mcmc_sampler.chain[0, :, :, :].reshape(self.bay_mcmc_sampling_steps * self.bay_mcmc_num_walkers, self.bay_mcmc_num_dim)
-        # this temperature and all the others are used to estimatate the evidence by an interpolated thermodynamic integral (see emcee docs)
+            # actual sampling
+            # the last (p, lnprob, lnlike) values from the burn in are used here for the start
+            for p, lnprob, lnlike in bay_mcmc_sampler.sample(p, lnprob0=lnprob,
+                                                       lnlike0=lnlike,
+                                                       iterations=self.bay_mcmc_sampling_steps, thin=1):
 
-        # assess confidence bounds for parameters
-        self.bay_est_params_conf = self.get_confidence_bounds(self.bay_est_samples_temp1)
-        self.bay_est_params_median = np.array([self.bay_est_params_conf[i][0] for i in range(len(self.bay_est_params_conf))])
+                # update progress bar
+                pbar.update(1)
+                pass
 
-        # calculate evidence and plot evidence with error
-        self.bay_est_log_evidence, self.bay_est_log_evidence_error = self.compute_model_evidence(self.bay_mcmc_sampler)
+            self.bay_mcmc_sampler = bay_mcmc_sampler
+
+            # the samples used for parameter estimation are at standard temperature = 1
+            # i.e. beta=1/temperature=1, i.e. index = 0 (see following print command)
+            # print(self.mcmc_sampler.betas)
+            self.bay_est_samples_temp1 = self.bay_mcmc_sampler.chain[0, :, :, :].reshape(self.bay_mcmc_sampling_steps * self.bay_mcmc_num_walkers, self.bay_mcmc_num_dim)
+            # this temperature and all the others are used to estimatate the evidence by an interpolated thermodynamic integral (see emcee docs)
+
+            # assess confidence bounds for parameters
+            self.bay_est_params_conf = self.get_confidence_bounds(self.bay_est_samples_temp1)
+            self.bay_est_params_median = np.array([self.bay_est_params_conf[i][0] for i in range(len(self.bay_est_params_conf))])
+
+            # calculate evidence and plot evidence with error
+            self.bay_est_log_evidence, self.bay_est_log_evidence_error = self.compute_model_evidence(self.bay_mcmc_sampler)
 
 
     def get_confidence_bounds(self, samples_at_temperature1):
@@ -301,19 +303,20 @@ class Estimation(object):
 
     def log_prior(self, theta):
         """docstring for ."""
-        st = time.time()
+        # st = time.time()
+
         # log_prior is based on a uniform prior distribution with finite support
         # on_support is a boolean; True if all parameters/theta's are on the support (prior > 0) else False (prior = 0)
         on_support = np.all(( self.net_theta_bounds[:, 0] <= theta ) & ( theta <= self.net_theta_bounds[:, 1] ))
 
         # log_prior returns its log value > -infinity (if on_support) or -infinity (if not on_support)
         if on_support:
-            et = time.time()
-            print('log_prior (ms)', (et - st)*1000)
+            # et = time.time()
+            # print('log_prior (ms)', (et - st)*1000)
             return self.bay_log_prior_supp
         else:
-            et = time.time()
-            print('log_prior (ms)', (et - st)*1000)
+            # et = time.time()
+            # print('log_prior (ms)', (et - st)*1000)
             return -np.inf
 
 
@@ -326,7 +329,9 @@ class Estimation(object):
         # (data = model + error); thus, effectively, the log_likelihood depends
         # on the squared differences between data and model weighted by
         # measurement uncertainties (see chi's below)
-        st = time.time()
+
+        # st = time.time()
+
         # mean, variance (if specified), covariance (if specified) of the model
         # are generated by the simulation class by a moment-based approach
         mean_m, var_m, cov_m  = self.net_simulation.simulate(self.net_simulation_type, initial_values,
@@ -334,10 +339,11 @@ class Estimation(object):
                                                                         simulation_variables,
                                                                         moment_mean_only=self.net_simulation_mean_only,
                                                                         estimate_mode=self.net_simulation_estimate_mode)
-        et = time.time()
-        print('simulate (ms)', (et - st)*1000)
+        # et = time.time()
+        # print('simulate (ms)', (et - st)*1000)
 
-        st = time.time()
+        # st = time.time()
+
         # compute the value of the log_likelihood
         if self.net_simulation_mean_only:
             # when only mean values are fitted (first moments only)
@@ -349,8 +355,9 @@ class Estimation(object):
             chi_mean = np.sum( ((mean_data[0, :, :] - mean_m)/(mean_data[1, :, :]))**2  + np.log(2 * np.pi * (mean_data[1, :, :]**2)) )
             chi_var = np.sum( ((var_data[0, :, :] - var_m)/(var_data[1, :, :]))**2  + np.log(2 * np.pi * (var_data[1, :, :]**2)) )
             chi_cov = np.sum( ((cov_data[0, :, :] - cov_m)/(cov_data[1, :, :]))**2  + np.log(2 * np.pi * (cov_data[1, :, :]**2)) )
-        et = time.time()
-        print('chi (ms)', (et - st)*1000)
+
+        # et = time.time()
+        # print('chi (ms)', (et - st)*1000)
         return -0.5 * (chi_mean + chi_var + chi_cov)
 
     @staticmethod
@@ -481,14 +488,13 @@ class Estimation(object):
         inds_random_selection = np.random.choice(inds, size=(num_sim_ensemble), replace=True)
         theta_ensemble = self.bay_est_samples_temp1[inds_random_selection, :]
 
-        print('start')
         sim_ensemble = [self.net_simulation.simulate(self.net_simulation_type, self.net_initial_values,
                                                                         theta, self.data_time_values_dense,
                                                                         self.net_simulation.sim_variables,
                                                                         moment_mean_only=self.net_simulation_mean_only,
                                                                         estimate_mode=self.net_simulation_estimate_mode)
                                                                         for theta in theta_ensemble]
-        print('end')
+
         # then we compute the statistic of the sampled trajectories (means, variances, covariances)
         # and the corresponding 2.5th and 97.5th percentiles for 95%-confidence band (both for all time points)
         mean_samples = np.array([sim[0] for sim in sim_ensemble])

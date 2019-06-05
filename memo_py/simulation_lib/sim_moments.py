@@ -85,8 +85,6 @@ class MomentsSim(object):
     def prepare_moment_simulation(self, variables_order, variables_identifier, mean_only=False, estimate_mode=False):
         """docstring for ."""
 
-        print('should go here just once (prepare_moment_simulation)')
-
         # set information for mean_only and estimation modes
         self.moment_mean_only = mean_only
         self.moment_estimation_mode = estimate_mode
@@ -717,25 +715,7 @@ class MomentsSim(object):
         # str_for_exec += '\treturn ' + ', '.join([f'm{i}' for i in range(len(moment_eqs))])
         # ###
 
-        # ### NEW script
-        # # creates string as "(m[0], m[1], ..., m[last index]) = ("
-        # str_for_exec += '\t('
-        # for i, __ in enumerate(moment_eqs):
-        #     str_for_exec += f'm[{i}], '
-        # str_for_exec = str_for_exec[:-2]
-        # str_for_exec += ') = (\n'
-        #
-        # # adds moment_eqs for each m[i] from before
-        # for __, eq in enumerate(moment_eqs):
-        #     str_for_exec += '\t' + eq + ',\n'
-        # str_for_exec = str_for_exec[:-2]
-        # str_for_exec += ')\n'
-        #
-        # # return the array of the moments
-        # str_for_exec += '\treturn m'
-        # ###
-
-        ### NEW script 2
+        ### NEW script
         str_for_exec += '\treturn np.array([\n'
         for eq in moment_eqs:
             str_for_exec += '\t' + eq + ',\n'
@@ -774,13 +754,16 @@ class MomentsSim(object):
         # number of time points
         num_time_points = len(time_arr)
 
-        st = time.time()
+        # st = time.time()
+
         # here python's scipy ode integrator is used
         sol = odeint(self.moment_system, init, time_arr, args=(theta, ))
-        et = time.time()
-        print('\tode_int (ms)', (et - st)*1000)
 
-        st = time.time()
+        # et = time.time()
+        # print('\tode_int (ms)', (et - st)*1000)
+
+        # st = time.time()
+
         ### sum up hidden layer to main layer nodes
         # NOTE: the rules for summation follow preceding theoretical derivations
         # NOTE: idea: the self.mean_ind[i, 0] stuff now has to give tuples and then np.sum() over the higher dimensional array
@@ -817,8 +800,10 @@ class MomentsSim(object):
             variables_cov[i, :] = (np.sum(var[self.variables_cov_ind[i, 0], :], axis=0) +
                                     np.sum(cov[self.variables_cov_ind[i, 1], :], axis=0))
         ###
-        et = time.time()
-        print('\tfw pass rest (ms)', (et - st)*1000)
+
+        # et = time.time()
+        # print('\tfw pass rest (ms)', (et - st)*1000)
+
         return variables_mean, variables_var, variables_cov
 
     ### helper functions for the derive_pde method

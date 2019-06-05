@@ -13,7 +13,8 @@ from .estimation import Estimation
 
 # import python modules
 import numpy as np
-from multiprocessing import Pool
+from multiprocessing import Pool, freeze_support, RLock
+from tqdm import tqdm
 
 
 def select_models(input_dict, multiprocessing={'do': True, 'num_processes': None}):
@@ -39,7 +40,7 @@ def select_models(input_dict, multiprocessing={'do': True, 'num_processes': None
     # create input variable 'input_var' (in net_estimation fct) that is stored in
     # 'pool_inputs' for the parallelised loop over the networks
     pool_inputs = list()
-    for model in d_model_set:
+    for i, model in enumerate(d_model_set):
         # load model information
         m_name = model[0]
         m_topology = model[1]
@@ -48,9 +49,13 @@ def select_models(input_dict, multiprocessing={'do': True, 'num_processes': None
         # add 'mean_only' information to m_setup
         m_setup['mean_only'] = d_mean_only
 
+        # pass a model iteration count
+        m_iter = i
+
         pool_inputs.append((m_name,
                             m_topology,
                             m_setup,
+                            m_iter,
                             d_data,
                             d_mcmc_setup))
 
@@ -61,13 +66,21 @@ def select_models(input_dict, multiprocessing={'do': True, 'num_processes': None
         # read out number of processes (None if mp.cpu_count() should be used)
         num_processes = multiprocessing['num_processes']
 
+        # for progress bars
+        freeze_support()
+
         # create a pool for multiprocessing to run the estimation for the models
         # this automatically searches for the maximal possible computer cores to use
-        pool = Pool(processes=num_processes)
+        pool = Pool(processes=num_processes,
+                    # for progress bars
+                    initargs=(RLock(),), initializer=tqdm.set_lock)
 
         # in parallelised loop, run for each network (item in pool_inputs) the net_estimation funtion
         # 'results' receives the original order
         results = pool.map(net_estimation, pool_inputs)
+
+        # for the correct spacing of progress bars
+        print('\n' * (len(pool_inputs) + 1))
 
     # unparallelised version
     # NOTE: turning off multiprocessing might facilitate debugging
@@ -75,6 +88,9 @@ def select_models(input_dict, multiprocessing={'do': True, 'num_processes': None
         results = list()
         for input_var in pool_inputs:
             results.append(net_estimation(input_var))
+
+        # for the correct spacing of progress bars
+        print('\n' * (len(pool_inputs) + 1))
     return results
 
 
@@ -87,6 +103,7 @@ def net_estimation(input_var):
     (m_name, # name of the network (as string)
     m_topology, # topology/structure of the network
     m_setup, # initial_values for nodes, theta_bounds for parameters, mean_only boolean
+    m_iter, # integer i denoting the i-th model in the set of models
     d_data, # data that is tried to fit by the model
     d_mcmc_setup) = input_var # settings for Bayesian inference framework (Markov Chain Monte Carlo)
 
@@ -96,7 +113,7 @@ def net_estimation(input_var):
 
     # conduct the estimation via the Estimation class
     est_name = 'est_' + m_name
-    est = Estimation(est_name, net, d_data)
+    est = Estimation(est_name, net, d_data, est_iter=m_iter)
     est.estimate(m_setup, d_mcmc_setup)
 
     # reset the eval() function 'moment_system' to prevent pickling error
@@ -105,7 +122,6 @@ def net_estimation(input_var):
 
     # return the instance 'est' of the Estimation class
     # 'est' can be read out to obtain the estimation results
-    print(f'{est_name} done')
     return est
 
 
