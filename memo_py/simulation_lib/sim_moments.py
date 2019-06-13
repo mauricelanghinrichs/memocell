@@ -309,6 +309,11 @@ class MomentsSim(object):
                 else:
                     string_deriv = f'Derivative(F({z_vars_str}), ({z_var1}, 2))'
             else:
+                # the following sorted function is needed since auxiliary vars (with
+                # additional 'q') can have a different tuple order than the tuple
+                # order in moment_order_hidden (e.g. if one hidden node has index
+                # >= 10 (two digits)), see jupyter notebook for sympy bug
+                z_var1, z_var2 = tuple(sorted([z_var1, z_var2]))
                 string_deriv = f'Derivative(F({z_vars_str}), {z_var1}, {z_var2})'
             string_subs = f'm_{count_i}_q'
             replace_tuples.append((string_deriv, string_subs))
