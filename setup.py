@@ -29,9 +29,8 @@ setup(
     packages=find_packages(exclude=('tests',)),
 
     # package dependendies
-    # NOTE: emcee==2.2.1 is required to be able to use PTSampler method
     install_requires=['numpy>=1.14.1', 'sympy>=1.1.1', 'networkx>=2.2',
-                        'scipy>=1.0.0', 'corner>=2.0.1', 'emcee==2.2.1',
+                        'scipy>=1.0.0', 'corner>=2.0.1', 'dynesty>=0.9',
                         'matplotlib>=2.1.2', 'cycler>=0.10.0', 'setuptools>=38.5.1',
                         'pygraphviz>=1.5', 'graphviz>=0.10.1', 'numba>=0.43.1',
                         'tqdm>=4.31.1'],

@@ -10,6 +10,9 @@ import os
 # NOTE: mark as comment for cluster computations
 import graphviz
 
+# dynesty plotting utilities
+from dynesty import plotting as dyplot
+
 
 class Plots(object):
     """
@@ -127,46 +130,193 @@ class Plots(object):
         plt.close()
 
 
-    def samples_chains(self, mcmc_sampler, num_temps, sampling_steps, num_walkers, num_params, output):
-        betas = mcmc_sampler.betas
-        temperatures = 1.0 / betas
-        plt.rcParams['axes.titleweight'] = 'medium'
-        plt.rcParams['axes.titlesize'] = 14
+    def samples_cornerkernel(self, sampler_result, params_labels, output):
+        """docstring for ."""
 
-        for temp_ind in range(num_temps):
-            plt.figure()
-            plt.title(f'temp = {round(temperatures[temp_ind], 2)}, beta = {round(betas[temp_ind], 4)}') # .format(temperatures[temp_ind], betas[temp_ind]))
-            ax = plt.gca()
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            ax.spines['bottom'].set_visible(True)
-            ax.spines['left'].set_visible(True)
+        plt.rcdefaults()
+        # plt.rcParams.update({'figure.autolayout': True})
+        # plt.rcParams.update({'font.size': 16})
+        plt.rcParams['font.family'] = 'Helvetica Neue'
+        plt.rcParams['font.weight'] = 'medium'
+        plt.rcParams['mathtext.fontset'] = 'custom'
+        plt.rcParams['mathtext.rm'] = 'Helvetica Neue:medium'
+        plt.rcParams['mathtext.it'] = 'Helvetica Neue:medium:italic'
 
-            # set a color cycle for the different params
-            colormap = plt.cm.viridis
-            plt.gca().set_prop_cycle(cycler('color', [colormap(i) for i in np.linspace(0, 1, num_params)]))
+        fig = plt.figure()
+        ax = fig.gca()
 
-            samples_all = mcmc_sampler.chain[temp_ind, :, :, :]
-            samples_all = samples_all.reshape(sampling_steps * num_walkers, num_params)
-            plt.plot(samples_all[:, :], alpha=0.75)
+        fig, axes = dyplot.cornerplot(sampler_result,
+                                color='dodgerblue',
+                                show_titles=True,
+                                labels=params_labels,
+                                title_fmt='.4f')
+        fig.tight_layout()
 
-            # final axis setting
-            ax.set_xlim(self.x_lim)
-            ax.set_xlabel(self.x_label, color="black")
-            ax.set_xscale('log' if self.x_log==True else 'linear')
-            ax.set_ylim(self.y_lim)
-            ax.set_ylabel(self.y_label, color="black")
-            ax.set_yscale('log' if self.y_log==True else 'linear')
+        # save figure
+        name = output['plot_name']
+        plt.savefig(output['output_folder'] + f'/{name}.pdf')
+        if self.plot_show:
+            plt.show(fig)
+        plt.close(fig)
 
-            plt.xlabel('concatenated steps of all walkers')
-            plt.ylabel('parameter value')
+
+    def samples_cornerpoints(self, sampler_result, params_labels, output):
+        """docstring for ."""
+
+        plt.rcdefaults()
+        # plt.rcParams.update({'figure.autolayout': True})
+        # plt.rcParams.update({'font.size': 16})
+        plt.rcParams['font.family'] = 'Helvetica Neue'
+        plt.rcParams['font.weight'] = 'medium'
+        plt.rcParams['mathtext.fontset'] = 'custom'
+        plt.rcParams['mathtext.rm'] = 'Helvetica Neue:medium'
+        plt.rcParams['mathtext.it'] = 'Helvetica Neue:medium:italic'
+
+        fig = plt.figure()
+        ax = fig.gca()
+
+        fig, axes = dyplot.cornerpoints(sampler_result,
+                             cmap='magma',
+                             labels=params_labels)
+
+        # save figure
+        name = output['plot_name']
+        plt.savefig(output['output_folder'] + f'/{name}.pdf')
+        if self.plot_show:
+            plt.show(fig)
+        plt.close(fig)
+
+
+    def samples_cornerbounds(self, sampler_result, params_labels, prior_transform, output):
+        """docstring for ."""
+
+        plt.rcdefaults()
+        # plt.rcParams.update({'figure.autolayout': True})
+        # plt.rcParams.update({'font.size': 16})
+        plt.rcParams['font.family'] = 'Helvetica Neue'
+        plt.rcParams['font.weight'] = 'medium'
+        plt.rcParams['mathtext.fontset'] = 'custom'
+        plt.rcParams['mathtext.rm'] = 'Helvetica Neue:medium'
+        plt.rcParams['mathtext.it'] = 'Helvetica Neue:medium:italic'
+
+        num_it_segs = 14 # num_it_segs+1 plots will be plotted
+        num_it_total = sampler_result.niter
+
+        for it_plot in range(num_it_segs):
+
+            it_num = int( it_plot * num_it_total / float(num_it_segs - 1))
+            it_num = min(num_it_total, it_num)
+
+            fig = plt.figure()
+            ax = fig.gca()
+
+            fig, axes = dyplot.cornerbound(sampler_result,
+                                    it=it_num,
+                                    prior_transform=prior_transform,
+                                    color='lightgrey',
+                                    show_live=True,
+                                    live_color='darkorange',
+                                    labels=params_labels)
 
             # save figure
             name = output['plot_name']
-            plt.savefig(output['output_folder'] + f'/{name}_temp{temp_ind}.pdf')
+            plt.savefig(output['output_folder'] + f'/{name}_it{it_num}.pdf')
             if self.plot_show:
-                plt.show()
-            plt.close()
+                plt.show(fig)
+            plt.close(fig)
+
+
+    def sampling_runplot(self, sampler_result, output):
+        """docstring for ."""
+
+        plt.rcParams['axes.titleweight'] = 'medium'
+        plt.rcParams['axes.titlesize'] = 14
+
+        fig = plt.figure()
+        ax = fig.gca()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+
+        fig, ax = dyplot.runplot(sampler_result,
+                                color='limegreen') # fig, axes =
+
+        # save figure
+        name = output['plot_name']
+        plt.savefig(output['output_folder'] + f'/{name}.pdf')
+        if self.plot_show:
+            plt.show(fig)
+        plt.close(fig)
+
+
+    def sampling_traceplot(self, sampler_result, params_labels, output):
+        """docstring for ."""
+
+        plt.rcParams['axes.titleweight'] = 'medium'
+        plt.rcParams['axes.titlesize'] = 14
+
+        fig = plt.figure()
+        ax = fig.gca()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+
+        fig, axes = dyplot.traceplot(sampler_result,
+                             show_titles=True,
+                             post_color='dodgerblue',
+                             connect_color='darkorange',
+                             trace_cmap='magma',
+                             connect=True,
+                             connect_highlight=range(5),
+                             labels=params_labels,
+                             title_fmt='.4f')
+
+        # save figure
+        name = output['plot_name']
+        plt.savefig(output['output_folder'] + f'/{name}.pdf')
+        if self.plot_show:
+            plt.show(fig)
+        plt.close(fig)
+
+
+    def samples_chains(self, samples, num_params, output):
+        """docstring for ."""
+
+        plt.rcParams['axes.titleweight'] = 'medium'
+        plt.rcParams['axes.titlesize'] = 14
+
+        plt.figure()
+        ax = plt.gca()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+
+        # set a color cycle for the different params
+        colormap = plt.cm.viridis
+        plt.gca().set_prop_cycle(cycler('color', [colormap(i) for i in np.linspace(0, 1, num_params)]))
+
+        plt.plot(samples, alpha=0.75)
+
+        # final axis setting
+        ax.set_xlim(self.x_lim)
+        ax.set_xlabel(self.x_label, color="black")
+        ax.set_xscale('log' if self.x_log==True else 'linear')
+        ax.set_ylim(self.y_lim)
+        ax.set_ylabel(self.y_label, color="black")
+        ax.set_yscale('log' if self.y_log==True else 'linear')
+
+        plt.xlabel('sample iteration')
+        plt.ylabel('parameter value')
+
+        # save figure
+        name = output['plot_name']
+        plt.savefig(output['output_folder'] + f'/{name}.pdf')
+        if self.plot_show:
+            plt.show()
+        plt.close()
 
 
     # def fig_step_evolv(self, x_arr, y_arr, var_attributes, output):
