@@ -31,6 +31,10 @@ class Data(object):
         self.data_variance = None
         self.data_covariance = None
 
+        # instantiate object for the number of data points in summary statistics
+        self.data_num_values = None
+        self.data_num_values_mean_only = None # in case data is used in mean_only mode
+
         # instantiate object for the count data
         # only used, if data_type == 'counts'
         self.data_counts = None
@@ -89,6 +93,13 @@ class Data(object):
         self.data_mean = self.introduce_basic_sigma(self.data_basic_sigma, self.data_mean)
         self.data_variance = self.introduce_basic_sigma(self.data_basic_sigma, self.data_variance)
         self.data_covariance = self.introduce_basic_sigma(self.data_basic_sigma, self.data_covariance)
+
+        # obtain the number of summary data points
+        self.data_num_values, self.data_num_values_mean_only = self.get_number_data_points(
+                                                                        self.data_mean,
+                                                                        self.data_variance,
+                                                                        self.data_covariance)
+
 
     @staticmethod
     def create_data_variable_order(data_variables):
@@ -262,6 +273,20 @@ class Data(object):
         # this ensures that for each standard error holds: standard error >= basic_sigma
         data[1, data[1, :, :] <= basic_sigma] = basic_sigma
         return data
+
+
+    @staticmethod
+    def get_number_data_points(data_mean, data_var, data_cov):
+        """docstring for ."""
+
+        # calculate the number of data points along their last two dimensions
+        # number of variables * number of time points
+        data_points_mean = int(data_mean.shape[1] * data_mean.shape[2])
+        data_points_var = int(data_var.shape[1] * data_var.shape[2])
+        data_points_cov = int(data_cov.shape[1] * data_cov.shape[2])
+
+        return data_points_mean + data_points_var + data_points_cov, data_points_mean
+
 
     ### plotting helper functions
     def dots_w_bars_evolv_mean(self, settings):
