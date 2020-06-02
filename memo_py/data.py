@@ -1,6 +1,7 @@
 
 import numpy as np
-
+import scipy.stats as stats
+import scipy.optimize as optimize
 
 class Data(object):
     """docstring for ."""
@@ -31,6 +32,10 @@ class Data(object):
         self.data_variance = None
         self.data_covariance = None
 
+        # instantiate object for the number of data points in summary statistics
+        self.data_num_values = None
+        self.data_num_values_mean_only = None # in case data is used in mean_only mode
+
         # instantiate object for the count data
         # only used, if data_type == 'counts'
         self.data_counts = None
@@ -41,6 +46,22 @@ class Data(object):
 
         # instantiate object for a basic_sigma value to handle zero-valued standard errors
         self.data_basic_sigma = None
+
+        # instantiate objects for data events analysis
+        self.event_all_first_change_from_inital_conditions = None
+        self.event_all_first_cell_count_increase = None
+        self.event_all_first_cell_type_conversion = None
+        self.event_all_first_cell_count_increase_after_cell_type_conversion = None
+        self.event_all_second_cell_count_increase_after_first_cell_count_increase_after_cell_type_conversion = None
+        self.event_all_third_cell_count_increase_after_first_and_second_cell_count_increase_after_cell_type_conversion = None
+
+        # instantiate objects for Gamma fit of binned waiting time distribution
+        self.gamma_fit_bins = None
+        self.gamma_fit_bin_inds_sample = None
+        self.gamma_fit_bin_inds_all_occ = None
+        self.gamma_fit_theta_init = None
+        self.gamma_fit_result = None
+        self.gamma_fit_theta = None # parameters for the gamma distribution, shape 'a' and scale
 
 
     def load(self, data_input):
@@ -89,6 +110,13 @@ class Data(object):
         self.data_mean = self.introduce_basic_sigma(self.data_basic_sigma, self.data_mean)
         self.data_variance = self.introduce_basic_sigma(self.data_basic_sigma, self.data_variance)
         self.data_covariance = self.introduce_basic_sigma(self.data_basic_sigma, self.data_covariance)
+
+        # obtain the number of summary data points
+        self.data_num_values, self.data_num_values_mean_only = self.get_number_data_points(
+                                                                        self.data_mean,
+                                                                        self.data_variance,
+                                                                        self.data_covariance)
+
 
     @staticmethod
     def create_data_variable_order(data_variables):
@@ -263,7 +291,404 @@ class Data(object):
         data[1, data[1, :, :] <= basic_sigma] = basic_sigma
         return data
 
+
+    @staticmethod
+    def get_number_data_points(data_mean, data_var, data_cov):
+        """docstring for ."""
+
+        # calculate the number of data points along their last two dimensions
+        # number of variables * number of time points
+        data_points_mean = int(data_mean.shape[1] * data_mean.shape[2])
+        data_points_var = int(data_var.shape[1] * data_var.shape[2])
+        data_points_cov = int(data_cov.shape[1] * data_cov.shape[2])
+
+        return data_points_mean + data_points_var + data_points_cov, data_points_mean
+
+
+    def events_find_all(self):
+        """docstring for ."""
+
+        self.event_all_first_change_from_inital_conditions = [
+                self.event_find_first_change_from_inital_conditions(self.data_counts[trace_ind, :, :], self.data_time_values)
+                for trace_ind in range(self.data_counts.shape[0])
+        ]
+
+        self.event_all_first_cell_count_increase = [
+                self.event_find_first_cell_count_increase(self.data_counts[trace_ind, :, :], self.data_time_values)
+                for trace_ind in range(self.data_counts.shape[0])
+        ]
+
+        self.event_all_first_cell_type_conversion = [
+                self.event_find_first_cell_type_conversion(self.data_counts[trace_ind, :, :], self.data_time_values)
+                for trace_ind in range(self.data_counts.shape[0])
+        ]
+
+        self.event_all_first_cell_count_increase_after_cell_type_conversion = [
+                self.event_find_first_cell_count_increase_after_cell_type_conversion(self.data_counts[trace_ind, :, :], self.data_time_values)
+                for trace_ind in range(self.data_counts.shape[0])
+        ]
+
+        self.event_all_second_cell_count_increase_after_first_cell_count_increase_after_cell_type_conversion = [
+                self.event_find_second_cell_count_increase_after_first_cell_count_increase_after_cell_type_conversion(self.data_counts[trace_ind, :, :], self.data_time_values)
+                for trace_ind in range(self.data_counts.shape[0])
+        ]
+
+        self.event_all_third_cell_count_increase_after_first_and_second_cell_count_increase_after_cell_type_conversion = [
+                self.event_find_third_cell_count_increase_after_first_and_second_cell_count_increase_after_cell_type_conversion(self.data_counts[trace_ind, :, :], self.data_time_values)
+                for trace_ind in range(self.data_counts.shape[0])
+        ]
+
+    ### single-well event functions
+    # well event functions search for the first occurance of an event
+    # return True or False whether event is found, if True with an event waiting time tau else tau=None
+
+    # IMPORTANT NOTE: the cell count increase functions treat an increase by two cells as the same event
+    # it will also look for 'any increase of cell numbers between two time points'
+    # THIS MEANS in particular that the 'second increase' event will not yield tau=0 but looks for the third cell increase
+    # working with the 'first', 'second', 'third' increase functions is thus not strictly representative of actual cell numbers
+
+    # NOTE: we have currently no event function for backwards conversion (there is one well for this)
+
+    def event_find_first_change_from_inital_conditions(self, well_trace, time_values):
+        """docstring for ."""
+
+        # initial setting that event did not happen
+        event_bool = False
+        event_tau = None
+
+        # get initial conditions
+        init_cond = well_trace[:, 0]
+
+        # loop over well_trace and get waiting time tau if event happens
+        for time_ind in range(well_trace.shape[1]):
+            if np.any(well_trace[:, time_ind]!=init_cond):
+                event_bool = True
+                event_tau = time_values[time_ind]
+                break
+
+        return event_bool, event_tau
+
+
+    def event_find_first_cell_count_increase(self, well_trace, time_values):
+        """docstring for ."""
+
+        ### here we check for the first increase in TOTAL cell numbers
+        ### (not an increase in any individual cell type population)
+
+        # initial setting that event did not happen
+        event_bool = False
+        event_tau = None
+
+        # first, get the sum of all cell types (along axis=0)
+        well_trace_sum = np.sum(well_trace, axis=0)
+
+        # get initial conditions
+        init_cond_sum = well_trace_sum[0]
+
+        # loop over well_trace and get waiting time tau if event happens
+        for time_ind in range(well_trace_sum.shape[0]):
+            if well_trace_sum[time_ind] > init_cond_sum:
+                event_bool = True
+                event_tau = time_values[time_ind]
+                break
+
+        return event_bool, event_tau
+
+
+    def event_find_first_cell_type_conversion(self, well_trace, time_values):
+        """docstring for ."""
+
+        ### here we check for any event with a change in state space
+        ### but maintenance of the total cell numbers
+        ### (since we exclude cell death from happening)
+
+        # initial setting that event did not happen
+        event_bool = False
+        event_tau = None
+
+        # also get the sum of all cell types (along axis=0)
+        well_trace_sum = np.sum(well_trace, axis=0)
+
+        # loop over well_trace and get waiting time tau if event happens
+        for time_ind in range(1, well_trace.shape[1]):
+            if (np.any(well_trace[:, time_ind]!=well_trace[:, time_ind - 1])
+                and well_trace_sum[time_ind]==well_trace_sum[time_ind - 1]):
+
+                event_bool = True
+                event_tau = time_values[time_ind]
+                break
+
+        return event_bool, event_tau
+
+
+    def event_find_first_cell_count_increase_after_cell_type_conversion(self, well_trace, time_values, diff=True):
+        """docstring for ."""
+
+        ### this event is checked by the sequential use of the event
+        ### functions 'conversion' and 'cell count increase'
+
+        # initial setting that event did not happen
+        event_bool = False
+        event_tau = None
+
+        # first, check for cell type conversion
+        event_bool_conv, event_tau_conv = self.event_find_first_cell_type_conversion(well_trace, time_values)
+
+        # in case of conversion proceed with the following
+        if event_bool_conv:
+
+            # get time index of conversion
+            time_ind_conv = np.nonzero(time_values == event_tau_conv)[0][0]
+
+            # shorten the well_trace and time_values starting with conv event
+            well_trace_shortened = well_trace[:, time_ind_conv:]
+            time_values_shortened = time_values[time_ind_conv:]
+
+            # now check for cell count increase of the shortened trace
+            # (yielding the overall event information)
+            event_bool, event_tau = self.event_find_first_cell_count_increase(well_trace_shortened, time_values_shortened)
+
+            # if difference shall be computed, we are interested in the waiting starting with the conditional event, thus
+            if event_bool and diff:
+                event_tau = event_tau - event_tau_conv
+
+        return event_bool, event_tau
+
+
+    def event_find_second_cell_count_increase_after_first_cell_count_increase_after_cell_type_conversion(self, well_trace, time_values, diff=True):
+        """docstring for ."""
+
+        # initial setting that event did not happen
+        event_bool = False
+        event_tau = None
+
+        # check if the conditional event happened (first cell count increase after conversion)
+        event_bool_conditional, event_tau_conditional = self.event_find_first_cell_count_increase_after_cell_type_conversion(well_trace, time_values, diff=False)
+
+        # in case that the conditional event happened, proceed with:
+        if event_bool_conditional:
+
+            # get time index of conditional event
+            time_ind_conditional = np.nonzero(time_values == event_tau_conditional)[0][0]
+
+            # shorten the well_trace and time_values starting with conditional event
+            well_trace_shortened = well_trace[:, time_ind_conditional:]
+            time_values_shortened = time_values[time_ind_conditional:]
+
+            # now check for cell count increase of the shortened trace
+            # (yielding the overall event information)
+            event_bool, event_tau = self.event_find_first_cell_count_increase(well_trace_shortened, time_values_shortened)
+
+            # if difference shall be computed, we are interested in the waiting starting with the conditional event, thus
+            if event_bool and diff:
+                event_tau = event_tau - event_tau_conditional
+
+        return event_bool, event_tau
+
+
+    def event_find_third_cell_count_increase_after_first_and_second_cell_count_increase_after_cell_type_conversion(self, well_trace, time_values, diff=True):
+        """docstring for ."""
+
+        # initial setting that event did not happen
+        event_bool = False
+        event_tau = None
+
+        # check if the conditional event happened (first and second cell count increase after conversion)
+        event_bool_conditional, event_tau_conditional = self.event_find_second_cell_count_increase_after_first_cell_count_increase_after_cell_type_conversion(well_trace, time_values, diff=False)
+
+        # in case that the conditional event happened, proceed with:
+        if event_bool_conditional:
+
+            # get time index of conditional event
+            time_ind_conditional = np.nonzero(time_values == event_tau_conditional)[0][0]
+
+            # shorten the well_trace and time_values starting with conditional event
+            well_trace_shortened = well_trace[:, time_ind_conditional:]
+            time_values_shortened = time_values[time_ind_conditional:]
+
+            # now check for cell count increase of the shortened trace
+            # (yielding the overall event information)
+            event_bool, event_tau = self.event_find_first_cell_count_increase(well_trace_shortened, time_values_shortened)
+
+            # if difference shall be computed, we are interested in the waiting starting with the conditional event, thus
+            if event_bool and diff:
+                event_tau = event_tau - event_tau_conditional
+
+        return event_bool, event_tau
+    ###
+
+    ### methods for fitting binned waiting times with the Gamma distribution
+    def gamma_fit_binned_waiting_times(self, waiting_times_arr):
+        """docstring for ."""
+
+        ### IDEA: for a given Gamma distribution the probability to find a
+        ### drawn waiting time within an interval (a, b] is given by the cumulative
+        ### Gamma distribution;
+        ### we can calculate this probability for all bins individually and can
+        ### obtain a likelihood of a measured binned distribution by comparing the
+        ### bin probabilities with the measured bin frequencies;
+        ### this is a multinomial likelihood
+
+        # given times_values = [0, 2, ..., 54],
+        # bins are defined as (-inf, 0], (0, 2], ..., (52, 54], (54, inf)
+        # 29 bins in total
+        # variable bins is = [-inf, 0, 2, ..., 52, 54, inf] (len = 30)
+        self.gamma_fit_bins = np.concatenate(([-np.inf], self.data_time_values, [np.inf]))
+        # print(len(bins))
+        # print(bins)
+
+        # bin indices are then as follows
+        # 0: (-inf, 0], 1: (0, 2], ..., 27: (52, 54], 28: (54, inf)
+        self.gamma_fit_bin_inds_sample = np.digitize(waiting_times_arr, self.gamma_fit_bins, right=True) - 1
+        # print(len(bin_inds_sample))
+        # print(bin_inds_sample)
+
+        # all bin indices then go from 0 to 28
+        bin_inds_all = np.arange(len(self.gamma_fit_bins) - 1)
+        # print(len(bin_inds_all))
+        # print(bin_inds_all)
+
+        # count the occurences of data points in each bin
+        self.gamma_fit_bin_inds_all_occ = np.array([np.count_nonzero(self.gamma_fit_bin_inds_sample==bin_ind) for bin_ind in bin_inds_all])
+        # print(np.sum(bin_inds_all_occ))
+        # print(len(bin_inds_all_occ))
+        # print(bin_inds_all_occ)
+
+        # compute a rough estimation of theta as an initial theta for the optimisation
+        var_init = np.var(waiting_times_arr)
+        mean_init = np.mean(waiting_times_arr)
+        self.gamma_fit_theta_init = [mean_init**2/var_init, var_init/mean_init]
+        # print(self.gamma_fit_theta_init)
+
+        # optimise the multinomial log likelihood to find theta
+        self.gamma_fit_result = optimize.minimize(self.negative_multinomial_log_likelihood,
+                                                    self.gamma_fit_theta_init,
+                                                    method='L-BFGS-B',
+                                                    bounds=[(0, None)]*len(self.gamma_fit_theta_init))
+        self.gamma_fit_theta = self.gamma_fit_result['x']
+
+
+    def compute_bin_probabilities(self, theta):
+        """docstring for ."""
+
+        # the probability to be in bin (a, b] are given by prob(theta) = Gamma_cdf_theta(b) - Gamma_cdf_theta(a)
+        # F(time_values[1:]) - F(time_values[:-1]) achieves bin-wise calculation of
+        # bin probs by prob(theta) = F(b) - F(a), with F Gamma CDF for a given theta
+        bins_probs = stats.gamma.cdf(self.gamma_fit_bins[1:], a=theta[0], loc=0, scale=theta[1]) - stats.gamma.cdf(self.gamma_fit_bins[:-1], a=theta[0], loc=0, scale=theta[1])
+        return bins_probs
+
+
+    def negative_multinomial_log_likelihood(self, theta):
+        """docstring for ."""
+
+        # calculate the bin probabilities for a given theta = (shape, scale)
+        bin_probs = self.compute_bin_probabilities(theta)
+
+        # use a multinomial model to compute the log likelihood of observing the data (counts in each bin) for the given bins probs
+        log_likelihood = stats.multinomial.logpmf(self.gamma_fit_bin_inds_all_occ, n=np.sum(self.gamma_fit_bin_inds_all_occ), p=bin_probs)
+        return - log_likelihood
+    ###
+
     ### plotting helper functions
+    def event_percentages(self, settings):
+        """docstring for ."""
+
+        y_list_err = list()
+        x_ticks = list()
+        attributes = dict()
+
+        for i, event_dict in enumerate(settings):
+            event_results = event_dict['event']
+            event_perc = 100.0 * (sum([event_bool for event_bool, __ in event_results])/float(len(event_results)))
+            y_list_err.append([event_perc])
+
+            x_ticks.append(event_dict['label'])
+
+            attributes[i] = (None, event_dict['color'])
+
+        y_arr_err = np.array(y_list_err)
+        return y_arr_err, x_ticks, attributes
+
+    def scatter_at_time_point(self, time_ind, settings):
+        """docstring for ."""
+
+        var_ind_x = self.data_variables.index(settings['variables'][0])
+        var_ind_y = self.data_variables.index(settings['variables'][1])
+
+        x_arr = self.data_counts[:, var_ind_x, time_ind]
+        y_arr = self.data_counts[:, var_ind_y, time_ind]
+
+        attributes = dict()
+        attributes['color'] = settings['color']
+        attributes['opacity'] = settings['opacity']
+        attributes['label'] = settings['label']
+
+        return x_arr, y_arr, attributes
+
+    def histogram_continuous_event_waiting_times(self, settings):
+        """docstring for ."""
+
+        bar_attributes = dict()
+        bar_list = list()
+
+        event_results = settings['event']
+        tau_list = [event_tau for event_bool, event_tau in event_results if event_bool]
+        bar_arr = np.array(tau_list).reshape(len(tau_list), 1)
+
+        bar_attributes[0] = {   'label': settings['label'],
+                                'color': settings['color'],
+                                'opacity': settings['opacity'],
+                                'edges': self.data_time_values,
+                                'interval_type': '(]'
+                                }
+
+        return bar_arr, bar_attributes
+
+    def histogram_continuous_event_waiting_times_w_gamma_fit(self, settings):
+        """docstring for ."""
+
+        bar_attributes = dict()
+        bar_list = list()
+
+        event_results = settings['event']
+        tau_list = [event_tau for event_bool, event_tau in event_results if event_bool]
+        bar_arr = np.array(tau_list).reshape(len(tau_list), 1)
+
+        bar_attributes[0] = {   'label': settings['label'],
+                                'color': settings['color'],
+                                'opacity': settings['opacity'],
+                                'edges': self.data_time_values,
+                                'interval_type': '(]'
+                                }
+
+        def gamma_fit_func(x_line_arr, bar_arr):
+            # compute Gamma distr. fit
+            self.gamma_fit_binned_waiting_times(bar_arr)
+            gamma_fit_shape, gamma_fit_scale = self.gamma_fit_theta
+            print(gamma_fit_shape, gamma_fit_scale)
+
+            y_line_arr = stats.gamma.pdf(x_line_arr, a=gamma_fit_shape, loc=0.0, scale=gamma_fit_scale)
+
+            # # KS test for if data follows Gamma distr.
+            # ks_stat, pval = stats.kstest(bar_arr, 'gamma', args=(fit_alpha, fit_loc, fit_beta))
+
+            return x_line_arr, y_line_arr, f'$\Gamma$($n$={round(gamma_fit_shape, 1)}, $θ$={round(gamma_fit_shape * gamma_fit_scale, 1)})', settings['gamma_color'] # , KS $p$-value {round(pval, 2)}
+
+        return bar_arr, bar_attributes, gamma_fit_func
+
+    def histogram_discrete_cell_counts_at_time_point(self, time_ind, settings):
+        """docstring for ."""
+
+        bar_arr = self.data_counts[:, :, time_ind]
+        bar_attributes = dict()
+
+        for i, var in enumerate(self.data_variables):
+            bar_attributes[i] = {   'label': settings[var]['label'],
+                                    'color': settings[var]['color'],
+                                    'opacity': settings[var]['opacity']}
+
+        return bar_arr, bar_attributes
+
     def dots_w_bars_evolv_mean(self, settings):
         """docstring for ."""
 

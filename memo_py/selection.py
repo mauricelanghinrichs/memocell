@@ -28,10 +28,10 @@ def select_models(input_dict, multiprocessing={'do': True, 'num_processes': None
     d_data = input_dict['data']
     d_mean_only = input_dict['mean_only']
     d_mcmc_setup = {
-        'burn_in_steps':    input_dict['burn_in_steps'],
-        'sampling_steps':   input_dict['sampling_steps'],
-        'num_temps':        input_dict['num_temps'],
-        'num_walkers':      input_dict['num_walkers']
+        'nlive':    input_dict['nlive'],
+        'tolerance':   input_dict['tolerance'],
+        'bound':        input_dict['bound'],
+        'sample':      input_dict['sample']
     }
 
     # load information of the set of models
@@ -119,12 +119,14 @@ def net_estimation(input_var):
     # reset the eval() function 'moment_system' to prevent pickling error
     # 'reset' is just a placeholder string to indicate the reset
     est.net_simulation.sim_moments.moment_system = 'reset'
+    est.bay_nested_sampler = 'reset'
 
     # return the instance 'est' of the Estimation class
     # 'est' can be read out to obtain the estimation results
     return est
 
 
+### for plotting routines
 def dots_w_bars_evidence(estimation_instances, settings):
     """docstring for ."""
 
@@ -143,3 +145,61 @@ def dots_w_bars_evidence(estimation_instances, settings):
         x_ticks.append(est_setting['label'])
 
     return y_arr_err, x_ticks, attributes
+
+
+def dots_wo_bars_likelihood_max(estimation_instances, settings):
+    """docstring for ."""
+
+    y_arr_err = np.zeros((len(estimation_instances), 3))
+    x_ticks = list()
+    attributes = dict()
+
+    for i, est_i in enumerate(estimation_instances):
+        log_l_max = est_i.bay_est_log_likelihood_max
+
+        y_arr_err[i, :] = np.array([log_l_max, None, None])
+
+        est_setting = settings[est_i.est_name]
+        attributes[i] = (est_setting['label'], est_setting['color'])
+        x_ticks.append(est_setting['label'])
+
+    return y_arr_err, x_ticks, attributes
+
+
+def dots_wo_bars_bic(estimation_instances, settings):
+    """docstring for ."""
+
+    y_arr_err = np.zeros((len(estimation_instances), 3))
+    x_ticks = list()
+    attributes = dict()
+
+    for i, est_i in enumerate(estimation_instances):
+        bic = est_i.bay_est_bayesian_information_criterion
+
+        y_arr_err[i, :] = np.array([bic, None, None])
+
+        est_setting = settings[est_i.est_name]
+        attributes[i] = (est_setting['label'], est_setting['color'])
+        x_ticks.append(est_setting['label'])
+
+    return y_arr_err, x_ticks, attributes
+
+
+def dots_wo_bars_evidence_from_bic(estimation_instances, settings):
+    """docstring for ."""
+
+    y_arr_err = np.zeros((len(estimation_instances), 3))
+    x_ticks = list()
+    attributes = dict()
+
+    for i, est_i in enumerate(estimation_instances):
+        log_evid_from_bic = est_i.bay_est_log_evidence_from_bic
+
+        y_arr_err[i, :] = np.array([log_evid_from_bic, None, None])
+
+        est_setting = settings[est_i.est_name]
+        attributes[i] = (est_setting['label'], est_setting['color'])
+        x_ticks.append(est_setting['label'])
+
+    return y_arr_err, x_ticks, attributes
+###

@@ -3,7 +3,9 @@ from .network import Network
 from .data import Data
 from .simulation import Simulation
 
-from emcee import PTSampler
+from dynesty import NestedSampler
+from dynesty import utils as dyfunc
+
 import numpy as np
 from tqdm import tqdm
 import warnings
@@ -32,44 +34,10 @@ class Estimation(object):
         self.data_mean_values = None
         self.data_var_values = None
         self.data_cov_values = None
+        self.data_num_values = None
 
         # instantiate object for time values as the data, but more intermediate points
         self.data_time_values_dense = None
-
-        # ###### INTERMEDIATE SOLUTION TO TEST THIS CLASS
-        # # function to load and return data, specified with the input variables
-        # # data has shape = (type, variables, time_points), where type can be a statistic or standard error of that statistic
-        # # function returns the tuple (mean_data, var_data, cov_data)
-        # def load_data(str_type):
-        #     if str_type=='18_01_14_data_cd44_28_mp':
-        #         ### NOTE: specify if a basic sigma should be added
-        #         add_basic_sigma = True
-        #         ###
-        #
-        #         # mlanghinrichs or mauricelanghinrichs
-        #         top_folder = '/Users/mauricelanghinrichs/Documents/Studium/MSc/09_hiwi_hoefer/01_project/memo_py/examples/numpy_data_cd44_28_mp'
-        #         mean_data = np.load(top_folder + '/mean_data_reduced_single.npy')
-        #         var_data = np.load(top_folder + '/var_data_reduced_single.npy')
-        #         cov_data = np.load(top_folder + '/cov_data_reduced_single.npy')
-        #
-        #         # add basic sigma
-        #         # only set those to basic sigma which have a zero value
-        #         if add_basic_sigma:
-        #             basic_sigma = 0.001
-        #             mean_data[1, mean_data[1, :, :]==0] += basic_sigma
-        #             var_data[1, var_data[1, :, :]==0] += basic_sigma
-        #             cov_data[1, cov_data[1, :, :]==0] += basic_sigma
-        #
-        #         return (mean_data, var_data, cov_data)
-        #
-        # data = load_data('18_01_14_data_cd44_28_mp')
-        # self.data_time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
-        # self.data_mean_values = data[0]
-        # self.data_var_values = data[1]
-        # self.data_cov_values = data[2]
-        #
-        # print(self.data_mean_values)
-        # ######
 
         ### network related settings
         # instantiate object for rate parameter bounds (theta bounds)
@@ -100,26 +68,31 @@ class Estimation(object):
         ###
 
         ### bayesian (bay) inference related settings
-        # instantiate objects for mcmc (Markov chain Monte Carlo) settings
-        self.bay_mcmc_burn_in_steps = None
-        self.bay_mcmc_sampling_steps = None
-        self.bay_mcmc_num_temps = None
-        self.bay_mcmc_num_walkers = None
-        self.bay_mcmc_num_dim = None
-        self.bay_mcmc_num_threads = None
-        self.bay_mcmc_initial_theta = None
-        self.bay_mcmc_sampler = None
+        # instantiate object for the fixed log-likelihood norm
+        self.bay_log_likelihood_norm = None
 
-        # instantiate object for information on the prior
-        # (value of logarithmic prior on its support)
-        self.bay_log_prior_supp = None
+        # instantiate objects for Markov chain Monte Carlo Nested Sampling settings
+        self.bay_nested_nlive = None
+        self.bay_nested_tolerance = None
+        self.bay_nested_bound = None
+        self.bay_nested_ndims = None
+        self.bay_nested_sample = None
+        self.bay_nested_sampler = None
+        self.bay_nested_sampler_res = None
 
         # instantiate objects to assign estimation results
-        self.bay_est_samples_temp1 = None
+        self.bay_est_samples = None
+        self.bay_est_samples_weighted = None
+        self.bay_est_weights = None
         self.bay_est_params_conf = None
         self.bay_est_params_median = None
+
+        # estimation results for model selection
         self.bay_est_log_evidence = None
         self.bay_est_log_evidence_error = None
+        self.bay_est_log_likelihood_max = None
+        self.bay_est_bayesian_information_criterion = None # short BIC
+        self.bay_est_log_evidence_from_bic = None
         ###
 
 
@@ -148,81 +121,121 @@ class Estimation(object):
     def estimate(self, network_setup, mcmc_setup):
         """docstring for ."""
 
-        # initialise estimation
-        # (set up network, simulation and sampling properties)
-        self.initialise_estimation(network_setup, mcmc_setup)
+        # for progress bar
+        total_sampling_steps = 1
+        with tqdm(total=total_sampling_steps, desc='{est: <{width}}'.format(est=self.est_name, width=16), position=self.est_iter+1) as pbar:
 
-        # execute the sampling for the estimation of parameters and model evidence
-        self.run_estimation()
+            # initialise estimation
+            # (set up network, simulation and sampling properties)
+            self.initialise_estimation(network_setup, mcmc_setup)
 
-        # print(f"""results:\n
-        # \t theta confidence: {self.bay_est_params_conf}\n
-        # \t theta medians: {self.bay_est_params_median}\n
-        # \t log evidence: {self.bay_est_log_evidence}\n
-        # \t log evidence error: {self.bay_est_log_evidence_error}""")
+            # execute the sampling for the estimation of parameters and model evidence
+            self.run_estimation()
 
+            # print(f"""results:\n
+            # \t theta confidence: {self.bay_est_params_conf}\n
+            # \t theta medians: {self.bay_est_params_median}\n
+            # \t log evidence: {self.bay_est_log_evidence}\n
+            # \t log evidence error: {self.bay_est_log_evidence_error}""")
+
+
+            # update progress bar (there is just not done or done (0/1 or 1/1 steps))
+            pbar.update(1)
 
 
     def run_estimation(self):
         """docstring for ."""
 
-        # for progress bar
-        total_sampling_steps = self.bay_mcmc_burn_in_steps + self.bay_mcmc_sampling_steps
-        with tqdm(total=total_sampling_steps, desc='{est: <{width}}'.format(est=self.est_name, width=16), position=self.est_iter+1) as pbar:
+        # run the dynesty sampler
+        # NOTE: the very first iteration can take a while since preparations
+        # for the moment calculations have to be done
+        self.bay_nested_sampler.run_nested(dlogz=self.bay_nested_tolerance,
+                                            print_progress=False) # dynesty progress bar
 
-            # NOTE: the very first burn in step can take a while since preparations for the
-            # moment calculations have to be done
-            bay_mcmc_sampler = self.bay_mcmc_sampler
-            # burn in a few steps
-            for p, lnprob, lnlike in bay_mcmc_sampler.sample(self.bay_mcmc_initial_theta, iterations=self.bay_mcmc_burn_in_steps):
+        # get sampler result
+        self.bay_nested_sampler_res = self.bay_nested_sampler.results
 
-                # update progress bar
-                pbar.update(1)
-                pass
-            bay_mcmc_sampler.reset()
+        # obtain posterior parameter samples from reweighting
+        self.bay_est_samples, self.bay_est_samples_weighted, self.bay_est_weights = self.get_posterior_samples(self.bay_nested_sampler_res)
 
-            # actual sampling
-            # the last (p, lnprob, lnlike) values from the burn in are used here for the start
-            for p, lnprob, lnlike in bay_mcmc_sampler.sample(p, lnprob0=lnprob,
-                                                       lnlike0=lnlike,
-                                                       iterations=self.bay_mcmc_sampling_steps, thin=1):
+        # assess confidence bounds for parameters
+        self.bay_est_params_conf = self.get_confidence_bounds(self.bay_est_samples_weighted)
+        self.bay_est_params_median = np.array([self.bay_est_params_conf[i][0] for i in range(len(self.bay_est_params_conf))])
 
-                # update progress bar
-                pbar.update(1)
-                pass
+        # obtain log evidence values with associated error
+        self.bay_est_log_evidence, self.bay_est_log_evidence_error = self.get_model_evidence(self.bay_nested_sampler_res)
 
-            self.bay_mcmc_sampler = bay_mcmc_sampler
-
-            # the samples used for parameter estimation are at standard temperature = 1
-            # i.e. beta=1/temperature=1, i.e. index = 0 (see following print command)
-            # print(self.mcmc_sampler.betas)
-            self.bay_est_samples_temp1 = self.bay_mcmc_sampler.chain[0, :, :, :].reshape(self.bay_mcmc_sampling_steps * self.bay_mcmc_num_walkers, self.bay_mcmc_num_dim)
-            # this temperature and all the others are used to estimatate the evidence by an interpolated thermodynamic integral (see emcee docs)
-
-            # assess confidence bounds for parameters
-            self.bay_est_params_conf = self.get_confidence_bounds(self.bay_est_samples_temp1)
-            self.bay_est_params_median = np.array([self.bay_est_params_conf[i][0] for i in range(len(self.bay_est_params_conf))])
-
-            # calculate evidence and plot evidence with error
-            self.bay_est_log_evidence, self.bay_est_log_evidence_error = self.compute_model_evidence(self.bay_mcmc_sampler)
+        # compute alternative measures for model selection
+        self.bay_est_log_likelihood_max = self.get_maximal_log_likelihood(self.bay_nested_sampler_res)
+        self.bay_est_bayesian_information_criterion = self.compute_bayesian_information_criterion(
+                                                                    self.data_num_values,
+                                                                    self.bay_nested_ndims,
+                                                                    self.bay_est_log_likelihood_max)
+        self.bay_est_log_evidence_from_bic = self.compute_log_evidence_from_bic(self.bay_est_bayesian_information_criterion)
 
 
-    def get_confidence_bounds(self, samples_at_temperature1):
+    @staticmethod
+    def get_posterior_samples(sampler_result):
+        """docstring for ."""
+
+        # TODO: understand this and comment!
+        samples = sampler_result.samples
+        weights = np.exp(sampler_result.logwt - sampler_result.logz[-1])
+        samples_weighted = dyfunc.resample_equal(samples, weights)
+        return samples, samples_weighted, weights
+
+
+    @staticmethod
+    def get_confidence_bounds(samples):
         """docstring for ."""
 
         # the 2.5th, 50th and 97.5th percentiles of parameter distributions are extracted
         # params_conf then contains the tuple (median (50th), lower bound (2.5th), upper bound (97.5th))
         # to provide a 95%-confidence interval
-        params_conf = tuple(map(lambda v: (v[1], v[0], v[2]), zip(*np.percentile(samples_at_temperature1, [2.5, 50, 97.5], axis=0))))
+        params_conf = tuple(map(lambda v: (v[1], v[0], v[2]), zip(*np.percentile(samples, [2.5, 50, 97.5], axis=0))))
         return params_conf
 
-    def compute_model_evidence(self, sampler):
+
+    @staticmethod
+    def get_model_evidence(sampler_result):
         """docstring for ."""
 
-        # estimation of the logarithmic evidence and an according error
-        log_evid, log_evid_err = sampler.thermodynamic_integration_log_evidence()
+        # value of log evidence (logZ) (last entry of nested sampling results)
+        log_evid_dynesty = sampler_result.logz[-1]
 
-        return log_evid, log_evid_err
+        # estimate of the statistcal uncertainty on logZ
+        log_evid_err_dynesty = sampler_result.logzerr[-1]
+
+        return log_evid_dynesty, log_evid_err_dynesty
+
+
+    @staticmethod
+    def get_maximal_log_likelihood(sampler_result):
+        """docstring for ."""
+
+        # get the value of the maximal log likelihood as last entry of nested sampling results
+        return sampler_result.logl[-1]
+
+
+    @staticmethod
+    def compute_bayesian_information_criterion(num_data, num_params, log_likelihood_max):
+        """docstring for ."""
+
+        # the BIC (bayesian_information_criterion) is defined as
+        # BIC = ln(n) k - 2 ln(Lmax)
+        # with n being the number of data points, k the number of estimated
+        # parameters, Lmax the maximal likelihood and ln() the natural logarithm
+        return np.log(num_data) * num_params - 2.0 * log_likelihood_max
+
+
+    @staticmethod
+    def compute_log_evidence_from_bic(bic):
+        """docstring for ."""
+
+        # under certain assumptions the log evidence might be approximated from
+        # the BIC (bayesian_information_criterion) via evidence ≈ exp(-BIC / 2)
+        return - 0.5 * bic
+
 
     def initialise_estimation(self, network_setup, mcmc_setup):
         """docstring for ."""
@@ -272,53 +285,71 @@ class Estimation(object):
                                                         self.data.data_variance_order,
                                                         self.data.data_covariance_order)
 
-        ### initialise bayesian inference related settings
-        # computation of the log prior value for theta's that are on the support of the prior
-        self.bay_log_prior_supp = self.compute_bayes_log_prior_value_on_support(self.net_theta_bounds)
-
-        self.bay_mcmc_burn_in_steps = mcmc_setup['burn_in_steps'] # sampling steps per walker
-        self.bay_mcmc_sampling_steps = mcmc_setup['sampling_steps'] # sampling steps per walker
-        self.bay_mcmc_num_temps = mcmc_setup['num_temps'] # number of temperatures, e.g. 5, 10 or 20
-        self.bay_mcmc_num_walkers = mcmc_setup['num_walkers'] # number of walkers, e.g. 100 or 200
-        self.bay_mcmc_num_dim = len(self.net.net_theta_symbolic) # number of dimension for estimation (= number of rate parameters (theta))
-        self.bay_mcmc_num_threads = 1 # threads used for parallisation, NOTE: not yet implemented for this class
-
-        # sample uniformly within the bounds for each parameter to obtain
-        # initial parameter values for each walker at each temperature
-        self.bay_mcmc_initial_theta = self.generate_bayes_mcmc_initial_theta(self.bay_mcmc_num_temps,
-                                                                            self.bay_mcmc_num_walkers,
-                                                                            self.bay_mcmc_num_dim,
-                                                                            self.net_theta_bounds)
-        # define the sampler used for the estimation of parameters and model evidence
-        # the PTSampler from the emcee package is used here
-        # it also allows estimation of model evidence by 'thermodynamic integration'
-        # (see package documentation there)
-        self.bay_mcmc_sampler = PTSampler(self.bay_mcmc_num_temps, self.bay_mcmc_num_walkers, self.bay_mcmc_num_dim,
-                                        self.log_likelihood, self.log_prior,
-                                        loglargs=(self.net_initial_values, self.data_time_values,
-                                                    self.net_simulation.sim_variables, self.data_mean_values,
-                                                    self.data_var_values, self.data_cov_values),
-                                        threads=self.bay_mcmc_num_threads)
-
-
-    def log_prior(self, theta):
-        """docstring for ."""
-        # st = time.time()
-
-        # log_prior is based on a uniform prior distribution with finite support
-        # on_support is a boolean; True if all parameters/theta's are on the support (prior > 0) else False (prior = 0)
-        on_support = np.all(( self.net_theta_bounds[:, 0] <= theta ) & ( theta <= self.net_theta_bounds[:, 1] ))
-
-        # log_prior returns its log value > -infinity (if on_support) or -infinity (if not on_support)
-        if on_support:
-            # et = time.time()
-            # print('log_prior (ms)', (et - st)*1000)
-            return self.bay_log_prior_supp
+        # depending on mean only mode, get the number of summary data points
+        if self.net_simulation_mean_only:
+            self.data_num_values = self.data.data_num_values_mean_only
         else:
-            # et = time.time()
-            # print('log_prior (ms)', (et - st)*1000)
-            return -np.inf
+            self.data_num_values = self.data.data_num_values
 
+        ### initialise bayesian inference related settings
+        # # computation of the log prior value for theta's that are on the support of the prior
+        # self.bay_log_prior_supp = self.compute_bayes_log_prior_value_on_support(self.net_theta_bounds)
+
+        # compute the model-independent term of the log_likelihood
+        self.bay_log_likelihood_norm = self.compute_log_likelihood_norm(self.data_mean_values,
+                                    self.data_var_values,
+                                    self.data_cov_values,
+                                    self.net_simulation_mean_only)
+
+        # self.bay_mcmc_burn_in_steps = mcmc_setup['burn_in_steps'] # sampling steps per walker
+        # self.bay_mcmc_sampling_steps = mcmc_setup['sampling_steps'] # sampling steps per walker
+        # self.bay_mcmc_num_temps = mcmc_setup['num_temps'] # number of temperatures, e.g. 5, 10 or 20
+        # self.bay_mcmc_num_walkers = mcmc_setup['num_walkers'] # number of walkers, e.g. 100 or 200
+        self.bay_nested_nlive = mcmc_setup['nlive']
+        self.bay_nested_tolerance = mcmc_setup['tolerance']
+        self.bay_nested_bound = mcmc_setup['bound']
+        self.bay_nested_sample = mcmc_setup['sample']
+        self.bay_nested_ndims = len(self.net.net_theta_symbolic) # number of dimension for estimation (= number of rate parameters (theta))
+
+        # define the sampler used for the estimation of parameters and model evidence
+        self.bay_nested_sampler = NestedSampler(self.log_likelihood, self.prior_transform,
+                                                self.bay_nested_ndims, bound=self.bay_nested_bound,
+                                                sample=self.bay_nested_sample, nlive=self.bay_nested_nlive,
+                                logl_args=((self.net_initial_values, self.data_time_values,
+                                            self.net_simulation.sim_variables, self.data_mean_values,
+                                            self.data_var_values, self.data_cov_values)))
+
+    def prior_transform(self, theta):
+        """docstring for ."""
+
+        # we receive theta here in the unit hypercube form
+        # and have to transform it back into the true parametrisation
+
+        # since we use uniform priors we have to do in principle:
+        # theta_true = theta_unit * (upper_bound-lower_bound) + lower_bound
+
+        # if the lower_bound is zero, we would simply have:
+        # theta_true = theta_unit * upper_bound
+        return theta * (self.net_theta_bounds[:, 1] - self.net_theta_bounds[:, 0]) + self.net_theta_bounds[:, 0]
+
+
+    # def log_prior(self, theta):
+    #     """docstring for ."""
+    #     # st = time.time()
+    #
+    #     # log_prior is based on a uniform prior distribution with finite support
+    #     # on_support is a boolean; True if all parameters/theta's are on the support (prior > 0) else False (prior = 0)
+    #     on_support = np.all(( self.net_theta_bounds[:, 0] <= theta ) & ( theta <= self.net_theta_bounds[:, 1] ))
+    #
+    #     # log_prior returns its log value > -infinity (if on_support) or -infinity (if not on_support)
+    #     if on_support:
+    #         # et = time.time()
+    #         # print('log_prior (ms)', (et - st)*1000)
+    #         return self.bay_log_prior_supp
+    #     else:
+    #         # et = time.time()
+    #         # print('log_prior (ms)', (et - st)*1000)
+    #         return -np.inf
 
     def log_likelihood(self, theta_values, initial_values, time_values, simulation_variables, mean_data, var_data, cov_data):
         """docstring for ."""
@@ -347,46 +378,65 @@ class Estimation(object):
         # compute the value of the log_likelihood
         if self.net_simulation_mean_only:
             # when only mean values are fitted (first moments only)
-            chi_mean = np.sum( ((mean_data[0, :, :] - mean_m)/(mean_data[1, :, :]))**2  + np.log(2 * np.pi * (mean_data[1, :, :]**2)) )
+            chi_mean = np.sum( ((mean_data[0, :, :] - mean_m)/(mean_data[1, :, :]))**2 )
             chi_var = 0.0
             chi_cov = 0.0
         else:
             # when first (mean) and second moments (i.e., variance and covariance) are fitted
-            chi_mean = np.sum( ((mean_data[0, :, :] - mean_m)/(mean_data[1, :, :]))**2  + np.log(2 * np.pi * (mean_data[1, :, :]**2)) )
-            chi_var = np.sum( ((var_data[0, :, :] - var_m)/(var_data[1, :, :]))**2  + np.log(2 * np.pi * (var_data[1, :, :]**2)) )
-            chi_cov = np.sum( ((cov_data[0, :, :] - cov_m)/(cov_data[1, :, :]))**2  + np.log(2 * np.pi * (cov_data[1, :, :]**2)) )
+            chi_mean = np.sum( ((mean_data[0, :, :] - mean_m)/(mean_data[1, :, :]))**2 )
+            chi_var = np.sum( ((var_data[0, :, :] - var_m)/(var_data[1, :, :]))**2 )
+            chi_cov = np.sum( ((cov_data[0, :, :] - cov_m)/(cov_data[1, :, :]))**2 )
 
         # et = time.time()
         # print('chi (ms)', (et - st)*1000)
-        return -0.5 * (chi_mean + chi_var + chi_cov)
+        return -0.5 * (chi_mean + chi_var + chi_cov) + self.bay_log_likelihood_norm
+
 
     @staticmethod
-    def compute_bayes_log_prior_value_on_support(net_theta_bounds):
+    def compute_log_likelihood_norm(mean_data, var_data, cov_data, mean_only):
         """docstring for ."""
 
-        # compute the normalisation constant for the uniform prior
-        # it is the volume given by the product of interval ranges of the theta's
-        prior_norm = np.prod(np.diff(net_theta_bounds, axis=1))
+        # compute the model-independent term of the log_likelihood
+        # this is a fixed value that can be computed once over the data standard errors
+        if mean_only:
+            norm_mean = np.sum( np.log(2 * np.pi * (mean_data[1, :, :]**2)) )
+            norm_var = 0.0
+            norm_cov = 0.0
+        else:
+            norm_mean = np.sum( np.log(2 * np.pi * (mean_data[1, :, :]**2)) )
+            norm_var = np.sum( np.log(2 * np.pi * (var_data[1, :, :]**2)) )
+            norm_cov = np.sum( np.log(2 * np.pi * (cov_data[1, :, :]**2)) )
 
-        # compute the value of the log prior on the support
-        bayes_log_prior_supp = np.log(1.0/prior_norm)
-        return bayes_log_prior_supp
+        return -0.5 * (norm_mean + norm_var + norm_cov)
 
-    @staticmethod
-    def generate_bayes_mcmc_initial_theta(num_temps, num_walkers, num_theta, theta_bounds):
-        """docstring for ."""
 
-        # preallocate an array for initial values for theta
-        # (a value is required for each theta_i, each walker, each temperature)
-        mcmc_initial_params = np.zeros((num_temps, num_walkers, num_theta))
+    # @staticmethod
+    # def compute_bayes_log_prior_value_on_support(net_theta_bounds):
+    #     """docstring for ."""
+    #
+    #     # compute the normalisation constant for the uniform prior
+    #     # it is the volume given by the product of interval ranges of the theta's
+    #     prior_norm = np.prod(np.diff(net_theta_bounds, axis=1))
+    #
+    #     # compute the value of the log prior on the support
+    #     bayes_log_prior_supp = np.log(1.0/prior_norm)
+    #     return bayes_log_prior_supp
 
-        # for each theta_i / parameter we sample uniformly within its respective bounds
-        # (on a linear scale)
-        # this ensures that the initial parameters start on the support of the prior
-        # (meaning prior(theta) > 0 and log(prior(theta))>-inf)
-        for i in range(num_theta):
-            mcmc_initial_params[:, :, i] = np.random.uniform(low=theta_bounds[i, 0], high=theta_bounds[i, 1], size=(num_temps, num_walkers))
-        return mcmc_initial_params
+    # @staticmethod
+    # def generate_bayes_mcmc_initial_theta(num_temps, num_walkers, num_theta, theta_bounds):
+    #     """docstring for ."""
+    #
+    #     # preallocate an array for initial values for theta
+    #     # (a value is required for each theta_i, each walker, each temperature)
+    #     mcmc_initial_params = np.zeros((num_temps, num_walkers, num_theta))
+    #
+    #     # for each theta_i / parameter we sample uniformly within its respective bounds
+    #     # (on a linear scale)
+    #     # this ensures that the initial parameters start on the support of the prior
+    #     # (meaning prior(theta) > 0 and log(prior(theta))>-inf)
+    #     for i in range(num_theta):
+    #         mcmc_initial_params[:, :, i] = np.random.uniform(low=theta_bounds[i, 0], high=theta_bounds[i, 1], size=(num_temps, num_walkers))
+    #     return mcmc_initial_params
 
     @staticmethod
     def initialise_net_theta_bounds(theta_symbolic, theta_identifier, theta_bounds):
@@ -544,10 +594,10 @@ class Estimation(object):
         return y_arr_err, x_ticks, attributes
 
 
-    def samples_corner_parameters(self, settings, temperature_ind=0):
+    def samples_corner_parameters(self, settings):
         """docstring for ."""
 
-        samples = self.bay_mcmc_sampler.chain[temperature_ind, :, :, :].reshape(self.bay_mcmc_sampling_steps * self.bay_mcmc_num_walkers, self.bay_mcmc_num_dim)
+        samples = self.bay_est_samples_weighted
         labels = [settings[self.net.net_rates_identifier[theta_id]]['label'] for theta_id in self.net.net_theta_symbolic]
         return samples, labels
 
@@ -555,7 +605,27 @@ class Estimation(object):
     def samples_chains_parameters(self):
         """docstring for ."""
 
-        return self.bay_mcmc_sampler, self.bay_mcmc_num_temps, self.bay_mcmc_sampling_steps, self.bay_mcmc_num_walkers, self.bay_mcmc_num_dim
+        return self.bay_est_samples, self.bay_nested_ndims
+
+
+    def samples_weighted_chains_parameters(self):
+        """docstring for ."""
+
+        return self.bay_est_samples_weighted, self.bay_nested_ndims
+
+
+    def sampling_res_and_labels(self, settings):
+        """docstring for ."""
+
+        labels = [settings[self.net.net_rates_identifier[theta_id]]['label'] for theta_id in self.net.net_theta_symbolic]
+        return self.bay_nested_sampler_res, labels
+
+
+    def sampling_res_and_labels_and_priortransform(self, settings):
+        """docstring for ."""
+
+        labels = [settings[self.net.net_rates_identifier[theta_id]]['label'] for theta_id in self.net.net_theta_symbolic]
+        return self.bay_nested_sampler_res, labels, self.prior_transform
 
 
     def line_evolv_bestfit_mean(self, settings):

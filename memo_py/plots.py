@@ -3,12 +3,16 @@
 import numpy as np
 from networkx.drawing.nx_agraph import to_agraph
 import matplotlib.pyplot as plt
+from matplotlib.offsetbox import AnchoredText
 import corner
 from cycler import cycler
 import os
 
 # NOTE: mark as comment for cluster computations
 import graphviz
+
+# dynesty plotting utilities
+from dynesty import plotting as dyplot
 
 
 class Plots(object):
@@ -70,17 +74,19 @@ class Plots(object):
 
         # update or set basic figure settings
         # NOTE: Helvetica Neue has to be installed, otherwise default font is used
-        plt.rcParams.update({'figure.autolayout': True})
-        plt.rcParams.update({'figure.figsize': (8, 5)})
-        plt.rcParams.update({'font.size': 14})
+        # plt.rcParams.update({'figure.autolayout': True}) # replaced with , bbox_inches='tight'
+        # plt.rcParams.update({'figure.figsize': (8, 5)})
+        # plt.rcParams.update({'font.size': 14})
         plt.rcParams['font.family'] = 'Helvetica Neue'
-        plt.rcParams['font.weight'] = 'medium'
+        # plt.rcParams['font.weight'] = 'medium'
         plt.rcParams['mathtext.fontset'] = 'custom'
-        plt.rcParams['mathtext.rm'] = 'Helvetica Neue:medium'
-        plt.rcParams['mathtext.it'] = 'Helvetica Neue:medium:italic'
-        plt.rcParams['axes.labelweight'] = 'medium'
-        plt.rcParams['axes.labelsize'] = 16
-        plt.rcParams['axes.linewidth'] = 1.5
+        plt.rcParams['mathtext.rm'] = 'Helvetica Neue'
+        plt.rcParams['mathtext.it'] = 'Helvetica Neue:italic'
+        # plt.rcParams['mathtext.rm'] = 'Helvetica Neue:medium'
+        # plt.rcParams['mathtext.it'] = 'Helvetica Neue:medium:italic'
+        # plt.rcParams['axes.labelweight'] = 'medium'
+        # plt.rcParams['axes.labelsize'] = 16
+        # plt.rcParams['axes.linewidth'] = 1.2
 
 
     def network_graph(self, net_graphviz, layout_engine, output):
@@ -112,61 +118,221 @@ class Plots(object):
         # plt.rcParams.update({'figure.autolayout': True})
         # plt.rcParams.update({'font.size': 16})
         plt.rcParams['font.family'] = 'Helvetica Neue'
+        # plt.rcParams['font.weight'] = 'medium'
+        plt.rcParams['mathtext.fontset'] = 'custom'
+        plt.rcParams['mathtext.rm'] = 'Helvetica Neue'
+        plt.rcParams['mathtext.it'] = 'Helvetica Neue:italic'
+        # plt.rcParams['mathtext.rm'] = 'Helvetica Neue:medium'
+        # plt.rcParams['mathtext.it'] = 'Helvetica Neue:medium:italic'
+
+        # use corner package for this plot
+        fig = corner.corner(samples, labels=labels)
+
+        # save figure
+        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        if self.plot_show:
+            plt.show(fig, block=False)
+        plt.close(fig)
+        plt.close('all')
+
+
+    def samples_cornerkernel(self, sampler_result, params_labels, output):
+        """docstring for ."""
+
+        plt.rcdefaults()
+        # plt.rcParams.update({'figure.autolayout': True})
+        # plt.rcParams.update({'font.size': 16})
+        plt.rcParams['font.family'] = 'Helvetica Neue'
+        # plt.rcParams['font.weight'] = 'medium'
+        plt.rcParams['mathtext.fontset'] = 'custom'
+        plt.rcParams['mathtext.rm'] = 'Helvetica Neue'
+        plt.rcParams['mathtext.it'] = 'Helvetica Neue:italic'
+        # plt.rcParams['mathtext.rm'] = 'Helvetica Neue:medium'
+        # plt.rcParams['mathtext.it'] = 'Helvetica Neue:medium:italic'
+
+        # fig = plt.figure()
+        # ax = fig.gca()
+
+        fig, axes = dyplot.cornerplot(sampler_result,
+                                color='dodgerblue',
+                                show_titles=True,
+                                labels=params_labels,
+                                title_fmt='.4f')
+        fig.tight_layout()
+
+        # save figure
+        name = output['plot_name']
+        plt.savefig(output['output_folder'] + f'/{name}.pdf', bbox_inches='tight')
+        if self.plot_show:
+            plt.show(fig, block=False)
+        plt.close(fig)
+        plt.close('all')
+
+
+    def samples_cornerpoints(self, sampler_result, params_labels, output):
+        """docstring for ."""
+
+        plt.rcdefaults()
+        # plt.rcParams.update({'figure.autolayout': True})
+        # plt.rcParams.update({'font.size': 16})
+        plt.rcParams['font.family'] = 'Helvetica Neue'
+        # plt.rcParams['font.weight'] = 'medium'
+        plt.rcParams['mathtext.fontset'] = 'custom'
+        plt.rcParams['mathtext.rm'] = 'Helvetica Neue'
+        plt.rcParams['mathtext.it'] = 'Helvetica Neue:italic'
+        # plt.rcParams['mathtext.rm'] = 'Helvetica Neue:medium'
+        # plt.rcParams['mathtext.it'] = 'Helvetica Neue:medium:italic'
+
+        fig = plt.figure()
+        ax = fig.gca()
+
+        fig, axes = dyplot.cornerpoints(sampler_result,
+                             cmap='magma',
+                             labels=params_labels)
+
+        # save figure
+        name = output['plot_name']
+        plt.savefig(output['output_folder'] + f'/{name}.pdf', bbox_inches='tight')
+        if self.plot_show:
+            plt.show(fig, block=False)
+        plt.close(fig)
+        plt.close('all')
+
+
+    def samples_cornerbounds(self, sampler_result, params_labels, prior_transform, output):
+        """docstring for ."""
+
+        plt.rcdefaults()
+        # plt.rcParams.update({'figure.autolayout': True})
+        # plt.rcParams.update({'font.size': 16})
+        plt.rcParams['font.family'] = 'Helvetica Neue'
         plt.rcParams['font.weight'] = 'medium'
         plt.rcParams['mathtext.fontset'] = 'custom'
         plt.rcParams['mathtext.rm'] = 'Helvetica Neue:medium'
         plt.rcParams['mathtext.it'] = 'Helvetica Neue:medium:italic'
 
-        # use corner package for this plot
-        corner.corner(samples, labels=labels)
+        num_it_segs = 14 # num_it_segs+1 plots will be plotted
+        num_it_total = sampler_result.niter
 
-        # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']))
-        if self.plot_show:
-            plt.show()
-        plt.close()
+        for it_plot in range(num_it_segs):
 
+            it_num = int( it_plot * num_it_total / float(num_it_segs - 1))
+            it_num = min(num_it_total, it_num)
 
-    def samples_chains(self, mcmc_sampler, num_temps, sampling_steps, num_walkers, num_params, output):
-        betas = mcmc_sampler.betas
-        temperatures = 1.0 / betas
-        plt.rcParams['axes.titleweight'] = 'medium'
-        plt.rcParams['axes.titlesize'] = 14
+            fig = plt.figure()
+            ax = fig.gca()
 
-        for temp_ind in range(num_temps):
-            plt.figure()
-            plt.title(f'temp = {round(temperatures[temp_ind], 2)}, beta = {round(betas[temp_ind], 4)}') # .format(temperatures[temp_ind], betas[temp_ind]))
-            ax = plt.gca()
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            ax.spines['bottom'].set_visible(True)
-            ax.spines['left'].set_visible(True)
-
-            # set a color cycle for the different params
-            colormap = plt.cm.viridis
-            plt.gca().set_prop_cycle(cycler('color', [colormap(i) for i in np.linspace(0, 1, num_params)]))
-
-            samples_all = mcmc_sampler.chain[temp_ind, :, :, :]
-            samples_all = samples_all.reshape(sampling_steps * num_walkers, num_params)
-            plt.plot(samples_all[:, :], alpha=0.75)
-
-            # final axis setting
-            ax.set_xlim(self.x_lim)
-            ax.set_xlabel(self.x_label, color="black")
-            ax.set_xscale('log' if self.x_log==True else 'linear')
-            ax.set_ylim(self.y_lim)
-            ax.set_ylabel(self.y_label, color="black")
-            ax.set_yscale('log' if self.y_log==True else 'linear')
-
-            plt.xlabel('concatenated steps of all walkers')
-            plt.ylabel('parameter value')
+            fig, axes = dyplot.cornerbound(sampler_result,
+                                    it=it_num,
+                                    prior_transform=prior_transform,
+                                    color='lightgrey',
+                                    show_live=True,
+                                    live_color='darkorange',
+                                    labels=params_labels)
 
             # save figure
             name = output['plot_name']
-            plt.savefig(output['output_folder'] + f'/{name}_temp{temp_ind}.pdf')
+            plt.savefig(output['output_folder'] + f'/{name}_it{it_num}.pdf', bbox_inches='tight')
             if self.plot_show:
-                plt.show()
-            plt.close()
+                plt.show(fig, block=False)
+            plt.close(fig)
+            plt.close('all')
+
+
+    def sampling_runplot(self, sampler_result, output):
+        """docstring for ."""
+
+        # plt.rcParams['axes.titleweight'] = 'medium'
+        # plt.rcParams['axes.titlesize'] = 14
+
+        fig = plt.figure()
+        ax = fig.gca()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+
+        fig, ax = dyplot.runplot(sampler_result,
+                                color='limegreen') # fig, axes =
+
+        # save figure
+        name = output['plot_name']
+        plt.savefig(output['output_folder'] + f'/{name}.pdf', bbox_inches='tight')
+        if self.plot_show:
+            plt.show(fig, block=False)
+        plt.close(fig)
+        plt.close('all')
+
+
+    def sampling_traceplot(self, sampler_result, params_labels, output):
+        """docstring for ."""
+
+        # plt.rcParams['axes.titleweight'] = 'medium'
+        # plt.rcParams['axes.titlesize'] = 14
+
+        fig = plt.figure()
+        ax = fig.gca()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+
+        fig, axes = dyplot.traceplot(sampler_result,
+                             show_titles=True,
+                             post_color='dodgerblue',
+                             connect_color='darkorange',
+                             trace_cmap='magma',
+                             connect=True,
+                             connect_highlight=range(5),
+                             labels=params_labels,
+                             title_fmt='.4f')
+
+        # save figure
+        name = output['plot_name']
+        plt.savefig(output['output_folder'] + f'/{name}.pdf', bbox_inches='tight')
+        if self.plot_show:
+            plt.show(fig, block=False)
+        plt.close(fig)
+        plt.close('all')
+
+
+    def samples_chains(self, samples, num_params, output):
+        """docstring for ."""
+
+        # plt.rcParams['axes.titleweight'] = 'medium'
+        # plt.rcParams['axes.titlesize'] = 14
+
+        fig = plt.figure()
+        ax = plt.gca()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+
+        # set a color cycle for the different params
+        colormap = plt.cm.viridis
+        plt.gca().set_prop_cycle(cycler('color', [colormap(i) for i in np.linspace(0, 1, num_params)]))
+
+        plt.plot(samples, alpha=0.75)
+
+        # final axis setting
+        ax.set_xlim(self.x_lim)
+        ax.set_xlabel(self.x_label, color="black")
+        ax.set_xscale('log' if self.x_log==True else 'linear')
+        ax.set_ylim(self.y_lim)
+        ax.set_ylabel(self.y_label, color="black")
+        ax.set_yscale('log' if self.y_log==True else 'linear')
+
+        plt.xlabel('sample iteration')
+        plt.ylabel('parameter value')
+
+        # save figure
+        name = output['plot_name']
+        plt.savefig(output['output_folder'] + f'/{name}.pdf', bbox_inches='tight')
+        if self.plot_show:
+            plt.show(fig, block=False)
+        plt.close(fig)
+        plt.close('all')
 
 
     # def fig_step_evolv(self, x_arr, y_arr, var_attributes, output):
@@ -269,7 +435,7 @@ class Plots(object):
                 'plot_name': 'fig_test_dots_time'}
         """
         # initialise figure and axis settings
-        plt.figure()
+        fig = plt.figure()
 
         ax = plt.gca()
         ax.spines['top'].set_visible(False)
@@ -300,13 +466,14 @@ class Plots(object):
         legend.get_frame().set_edgecolor('lightgrey')
 
         # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']))
+        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
         if self.plot_show:
-            plt.show()
-        plt.close()
+            plt.show(fig, block=False)
+        plt.close(fig)
+        plt.close('all')
 
 
-    def line_evolv(self, x_arr, y_line, var_attributes, output):
+    def line_evolv(self, x_arr, y_line, var_attributes, output, text_box=None):
         """
         Plot multiple evolving (e.g. over time) lines.
 
@@ -337,7 +504,7 @@ class Plots(object):
                 'plot_name': 'fig_test_line_evolv'}
         """
         # initialise figure and axis settings
-        plt.figure()
+        fig = plt.figure()
 
         ax = plt.gca()
         ax.spines['top'].set_visible(False)
@@ -351,7 +518,12 @@ class Plots(object):
             var_color = var_attributes[var_ind][1]
 
             plt.plot(x_arr, y_line[var_ind, :], label=var_name,
-                            color=var_color, linewidth=3, zorder=2000)
+                            color=var_color, linewidth=2, zorder=2000)
+
+        # text_box if provided
+        if text_box!=None:
+            anchored_text = AnchoredText(text_box, loc='center left', frameon=False)
+            ax.add_artist(anchored_text)
 
         # final axis setting
         ax.set_xlim(self.x_lim)
@@ -367,10 +539,11 @@ class Plots(object):
         legend.get_frame().set_edgecolor('lightgrey')
 
         # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']))
+        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
         if self.plot_show:
-            plt.show()
-        plt.close()
+            plt.show(fig, block=False)
+        plt.close(fig)
+        plt.close('all')
 
 
     def line_w_band_evolv(self, x_arr, y_line, y_lower, y_upper, var_attributes, output):
@@ -420,7 +593,7 @@ class Plots(object):
                 'plot_name': 'fig_test_line_band'}
         """
         # initialise figure and axis settings
-        plt.figure()
+        fig = plt.figure()
 
         ax = plt.gca()
         ax.spines['top'].set_visible(False)
@@ -452,10 +625,11 @@ class Plots(object):
         legend.get_frame().set_edgecolor('lightgrey')
 
         # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']))
+        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
         if self.plot_show:
-            plt.show()
-        plt.close()
+            plt.show(fig, block=False)
+        plt.close(fig)
+        plt.close('all')
 
 
     def dots_w_bars_and_line_evolv(self, x_arr_dots, x_arr_line, y_dots_err, y_line, var_attributes, output):
@@ -499,7 +673,7 @@ class Plots(object):
                 'plot_name': 'fig_test_line_band_dots_bars'}
         """
         # initialise figure and axis settings
-        plt.figure()
+        fig = plt.figure()
 
         ax = plt.gca()
         ax.spines['top'].set_visible(False)
@@ -514,11 +688,25 @@ class Plots(object):
 
             # ax.fill_between(x_arr_line, y_lower[var_ind, :], y_upper[var_ind, :],
             #                 color=var_color, alpha=0.5, linewidth=0.0, zorder=1000)
+
+            # # normal version
+            # plt.plot(x_arr_line, y_line[var_ind, :], label=var_name,
+            #                 color=var_color, linewidth=3, zorder=3000)
+            # plt.errorbar(x_arr_dots, y_dots_err[var_ind, :, 0], yerr=y_dots_err[var_ind, :, 1],
+            #             fmt='o', capsize=4.0, elinewidth=2.5, #label='data' if var_ind==0 else '',
+            #             markeredgewidth=2.5, markersize=4.5, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
+            # poster version
+            # plt.plot(x_arr_line, y_line[var_ind, :], label=var_name,
+            #                 color=var_color, linewidth=2, zorder=3000)
+            # plt.errorbar(x_arr_dots, y_dots_err[var_ind, :, 0], yerr=y_dots_err[var_ind, :, 1],
+            #             fmt='o', capsize=2, elinewidth=2, #label='data' if var_ind==0 else '',
+            #             markeredgewidth=2, markersize=3, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
+            # paper version
             plt.plot(x_arr_line, y_line[var_ind, :], label=var_name,
-                            color=var_color, linewidth=3, zorder=3000)
+                            color=var_color, linewidth=0.7, zorder=3000)
             plt.errorbar(x_arr_dots, y_dots_err[var_ind, :, 0], yerr=y_dots_err[var_ind, :, 1],
-                        fmt='o', capsize=4.0, elinewidth=2.5, #label='data' if var_ind==0 else '',
-                        markeredgewidth=2.5, markersize=4.5, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
+                        fmt='o', capsize=0.7, elinewidth=0.7, #label='data' if var_ind==0 else '',
+                        markeredgewidth=0.7, markersize=1.0, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
 
         # final axis setting
         ax.set_xlim(self.x_lim)
@@ -532,12 +720,14 @@ class Plots(object):
         legend = ax.legend(loc=0)
         legend.get_frame().set_facecolor('white')
         legend.get_frame().set_edgecolor('lightgrey')
+        plt.legend(frameon=False)
 
         # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']))
+        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
         if self.plot_show:
-            plt.show()
-        plt.close()
+            plt.show(fig, block=False)
+        plt.close(fig)
+        plt.close('all')
 
 
     def dots_w_bars_and_line_w_band_evolv(self, x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, var_attributes, output):
@@ -595,7 +785,7 @@ class Plots(object):
                 'plot_name': 'fig_test_line_band_dots_bars'}
         """
         # initialise figure and axis settings
-        plt.figure()
+        fig = plt.figure()
 
         ax = plt.gca()
         ax.spines['top'].set_visible(False)
@@ -630,10 +820,11 @@ class Plots(object):
         legend.get_frame().set_edgecolor('lightgrey')
 
         # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']))
+        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
         if self.plot_show:
-            plt.show()
-        plt.close()
+            plt.show(fig, block=False)
+        plt.close(fig)
+        plt.close('all')
 
 
     # # TODO: steady state plots / volume plots?
@@ -703,7 +894,7 @@ class Plots(object):
     #     plt.close()
 
 
-    def dots_w_bars(self, y_arr_err, x_ticks, attributes, output):
+    def dots_w_bars(self, y_arr_err, x_ticks, attributes, output, show_errorbar=True):
         """
         Plot dots with error bars (values in y axis, iteration over x axis).
 
@@ -737,7 +928,7 @@ class Plots(object):
         """
 
         # initialise figure and axis settings
-        plt.figure()
+        fig = plt.figure()
 
         ax = plt.gca()
         ax.spines['top'].set_visible(False)
@@ -748,7 +939,7 @@ class Plots(object):
         # actual plotting
         for dot_ind in range(y_arr_err.shape[0]):
             plt.errorbar(dot_ind + 1, y_arr_err[dot_ind, 0],
-                        yerr=np.array([y_arr_err[dot_ind, 1], y_arr_err[dot_ind, 2]]).reshape(2,1),
+                        yerr=np.array([y_arr_err[dot_ind, 1], y_arr_err[dot_ind, 2]]).reshape(2,1) if show_errorbar else None,
                         fmt='o', capsize=4, elinewidth=2.5, markeredgewidth=2.5,
                         markersize=5, markeredgecolor=attributes[dot_ind][1],
                         color=attributes[dot_ind][1], ecolor='lightgrey')
@@ -766,11 +957,381 @@ class Plots(object):
                         [x_ticks[i] for i in range(y_arr_err.shape[0])], rotation=55)
 
         # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']))
+        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
         if self.plot_show:
-            plt.show()
-        plt.close()
+            plt.show(fig, block=False)
+        plt.close(fig)
+        plt.close('all')
 
+
+    def histogram_discrete(self, bar_arr, bar_attributes, output, normalised=False):
+        """
+        Plot a histogram for discrete values.
+
+        parameters
+        ----------
+        bar_arr
+            numpy array of discrete values with shape (#realisations, #variables),
+            histograms are computed over all realisations for each variable
+
+        bar_attributes
+            dictionary with keys specifying a general bin 'label' and bin 'color'
+        output
+            dictionary specifying the keys 'output_folder' and 'plot_name'
+
+        example
+        -------
+        bar_arr = np.random.poisson(10, size=10).reshape(10, 1)
+
+        bar_attributes = {0 : {'label': 'some bins', 'color': 'dodgerblue', 'opacity': 1.0}}
+
+        output = {'output_folder': './test_figures',
+                'plot_name': 'hist_disc_test'}
+        """
+
+        # initialise figure and axis settings
+        fig = plt.figure()
+
+        ax = plt.gca()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+
+        # plotting of a histogram
+        try:
+            bar_min = min(np.amin(bar_arr), self.x_lim[0])
+        except:
+            bar_min = np.amin(bar_arr)
+
+        try:
+            bar_max = max(np.amax(bar_arr), self.x_lim[1])
+        except:
+            bar_max = np.amax(bar_arr)
+
+        hist_bins = np.linspace(bar_min - 0.5, bar_max + 0.5, num=bar_max - bar_min + 2)
+
+        for var_ind in range(bar_arr.shape[1]):
+            plt.hist(bar_arr[:, var_ind], bins=hist_bins,
+                density=normalised,
+                histtype='stepfilled', # step, stepfilled
+                linewidth=2.0,
+                align='mid', color=bar_attributes[var_ind]['color'],
+                label=bar_attributes[var_ind]['label'],
+                alpha=bar_attributes[var_ind]['opacity'], zorder=1-var_ind)
+
+        # ax.set_xticks(bins + 0.5)
+
+        # final axis setting
+        ax.set_xlim(self.x_lim)
+        ax.set_xlabel(self.x_label, color="black")
+        ax.set_xscale('log' if self.x_log==True else 'linear')
+        ax.set_ylim(self.y_lim)
+        ax.set_ylabel(self.y_label, color="black")
+        ax.set_yscale('log' if self.y_log==True else 'linear')
+
+        # add legend
+        legend = ax.legend(loc=0)
+        legend.get_frame().set_facecolor('white')
+        legend.get_frame().set_edgecolor('lightgrey')
+        plt.legend(frameon=False)
+
+        # save figure
+        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        if self.plot_show:
+            plt.show(fig, block=False)
+        plt.close(fig)
+        plt.close('all')
+
+
+    def histogram_discrete_w_line(self, bar_arr, bar_attributes, line_function, output, normalised=False):
+        """
+        Plot a histogram for discrete values with line.
+
+        parameters
+        ----------
+        bar_arr
+            numpy array of discrete values with shape (#realisations, #variables),
+            histograms are computed over all realisations for each variable
+
+        bar_attributes
+            dictionary with keys specifying a general bin 'label' and bin 'color'
+        output
+            dictionary specifying the keys 'output_folder' and 'plot_name'
+
+        example
+        -------
+        bar_arr = np.random.poisson(10, size=10).reshape(10, 1)
+
+        bar_attributes = {0 : {'label': 'some bins', 'color': 'dodgerblue', 'opacity': 1.0}}
+
+        output = {'output_folder': './test_figures',
+                'plot_name': 'hist_disc_test'}
+        """
+
+        # initialise figure and axis settings
+        fig = plt.figure()
+
+        ax = plt.gca()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+
+        # plotting of a histogram
+        try:
+            bar_min = min(np.amin(bar_arr), self.x_lim[0])
+        except:
+            bar_min = np.amin(bar_arr)
+
+        try:
+            bar_max = max(np.amax(bar_arr), self.x_lim[1])
+        except:
+            bar_max = np.amax(bar_arr)
+
+        x_line_arr = np.linspace(bar_min, bar_max, num=1000, endpoint=True)
+        hist_bins = np.linspace(bar_min - 0.5, bar_max + 0.5, num=bar_max - bar_min + 2)
+
+        for var_ind in range(bar_arr.shape[1]):
+            plt.hist(bar_arr[:, var_ind], bins=hist_bins,
+                density=normalised,
+                histtype='stepfilled', # step, stepfilled
+                linewidth=2.0,
+                align='mid', color=bar_attributes[var_ind]['color'],
+                label=bar_attributes[var_ind]['label'],
+                alpha=bar_attributes[var_ind]['opacity'])
+
+            x_line, y_line, line_label, line_color = line_function(x_line_arr, bar_arr[:, var_ind])
+            plt.plot(x_line, y_line, label=line_label, color=line_color, linewidth=2.5)
+
+        # ax.set_xticks(bins + 0.5)
+
+        # final axis setting
+        ax.set_xlim(self.x_lim)
+        ax.set_xlabel(self.x_label, color="black")
+        ax.set_xscale('log' if self.x_log==True else 'linear')
+        ax.set_ylim(self.y_lim)
+        ax.set_ylabel(self.y_label, color="black")
+        ax.set_yscale('log' if self.y_log==True else 'linear')
+
+        # add legend
+        legend = ax.legend(loc=0)
+        legend.get_frame().set_facecolor('white')
+        legend.get_frame().set_edgecolor('lightgrey')
+
+        # save figure
+        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        if self.plot_show:
+            plt.show(fig, block=False)
+        plt.close(fig)
+        plt.close('all')
+
+
+    def histogram_continuous(self, bar_arr, bar_attributes, output, normalised=False):
+        """
+        Plot a histogram for continuous values.
+
+        parameters
+        ----------
+        bar_arr
+            numpy array of continuous values with shape (#realisations, #variables),
+            histograms are computed over all realisations for each variable
+
+        bar_attributes
+            dictionary with keys specifying a general bin 'label', bin 'color',
+            bin 'edges' and bin edges 'interval_type' ('[)' (default) or '(]')
+
+        normalised
+            True or False
+
+        interval
+
+        output
+            dictionary specifying the keys 'output_folder' and 'plot_name'
+
+        example
+        -------
+        bar_arr = np.random.poisson(10, size=10).reshape(10, 1)
+
+        bar_attributes = {0 : {'label': 'some bins', 'color': 'dodgerblue', 'opacity': 1.0}}
+
+        output = {'output_folder': './test_figures',
+                'plot_name': 'hist_disc_test'}
+        """
+
+        # initialise figure and axis settings
+        fig = plt.figure()
+
+        ax = plt.gca()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+
+        # plotting of a histogram
+        for var_ind in range(bar_arr.shape[1]):
+            # read out interval type, default plt.hist() behavior are
+            # half-open interval [.., ..), small epsilon shift mimicks (.., ..]
+            if bar_attributes[var_ind]['interval_type']=='(]':
+                epsilon = 1e-06
+            else:
+                epsilon = 0.0
+
+            plt.hist(bar_arr[:, var_ind] - epsilon,
+                bins=bar_attributes[var_ind]['edges'],
+                density=normalised,
+                histtype='stepfilled', # step, stepfilled
+                linewidth=2.0,
+                color=bar_attributes[var_ind]['color'],
+                label=bar_attributes[var_ind]['label'],
+                alpha=bar_attributes[var_ind]['opacity'])
+
+        # final axis setting
+        ax.set_xlim(self.x_lim)
+        ax.set_xlabel(self.x_label, color="black")
+        ax.set_xscale('log' if self.x_log==True else 'linear')
+        ax.set_ylim(self.y_lim)
+        ax.set_ylabel(self.y_label, color="black")
+        ax.set_yscale('log' if self.y_log==True else 'linear')
+
+        # add legend
+        legend = ax.legend(loc=0)
+        legend.get_frame().set_facecolor('white')
+        legend.get_frame().set_edgecolor('lightgrey')
+
+        # save figure
+        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        if self.plot_show:
+            plt.show(fig, block=False)
+        plt.close(fig)
+        plt.close('all')
+
+
+    def histogram_continuous_w_line(self, bar_arr, bar_attributes, line_function, output, normalised=False):
+        """
+        Plot a histogram for continuous values with line.
+
+        parameters
+        ----------
+        bar_arr
+            numpy array of continuous values with shape (#realisations, #variables),
+            histograms are computed over all realisations for each variable
+
+        bar_attributes
+            dictionary with keys specifying a general bin 'label', bin 'color',
+            bin 'edges' and bin edges 'interval_type' ('[)' (default) or '(]')
+
+        normalised
+            True or False
+
+        interval
+
+        output
+            dictionary specifying the keys 'output_folder' and 'plot_name'
+
+        example
+        -------
+        bar_arr = np.random.poisson(10, size=10).reshape(10, 1)
+
+        bar_attributes = {0 : {'label': 'some bins', 'color': 'dodgerblue', 'opacity': 1.0}}
+
+        output = {'output_folder': './test_figures',
+                'plot_name': 'hist_disc_test'}
+        """
+
+        # initialise figure and axis settings
+        fig = plt.figure()
+
+        ax = plt.gca()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+
+        # plotting of a histogram
+        for var_ind in range(bar_arr.shape[1]):
+            # read out interval type, default plt.hist() behavior are
+            # half-open interval [.., ..), small epsilon shift mimicks (.., ..]
+            if bar_attributes[var_ind]['interval_type']=='(]':
+                epsilon = 1e-06
+            else:
+                epsilon = 0.0
+
+            plt.hist(bar_arr[:, var_ind] - epsilon,
+                bins=bar_attributes[var_ind]['edges'],
+                density=normalised,
+                histtype='stepfilled', # step, stepfilled
+                linewidth=2.0,
+                color=bar_attributes[var_ind]['color'],
+                label=bar_attributes[var_ind]['label'],
+                alpha=bar_attributes[var_ind]['opacity'])
+
+            x_line_arr = np.linspace(np.amin(bar_attributes[var_ind]['edges']),
+                                    np.amax(bar_attributes[var_ind]['edges']),
+                                    num=1000, endpoint=True)
+            x_line, y_line, line_label, line_color = line_function(x_line_arr, bar_arr[:, var_ind])
+            plt.plot(x_line, y_line, label=line_label, color=line_color, linewidth=2.5)
+
+        # final axis setting
+        ax.set_xlim(self.x_lim)
+        ax.set_xlabel(self.x_label, color="black")
+        ax.set_xscale('log' if self.x_log==True else 'linear')
+        ax.set_ylim(self.y_lim)
+        ax.set_ylabel(self.y_label, color="black")
+        ax.set_yscale('log' if self.y_log==True else 'linear')
+
+        # add legend
+        legend = ax.legend(loc=0)
+        legend.get_frame().set_facecolor('white')
+        legend.get_frame().set_edgecolor('lightgrey')
+
+        # save figure
+        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        if self.plot_show:
+            plt.show(fig, block=False)
+        plt.close(fig)
+        plt.close('all')
+
+
+    def scatter(self, x_arr, y_arr, attributes, output, normalised=False):
+        """docstring for ."""
+
+        # initialise figure and axis settings
+        fig = plt.figure()
+
+        ax = plt.gca()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+
+        # plotting of a histogram
+        plt.scatter(    x_arr, y_arr,
+                        color=attributes['color'],
+                        alpha=attributes['opacity'])
+
+        # ax.set_xticks(bins + 0.5)
+
+        # final axis setting
+        ax.set_xlim(self.x_lim)
+        ax.set_xlabel(self.x_label, color="black")
+        ax.set_xscale('log' if self.x_log==True else 'linear')
+        ax.set_ylim(self.y_lim)
+        ax.set_ylabel(self.y_label, color="black")
+        ax.set_yscale('log' if self.y_log==True else 'linear')
+
+        # add legend
+        if not attributes['label']==None:
+            legend = ax.legend(loc=0)
+            legend.get_frame().set_facecolor('white')
+            legend.get_frame().set_edgecolor('lightgrey')
+
+        # save figure
+        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        if self.plot_show:
+            plt.show(fig, block=False)
+        plt.close(fig)
+        plt.close('all')
 
     # def fig_dots_w_mult_bars(self, val_obj, attributes, legend_attr, output):
     #     """
