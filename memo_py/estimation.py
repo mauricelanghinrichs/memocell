@@ -121,57 +121,57 @@ class Estimation(object):
     def estimate(self, network_setup, mcmc_setup):
         """docstring for ."""
 
-        # initialise estimation
-        # (set up network, simulation and sampling properties)
-        self.initialise_estimation(network_setup, mcmc_setup)
+        # for progress bar
+        total_sampling_steps = 1
+        with tqdm(total=total_sampling_steps, desc='{est: <{width}}'.format(est=self.est_name, width=16), position=self.est_iter+1) as pbar:
 
-        # execute the sampling for the estimation of parameters and model evidence
-        self.run_estimation()
+            # initialise estimation
+            # (set up network, simulation and sampling properties)
+            self.initialise_estimation(network_setup, mcmc_setup)
 
-        # print(f"""results:\n
-        # \t theta confidence: {self.bay_est_params_conf}\n
-        # \t theta medians: {self.bay_est_params_median}\n
-        # \t log evidence: {self.bay_est_log_evidence}\n
-        # \t log evidence error: {self.bay_est_log_evidence_error}""")
+            # execute the sampling for the estimation of parameters and model evidence
+            self.run_estimation()
 
+            # print(f"""results:\n
+            # \t theta confidence: {self.bay_est_params_conf}\n
+            # \t theta medians: {self.bay_est_params_median}\n
+            # \t log evidence: {self.bay_est_log_evidence}\n
+            # \t log evidence error: {self.bay_est_log_evidence_error}""")
+
+
+            # update progress bar (there is just not done or done (0/1 or 1/1 steps))
+            pbar.update(1)
 
 
     def run_estimation(self):
         """docstring for ."""
 
-        # for progress bar
-        total_sampling_steps = 1
-        with tqdm(total=total_sampling_steps, desc='{est: <{width}}'.format(est=self.est_name, width=16), position=self.est_iter+1) as pbar:
+        # run the dynesty sampler
+        # NOTE: the very first iteration can take a while since preparations
+        # for the moment calculations have to be done
+        self.bay_nested_sampler.run_nested(dlogz=self.bay_nested_tolerance,
+                                            print_progress=False) # dynesty progress bar
 
-            # run the dynesty sampler
-            # NOTE: the very first iteration can take a while since preparations
-            # for the moment calculations have to be done
-            self.bay_nested_sampler.run_nested(dlogz=self.bay_nested_tolerance,
-                                                print_progress=False) # dynesty progress bar
+        # get sampler result
+        self.bay_nested_sampler_res = self.bay_nested_sampler.results
 
-            # get sampler result
-            self.bay_nested_sampler_res = self.bay_nested_sampler.results
+        # obtain posterior parameter samples from reweighting
+        self.bay_est_samples, self.bay_est_samples_weighted, self.bay_est_weights = self.get_posterior_samples(self.bay_nested_sampler_res)
 
-            # obtain posterior parameter samples from reweighting
-            self.bay_est_samples, self.bay_est_samples_weighted, self.bay_est_weights = self.get_posterior_samples(self.bay_nested_sampler_res)
+        # assess confidence bounds for parameters
+        self.bay_est_params_conf = self.get_confidence_bounds(self.bay_est_samples_weighted)
+        self.bay_est_params_median = np.array([self.bay_est_params_conf[i][0] for i in range(len(self.bay_est_params_conf))])
 
-            # assess confidence bounds for parameters
-            self.bay_est_params_conf = self.get_confidence_bounds(self.bay_est_samples_weighted)
-            self.bay_est_params_median = np.array([self.bay_est_params_conf[i][0] for i in range(len(self.bay_est_params_conf))])
+        # obtain log evidence values with associated error
+        self.bay_est_log_evidence, self.bay_est_log_evidence_error = self.get_model_evidence(self.bay_nested_sampler_res)
 
-            # obtain log evidence values with associated error
-            self.bay_est_log_evidence, self.bay_est_log_evidence_error = self.get_model_evidence(self.bay_nested_sampler_res)
-
-            # compute alternative measures for model selection
-            self.bay_est_log_likelihood_max = self.get_maximal_log_likelihood(self.bay_nested_sampler_res)
-            self.bay_est_bayesian_information_criterion = self.compute_bayesian_information_criterion(
-                                                                        self.data_num_values,
-                                                                        self.bay_nested_ndims,
-                                                                        self.bay_est_log_likelihood_max)
-            self.bay_est_log_evidence_from_bic = self.compute_log_evidence_from_bic(self.bay_est_bayesian_information_criterion)
-
-            # update progress bar (there is just not done or done (0/1 or 1/1 steps))
-            pbar.update(1)
+        # compute alternative measures for model selection
+        self.bay_est_log_likelihood_max = self.get_maximal_log_likelihood(self.bay_nested_sampler_res)
+        self.bay_est_bayesian_information_criterion = self.compute_bayesian_information_criterion(
+                                                                    self.data_num_values,
+                                                                    self.bay_nested_ndims,
+                                                                    self.bay_est_log_likelihood_max)
+        self.bay_est_log_evidence_from_bic = self.compute_log_evidence_from_bic(self.bay_est_bayesian_information_criterion)
 
 
     @staticmethod
