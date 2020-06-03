@@ -42,7 +42,7 @@ Documentation
 
 Documentation can be found here [TODO link to read the docs].
 
-Licence
+License
 -------
 
 This package can be used under the MIT License (MIT), see LICENSE file.
@@ -50,5 +50,5 @@ This package can be used under the MIT License (MIT), see LICENSE file.
 Authors
 -------
 
-``memo_py`` was written and developed by `Maurice Langhinrichs <m.langhinrichs@icloud.com>`_ and
+Memopy was written and developed by `Maurice Langhinrichs <m.langhinrichs@icloud.com>`_ and
 ``Lisa Buchauer [TODO: permanent mail here?]`` `@TSB <https://www.dkfz.de/en/modellierung-biologischer-systeme/>`_.

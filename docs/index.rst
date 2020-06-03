@@ -17,7 +17,5 @@ Content
    getting_started
    motivation_theory
    usage
-   citation
-   license
-   acknowledgements
+   various
    dev_docs
