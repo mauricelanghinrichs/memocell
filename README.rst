@@ -17,14 +17,25 @@ Getting Started
 Installation
 ^^^^^^^^^^^^
 
-Make sure to have ```graphviz``` and ```pygraphviz``` installed before installing ```memo_py```; for
-example by running ```conda install graphviz``` in the terminal, followed by ```conda install pygraphviz```.
+Memopy requires an installation of a recent Python version; Python can be
+installed via `Anaconda <https://docs.anaconda.com/anaconda/install/>`_.
 
-Then ```memo_py``` can be installed by running ... [TODO]. Other dependencies should be
-installed automatically during the ```memo_py``` installation.
+Make sure to have ``graphviz`` and ``pygraphviz`` installed before installing ``memo_py``; for
+example by executing the following in the terminal::
+
+   conda install graphviz
+   conda install pygraphviz
+
+Then ``memo_py`` can be installed by running::
+
+   pip install memo_py
+
+Other dependencies should be installed automatically during the ``memo_py`` installation.
+
 
 First Example
 ^^^^^^^^^^^^^
+
 
 Documentation
 -------------
@@ -39,5 +50,5 @@ This package can be used under the MIT License (MIT), see LICENSE file.
 Authors
 -------
 
-`memo_py` was written and developed by `Maurice Langhinrichs <m.langhinrichs@icloud.com>` and
-`Lisa Buchauer [TODO: permanent mail here?]` `@TSB <https://www.dkfz.de/en/modellierung-biologischer-systeme/>`.
+``memo_py`` was written and developed by `Maurice Langhinrichs <m.langhinrichs@icloud.com>`_ and
+``Lisa Buchauer [TODO: permanent mail here?]`` `@TSB <https://www.dkfz.de/en/modellierung-biologischer-systeme/>`_.
