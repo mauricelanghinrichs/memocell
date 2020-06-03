@@ -32,7 +32,7 @@ setup(
     install_requires=['numpy>=1.14.1', 'sympy>=1.1.1', 'networkx>=2.2',
                         'scipy>=1.0.0', 'corner>=2.0.1', 'dynesty>=0.9',
                         'matplotlib>=2.1.2', 'cycler>=0.10.0', 'setuptools>=38.5.1',
-                        'pygraphviz>=1.5', 'graphviz>=0.10.1', 'numba>=0.43.1',
+                        'numba>=0.43.1', 'graphviz>=0.10.1', 'pygraphviz>=1.5',
                         'tqdm>=4.31.1'],
 
     # run pytest with "$ python setup.py pytest" in this directory

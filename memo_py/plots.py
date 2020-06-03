@@ -1,7 +1,8 @@
 
 
 import numpy as np
-from networkx.drawing.nx_agraph import to_agraph
+# from networkx.drawing.nx_agraph import to_agraph
+import networkx as nx
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 import corner
@@ -9,7 +10,7 @@ from cycler import cycler
 import os
 
 # NOTE: mark as comment for cluster computations
-import graphviz
+# import graphviz
 
 # dynesty plotting utilities
 from dynesty import plotting as dyplot
@@ -51,7 +52,7 @@ class Plots(object):
             'limits': (None, None),
             'log': False}
     """
-    def __init__(self, x_axis, y_axis, show=False):
+    def __init__(self, x_axis, y_axis, show=True, save=False):
         # initialise basic information
         try:
             self.x_label = x_axis['label']
@@ -71,17 +72,18 @@ class Plots(object):
             self.y_log = None
 
         self.plot_show = show
+        self.plot_save = save
 
         # update or set basic figure settings
         # NOTE: Helvetica Neue has to be installed, otherwise default font is used
         # plt.rcParams.update({'figure.autolayout': True}) # replaced with , bbox_inches='tight'
         # plt.rcParams.update({'figure.figsize': (8, 5)})
         # plt.rcParams.update({'font.size': 14})
-        plt.rcParams['font.family'] = 'Helvetica Neue'
+        # plt.rcParams['font.family'] = 'Helvetica Neue' # uncommented 2020
         # plt.rcParams['font.weight'] = 'medium'
-        plt.rcParams['mathtext.fontset'] = 'custom'
-        plt.rcParams['mathtext.rm'] = 'Helvetica Neue'
-        plt.rcParams['mathtext.it'] = 'Helvetica Neue:italic'
+        # plt.rcParams['mathtext.fontset'] = 'custom' # uncommented 2020
+        # plt.rcParams['mathtext.rm'] = 'Helvetica Neue' # uncommented 2020
+        # plt.rcParams['mathtext.it'] = 'Helvetica Neue:italic' # uncommented 2020
         # plt.rcParams['mathtext.rm'] = 'Helvetica Neue:medium'
         # plt.rcParams['mathtext.it'] = 'Helvetica Neue:medium:italic'
         # plt.rcParams['axes.labelweight'] = 'medium'
@@ -89,16 +91,51 @@ class Plots(object):
         # plt.rcParams['axes.linewidth'] = 1.2
 
 
-    def network_graph(self, net_graphviz, layout_engine, output):
+    def network_graph(self, net_graphviz, layout_engine, node_labels, node_colors,
+                                    node_sizes, edge_labels, edge_colors, output,
+                                    figsize=(6, 6)):
         """docstring for ."""
 
-        # TODO: implement
-        A = to_agraph(net_graphviz)
-        A.layout(layout_engine)
-        A.draw(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']))
+        fig = plt.figure(figsize=figsize)
+        ax = fig.gca()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+
+        pos = nx.nx_agraph.graphviz_layout(net_graphviz, prog=layout_engine)
+        nx.draw_networkx_nodes(net_graphviz, pos, node_color=node_colors,
+                            node_size=node_sizes)
+
+        nx.draw_networkx_labels(net_graphviz, pos,
+                      labels=node_labels, font_color='black') # , font_size=0.5
+
+        # draw network edges
+        # (node_size is given otherwise arrowheads are displaced)
+        nx.draw_networkx_edges(net_graphviz, pos, edge_color=edge_colors,
+                        arrowstyle='-|>') #, connectionstyle='arc3,rad=-0.3', arrowsize=6) # , node_size=node_size, alpha=edge_alpha)
+
+        # possible arrow styles that look nice
+        # '-|>' (default)
+        # '->'
+
+        nx.draw_networkx_edge_labels(net_graphviz, pos, edge_labels=edge_labels,
+                        label_pos=0.4)
+
+        # save/show figure
+        if self.plot_save:
+            plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
 
         if self.plot_show:
-            graphviz.Source(A).view()
+            plt.show()
+
+        # # graphviz version
+        # A = to_agraph(net_graphviz)
+        # A.layout(layout_engine)
+        # A.draw(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']))
+        #
+        # if self.plot_show:
+        #     graphviz.Source(A).view()
 
         # NOTE: use this somehow (arrow option for directed graphs in networkx)
         # nx.draw_networkx(G, arrows=True, **options)
@@ -117,19 +154,20 @@ class Plots(object):
         plt.rcdefaults()
         # plt.rcParams.update({'figure.autolayout': True})
         # plt.rcParams.update({'font.size': 16})
-        plt.rcParams['font.family'] = 'Helvetica Neue'
+        # plt.rcParams['font.family'] = 'Helvetica Neue' # uncommented 2020
         # plt.rcParams['font.weight'] = 'medium'
-        plt.rcParams['mathtext.fontset'] = 'custom'
-        plt.rcParams['mathtext.rm'] = 'Helvetica Neue'
-        plt.rcParams['mathtext.it'] = 'Helvetica Neue:italic'
+        # plt.rcParams['mathtext.fontset'] = 'custom' # uncommented 2020
+        # plt.rcParams['mathtext.rm'] = 'Helvetica Neue' # uncommented 2020
+        # plt.rcParams['mathtext.it'] = 'Helvetica Neue:italic' # uncommented 2020
         # plt.rcParams['mathtext.rm'] = 'Helvetica Neue:medium'
         # plt.rcParams['mathtext.it'] = 'Helvetica Neue:medium:italic'
 
         # use corner package for this plot
         fig = corner.corner(samples, labels=labels)
 
-        # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        # save/show figure
+        if self.plot_save:
+            plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
         if self.plot_show:
             plt.show(fig, block=False)
         plt.close(fig)
@@ -142,11 +180,11 @@ class Plots(object):
         plt.rcdefaults()
         # plt.rcParams.update({'figure.autolayout': True})
         # plt.rcParams.update({'font.size': 16})
-        plt.rcParams['font.family'] = 'Helvetica Neue'
+        # plt.rcParams['font.family'] = 'Helvetica Neue' # uncommented 2020
         # plt.rcParams['font.weight'] = 'medium'
-        plt.rcParams['mathtext.fontset'] = 'custom'
-        plt.rcParams['mathtext.rm'] = 'Helvetica Neue'
-        plt.rcParams['mathtext.it'] = 'Helvetica Neue:italic'
+        # plt.rcParams['mathtext.fontset'] = 'custom' # uncommented 2020
+        # plt.rcParams['mathtext.rm'] = 'Helvetica Neue' # uncommented 2020
+        # plt.rcParams['mathtext.it'] = 'Helvetica Neue:italic' # uncommented 2020
         # plt.rcParams['mathtext.rm'] = 'Helvetica Neue:medium'
         # plt.rcParams['mathtext.it'] = 'Helvetica Neue:medium:italic'
 
@@ -160,9 +198,10 @@ class Plots(object):
                                 title_fmt='.4f')
         fig.tight_layout()
 
-        # save figure
-        name = output['plot_name']
-        plt.savefig(output['output_folder'] + f'/{name}.pdf', bbox_inches='tight')
+        # save/show figure
+        if self.plot_save:
+            name = output['plot_name']
+            plt.savefig(output['output_folder'] + f'/{name}.pdf', bbox_inches='tight')
         if self.plot_show:
             plt.show(fig, block=False)
         plt.close(fig)
@@ -175,11 +214,11 @@ class Plots(object):
         plt.rcdefaults()
         # plt.rcParams.update({'figure.autolayout': True})
         # plt.rcParams.update({'font.size': 16})
-        plt.rcParams['font.family'] = 'Helvetica Neue'
+        # plt.rcParams['font.family'] = 'Helvetica Neue' # uncommented 2020
         # plt.rcParams['font.weight'] = 'medium'
-        plt.rcParams['mathtext.fontset'] = 'custom'
-        plt.rcParams['mathtext.rm'] = 'Helvetica Neue'
-        plt.rcParams['mathtext.it'] = 'Helvetica Neue:italic'
+        # plt.rcParams['mathtext.fontset'] = 'custom' # uncommented 2020
+        # plt.rcParams['mathtext.rm'] = 'Helvetica Neue' # uncommented 2020
+        # plt.rcParams['mathtext.it'] = 'Helvetica Neue:italic' # uncommented 2020
         # plt.rcParams['mathtext.rm'] = 'Helvetica Neue:medium'
         # plt.rcParams['mathtext.it'] = 'Helvetica Neue:medium:italic'
 
@@ -190,9 +229,10 @@ class Plots(object):
                              cmap='magma',
                              labels=params_labels)
 
-        # save figure
-        name = output['plot_name']
-        plt.savefig(output['output_folder'] + f'/{name}.pdf', bbox_inches='tight')
+        # save/show figure
+        if self.plot_save:
+            name = output['plot_name']
+            plt.savefig(output['output_folder'] + f'/{name}.pdf', bbox_inches='tight')
         if self.plot_show:
             plt.show(fig, block=False)
         plt.close(fig)
@@ -205,11 +245,11 @@ class Plots(object):
         plt.rcdefaults()
         # plt.rcParams.update({'figure.autolayout': True})
         # plt.rcParams.update({'font.size': 16})
-        plt.rcParams['font.family'] = 'Helvetica Neue'
-        plt.rcParams['font.weight'] = 'medium'
-        plt.rcParams['mathtext.fontset'] = 'custom'
-        plt.rcParams['mathtext.rm'] = 'Helvetica Neue:medium'
-        plt.rcParams['mathtext.it'] = 'Helvetica Neue:medium:italic'
+        # plt.rcParams['font.family'] = 'Helvetica Neue' # uncommented 2020
+        # plt.rcParams['font.weight'] = 'medium' # uncommented 2020
+        # plt.rcParams['mathtext.fontset'] = 'custom' # uncommented 2020
+        # plt.rcParams['mathtext.rm'] = 'Helvetica Neue:medium' # uncommented 2020
+        # plt.rcParams['mathtext.it'] = 'Helvetica Neue:medium:italic' # uncommented 2020
 
         num_it_segs = 14 # num_it_segs+1 plots will be plotted
         num_it_total = sampler_result.niter
@@ -230,9 +270,10 @@ class Plots(object):
                                     live_color='darkorange',
                                     labels=params_labels)
 
-            # save figure
-            name = output['plot_name']
-            plt.savefig(output['output_folder'] + f'/{name}_it{it_num}.pdf', bbox_inches='tight')
+            # save/show figure
+            if self.plot_save:
+                name = output['plot_name']
+                plt.savefig(output['output_folder'] + f'/{name}_it{it_num}.pdf', bbox_inches='tight')
             if self.plot_show:
                 plt.show(fig, block=False)
             plt.close(fig)
@@ -255,9 +296,10 @@ class Plots(object):
         fig, ax = dyplot.runplot(sampler_result,
                                 color='limegreen') # fig, axes =
 
-        # save figure
-        name = output['plot_name']
-        plt.savefig(output['output_folder'] + f'/{name}.pdf', bbox_inches='tight')
+        # save/show figure
+        if self.plot_save:
+            name = output['plot_name']
+            plt.savefig(output['output_folder'] + f'/{name}.pdf', bbox_inches='tight')
         if self.plot_show:
             plt.show(fig, block=False)
         plt.close(fig)
@@ -287,9 +329,10 @@ class Plots(object):
                              labels=params_labels,
                              title_fmt='.4f')
 
-        # save figure
-        name = output['plot_name']
-        plt.savefig(output['output_folder'] + f'/{name}.pdf', bbox_inches='tight')
+        # save/show figure
+        if self.plot_save:
+            name = output['plot_name']
+            plt.savefig(output['output_folder'] + f'/{name}.pdf', bbox_inches='tight')
         if self.plot_show:
             plt.show(fig, block=False)
         plt.close(fig)
@@ -326,9 +369,10 @@ class Plots(object):
         plt.xlabel('sample iteration')
         plt.ylabel('parameter value')
 
-        # save figure
-        name = output['plot_name']
-        plt.savefig(output['output_folder'] + f'/{name}.pdf', bbox_inches='tight')
+        # save/show figure
+        if self.plot_save:
+            name = output['plot_name']
+            plt.savefig(output['output_folder'] + f'/{name}.pdf', bbox_inches='tight')
         if self.plot_show:
             plt.show(fig, block=False)
         plt.close(fig)
@@ -465,8 +509,10 @@ class Plots(object):
         legend.get_frame().set_facecolor('white')
         legend.get_frame().set_edgecolor('lightgrey')
 
-        # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        # save/show figure
+        if self.plot_save:
+            plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+
         if self.plot_show:
             plt.show(fig, block=False)
         plt.close(fig)
@@ -538,8 +584,9 @@ class Plots(object):
         legend.get_frame().set_facecolor('white')
         legend.get_frame().set_edgecolor('lightgrey')
 
-        # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        # save/show figure
+        if self.plot_save:
+            plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
         if self.plot_show:
             plt.show(fig, block=False)
         plt.close(fig)
@@ -624,8 +671,9 @@ class Plots(object):
         legend.get_frame().set_facecolor('white')
         legend.get_frame().set_edgecolor('lightgrey')
 
-        # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        # save/show figure
+        if self.plot_save:
+            plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
         if self.plot_show:
             plt.show(fig, block=False)
         plt.close(fig)
@@ -722,8 +770,9 @@ class Plots(object):
         legend.get_frame().set_edgecolor('lightgrey')
         plt.legend(frameon=False)
 
-        # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        # save/show figure
+        if self.plot_save:
+            plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
         if self.plot_show:
             plt.show(fig, block=False)
         plt.close(fig)
@@ -819,8 +868,9 @@ class Plots(object):
         legend.get_frame().set_facecolor('white')
         legend.get_frame().set_edgecolor('lightgrey')
 
-        # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        # save/show figure
+        if self.plot_save:
+            plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
         if self.plot_show:
             plt.show(fig, block=False)
         plt.close(fig)
@@ -956,8 +1006,9 @@ class Plots(object):
             plt.xticks([i + 1 for i in range(y_arr_err.shape[0])],
                         [x_ticks[i] for i in range(y_arr_err.shape[0])], rotation=55)
 
-        # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        # save/show figure
+        if self.plot_save:
+            plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
         if self.plot_show:
             plt.show(fig, block=False)
         plt.close(fig)
@@ -1036,8 +1087,9 @@ class Plots(object):
         legend.get_frame().set_edgecolor('lightgrey')
         plt.legend(frameon=False)
 
-        # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        # save/show figure
+        if self.plot_save:
+            plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
         if self.plot_show:
             plt.show(fig, block=False)
         plt.close(fig)
@@ -1119,8 +1171,9 @@ class Plots(object):
         legend.get_frame().set_facecolor('white')
         legend.get_frame().set_edgecolor('lightgrey')
 
-        # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        # save/show figure
+        if self.plot_save:
+            plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
         if self.plot_show:
             plt.show(fig, block=False)
         plt.close(fig)
@@ -1199,8 +1252,9 @@ class Plots(object):
         legend.get_frame().set_facecolor('white')
         legend.get_frame().set_edgecolor('lightgrey')
 
-        # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        # save/show figure
+        if self.plot_save:
+            plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
         if self.plot_show:
             plt.show(fig, block=False)
         plt.close(fig)
@@ -1285,8 +1339,9 @@ class Plots(object):
         legend.get_frame().set_facecolor('white')
         legend.get_frame().set_edgecolor('lightgrey')
 
-        # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        # save/show figure
+        if self.plot_save:
+            plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
         if self.plot_show:
             plt.show(fig, block=False)
         plt.close(fig)
@@ -1327,7 +1382,8 @@ class Plots(object):
             legend.get_frame().set_edgecolor('lightgrey')
 
         # save figure
-        plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
+        if self.plot_save:
+            plt.savefig(output['output_folder'] + '/{0}.pdf'.format(output['plot_name']), bbox_inches='tight')
         if self.plot_show:
             plt.show(fig, block=False)
         plt.close(fig)
