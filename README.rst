@@ -13,6 +13,7 @@ An exact modelling framework for stochastic processes with and without **memo**\
 
 TODO:
 Package name ideas:
+
 *  Memopy
 *  Phasepy
 *  memoprocess (MemoProcess.jl)
@@ -20,9 +21,11 @@ Package name ideas:
 *  phaseprocess (PhaseProcess.jl)
 
 Consideration:
+
 *  maybe find a name that would also fit to potential Julia package
 
 Style guides:
+
 *  Python packages should also have short, all-lowercase names; the use of underscores is discouraged
 *  Julia: `see here <https://github.com/JuliaPraxis/Naming/blob/master/guides/PackagesAndModules.md>`_
 
