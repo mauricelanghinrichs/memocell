@@ -151,7 +151,6 @@ class Plots(object):
     def samples_corner(self, samples, labels, output):
         """docstring for ."""
         # initialise figure
-        plt.rcdefaults()
         # plt.rcParams.update({'figure.autolayout': True})
         # plt.rcParams.update({'font.size': 16})
         # plt.rcParams['font.family'] = 'Helvetica Neue' # uncommented 2020
@@ -177,7 +176,6 @@ class Plots(object):
     def samples_cornerkernel(self, sampler_result, params_labels, output):
         """docstring for ."""
 
-        plt.rcdefaults()
         # plt.rcParams.update({'figure.autolayout': True})
         # plt.rcParams.update({'font.size': 16})
         # plt.rcParams['font.family'] = 'Helvetica Neue' # uncommented 2020
@@ -211,7 +209,6 @@ class Plots(object):
     def samples_cornerpoints(self, sampler_result, params_labels, output):
         """docstring for ."""
 
-        plt.rcdefaults()
         # plt.rcParams.update({'figure.autolayout': True})
         # plt.rcParams.update({'font.size': 16})
         # plt.rcParams['font.family'] = 'Helvetica Neue' # uncommented 2020
@@ -222,8 +219,8 @@ class Plots(object):
         # plt.rcParams['mathtext.rm'] = 'Helvetica Neue:medium'
         # plt.rcParams['mathtext.it'] = 'Helvetica Neue:medium:italic'
 
-        fig = plt.figure()
-        ax = fig.gca()
+        # fig = plt.figure()
+        # ax = fig.gca()
 
         fig, axes = dyplot.cornerpoints(sampler_result,
                              cmap='magma',
@@ -242,7 +239,6 @@ class Plots(object):
     def samples_cornerbounds(self, sampler_result, params_labels, prior_transform, output):
         """docstring for ."""
 
-        plt.rcdefaults()
         # plt.rcParams.update({'figure.autolayout': True})
         # plt.rcParams.update({'font.size': 16})
         # plt.rcParams['font.family'] = 'Helvetica Neue' # uncommented 2020
@@ -259,8 +255,8 @@ class Plots(object):
             it_num = int( it_plot * num_it_total / float(num_it_segs - 1))
             it_num = min(num_it_total, it_num)
 
-            fig = plt.figure()
-            ax = fig.gca()
+            # fig = plt.figure()
+            # ax = fig.gca()
 
             fig, axes = dyplot.cornerbound(sampler_result,
                                     it=it_num,
@@ -286,12 +282,12 @@ class Plots(object):
         # plt.rcParams['axes.titleweight'] = 'medium'
         # plt.rcParams['axes.titlesize'] = 14
 
-        fig = plt.figure()
-        ax = fig.gca()
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['bottom'].set_visible(True)
-        ax.spines['left'].set_visible(True)
+        # fig = plt.figure()
+        # ax = fig.gca()
+        # ax.spines['top'].set_visible(False)
+        # ax.spines['right'].set_visible(False)
+        # ax.spines['bottom'].set_visible(True)
+        # ax.spines['left'].set_visible(True)
 
         fig, ax = dyplot.runplot(sampler_result,
                                 color='limegreen') # fig, axes =
@@ -312,12 +308,12 @@ class Plots(object):
         # plt.rcParams['axes.titleweight'] = 'medium'
         # plt.rcParams['axes.titlesize'] = 14
 
-        fig = plt.figure()
-        ax = fig.gca()
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['bottom'].set_visible(True)
-        ax.spines['left'].set_visible(True)
+        # fig = plt.figure()
+        # ax = fig.gca()
+        # ax.spines['top'].set_visible(False)
+        # ax.spines['right'].set_visible(False)
+        # ax.spines['bottom'].set_visible(True)
+        # ax.spines['left'].set_visible(True)
 
         fig, axes = dyplot.traceplot(sampler_result,
                              show_titles=True,
@@ -326,8 +322,8 @@ class Plots(object):
                              trace_cmap='magma',
                              connect=True,
                              connect_highlight=range(5),
-                             labels=params_labels,
-                             title_fmt='.4f')
+                             labels=params_labels #, title_fmt='.4f'
+                             )
 
         # save/show figure
         if self.plot_save:
@@ -564,7 +560,7 @@ class Plots(object):
             var_color = var_attributes[var_ind][1]
 
             plt.plot(x_arr, y_line[var_ind, :], label=var_name,
-                            color=var_color, linewidth=2, zorder=2000)
+                            color=var_color, linewidth=2.5, zorder=2000)
 
         # text_box if provided
         if text_box!=None:
@@ -656,7 +652,7 @@ class Plots(object):
             ax.fill_between(x_arr, y_lower[var_ind, :], y_upper[var_ind, :],
                             color=var_color, alpha=0.5, linewidth=0.0, zorder=1000)
             plt.plot(x_arr, y_line[var_ind, :], label=var_name,
-                            color=var_color, linewidth=3, zorder=2000)
+                            color=var_color, linewidth=2.5, zorder=2000)
 
         # final axis setting
         ax.set_xlim(self.x_lim)
@@ -751,10 +747,10 @@ class Plots(object):
             #             markeredgewidth=2, markersize=3, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
             # paper version
             plt.plot(x_arr_line, y_line[var_ind, :], label=var_name,
-                            color=var_color, linewidth=0.7, zorder=3000)
+                            color=var_color, linewidth=2.5, zorder=3000)
             plt.errorbar(x_arr_dots, y_dots_err[var_ind, :, 0], yerr=y_dots_err[var_ind, :, 1],
-                        fmt='o', capsize=0.7, elinewidth=0.7, #label='data' if var_ind==0 else '',
-                        markeredgewidth=0.7, markersize=1.0, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
+                        fmt='o', capsize=4.0, elinewidth=2.5, #label='data' if var_ind==0 else '',
+                        markeredgewidth=2.5, markersize=4.5, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
 
         # final axis setting
         ax.set_xlim(self.x_lim)
@@ -850,7 +846,7 @@ class Plots(object):
             ax.fill_between(x_arr_line, y_lower[var_ind, :], y_upper[var_ind, :],
                             color=var_color, alpha=0.5, linewidth=0.0, zorder=1000)
             plt.plot(x_arr_line, y_line[var_ind, :], label=var_name,
-                            color=var_color, linewidth=3, zorder=3000)
+                            color=var_color, linewidth=2.5, zorder=3000)
             plt.errorbar(x_arr_dots, y_dots_err[var_ind, :, 0], yerr=y_dots_err[var_ind, :, 1],
                         fmt='o', capsize=4.0, elinewidth=2.5, #label='data' if var_ind==0 else '',
                         markeredgewidth=2.5, markersize=4.5, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
