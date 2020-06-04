@@ -121,26 +121,25 @@ class Estimation(object):
     def estimate(self, network_setup, mcmc_setup):
         """docstring for ."""
 
-        # for progress bar
-        total_sampling_steps = 1
-        with tqdm(total=total_sampling_steps, desc='{est: <{width}}'.format(est=self.est_name, width=16), position=self.est_iter+1) as pbar:
+        # # for progress bar
+        # total_sampling_steps = 1
+        # with tqdm(total=total_sampling_steps, desc='{est: <{width}}'.format(est=self.est_name, width=16), position=self.est_iter+1) as pbar:
 
-            # initialise estimation
-            # (set up network, simulation and sampling properties)
-            self.initialise_estimation(network_setup, mcmc_setup)
+        # initialise estimation
+        # (set up network, simulation and sampling properties)
+        self.initialise_estimation(network_setup, mcmc_setup)
 
-            # execute the sampling for the estimation of parameters and model evidence
-            self.run_estimation()
+        # execute the sampling for the estimation of parameters and model evidence
+        self.run_estimation()
 
-            # print(f"""results:\n
-            # \t theta confidence: {self.bay_est_params_conf}\n
-            # \t theta medians: {self.bay_est_params_median}\n
-            # \t log evidence: {self.bay_est_log_evidence}\n
-            # \t log evidence error: {self.bay_est_log_evidence_error}""")
+        # print(f"""results:\n
+        # \t theta confidence: {self.bay_est_params_conf}\n
+        # \t theta medians: {self.bay_est_params_median}\n
+        # \t log evidence: {self.bay_est_log_evidence}\n
+        # \t log evidence error: {self.bay_est_log_evidence_error}""")
 
-
-            # update progress bar (there is just not done or done (0/1 or 1/1 steps))
-            pbar.update(1)
+        # # update progress bar (there is just not done or done (0/1 or 1/1 steps))
+        # pbar.update(1)
 
 
     def run_estimation(self):

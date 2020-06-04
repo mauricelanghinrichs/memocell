@@ -13,11 +13,11 @@ from .estimation import Estimation
 
 # import python modules
 import numpy as np
-from multiprocessing import Pool, freeze_support, RLock
-from tqdm import tqdm
+from multiprocessing import Pool
+from tqdm.autonotebook import tqdm
 
 
-def select_models(input_dict, multiprocessing={'do': True, 'num_processes': None}):
+def select_models(input_dict, parallel={'do': True, 'num_processes': None}):
     """docstring for ."""
     ### this is the top-level function of this script to handle the set of
     ### networks/models for parameter and evidence estimation;
@@ -36,6 +36,13 @@ def select_models(input_dict, multiprocessing={'do': True, 'num_processes': None
 
     # load information of the set of models
     d_model_set = input_dict['model_set']
+
+    # # load progress bar for current environment (jupyter or terminal)
+    # if input_dict['progress_bar_env']=='jupyter':
+    #     tqdm_version = tqdm.notebook.tqdm_notebook
+    # elif input_dict['progress_bar_env']=='terminal':
+    #     tqdm_version = tqdm.std.tqdm
+
 
     # create input variable 'input_var' (in net_estimation fct) that is stored in
     # 'pool_inputs' for the parallelised loop over the networks
@@ -62,35 +69,39 @@ def select_models(input_dict, multiprocessing={'do': True, 'num_processes': None
 
     # if __name__ == '__main__': # TODO: is this needed somewhere?
     # parallelised version
-    if multiprocessing['do']:
+    if parallel['do']:
         # read out number of processes (None if mp.cpu_count() should be used)
-        num_processes = multiprocessing['num_processes']
+        num_processes = parallel['num_processes']
 
-        # for progress bars
-        freeze_support()
+        with Pool(processes=num_processes) as p:
 
-        # create a pool for multiprocessing to run the estimation for the models
-        # this automatically searches for the maximal possible computer cores to use
-        pool = Pool(processes=num_processes,
-                    # for progress bars
-                    initargs=(RLock(),), initializer=tqdm.set_lock)
+            results = list(tqdm(p.imap(net_estimation, pool_inputs), total=len(pool_inputs)))
 
-        # in parallelised loop, run for each network (item in pool_inputs) the net_estimation funtion
-        # 'results' receives the original order
-        results = pool.map(net_estimation, pool_inputs)
-
-        # for the correct spacing of progress bars
-        print('\n' * (len(pool_inputs) + 1))
+        # # for progress bars
+        # freeze_support()
+        #
+        # # create a pool for multiprocessing to run the estimation for the models
+        # # this automatically searches for the maximal possible computer cores to use
+        # pool = Pool(processes=num_processes,
+        #             # for progress bars
+        #             initargs=(RLock(),), initializer=tqdm.set_lock)
+        #
+        # # in parallelised loop, run for each network (item in pool_inputs) the net_estimation funtion
+        # # 'results' receives the original order
+        # results = pool.map(net_estimation, pool_inputs)
+        #
+        # # for the correct spacing of progress bars
+        # print('\n' * (len(pool_inputs) + 1))
 
     # unparallelised version
     # NOTE: turning off multiprocessing might facilitate debugging
     else:
         results = list()
-        for input_var in pool_inputs:
+        for input_var in tqdm(pool_inputs):
             results.append(net_estimation(input_var))
 
-        # for the correct spacing of progress bars
-        print('\n' * (len(pool_inputs) + 1))
+        # # for the correct spacing of progress bars
+        # print('\n' * (len(pool_inputs) + 1))
     return results
 
 
