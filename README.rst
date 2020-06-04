@@ -51,4 +51,4 @@ Authors
 -------
 
 Memopy was written and developed by `Maurice Langhinrichs <m.langhinrichs@icloud.com>`_ and
-``Lisa Buchauer [TODO: permanent mail here?]`` `@TSB <https://www.dkfz.de/en/modellierung-biologischer-systeme/>`_.
+`Lisa Buchauer <lisa.buchauer@posteo.de>`_ `@TSB <https://www.dkfz.de/en/modellierung-biologischer-systeme/>`_.
