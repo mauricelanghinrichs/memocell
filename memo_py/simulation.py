@@ -404,10 +404,10 @@ class Simulation(object):
         if isinstance(initial_values, dict):
             if set(net_nodes_identifier.values()) - set(['env']) == set(initial_values.keys()):
                 if ((simulation_type=='gillespie' and all(isinstance(val, int) for val in initial_values.values())) or
-                    (simulation_type=='moments' and all(isinstance(val, float) for val in initial_values.values()))):
+                    (simulation_type=='moments' and all(isinstance(val, float) or isinstance(val, int) for val in initial_values.values()))):
                     pass
                 else:
-                    raise ValueError('Initial values are expected to provide integer or float values for Gillespie or Moment simulations, respectively.')
+                    raise ValueError('Initial values are expected to provide integer or float/integer values for Gillespie or Moment simulations, respectively.')
             else:
                 raise ValueError('Initial values are expected to provide a set of keys identical to the nodes of the main network.')
         else:
