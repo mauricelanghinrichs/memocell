@@ -7,7 +7,7 @@ This package can be used under the MIT License (MIT), see `LICENSE file on Githu
 Authors
 =======
 
-Memopy was written and developed by `Maurice Langhinrichs <m.langhinrichs@icloud.com>`_ and ``Lisa Buchauer [TODO: permanent mail here?]`` `@TSB <https://www.dkfz.de/en/modellierung-biologischer-systeme/>`_.
+Memopy was written and developed by `Maurice Langhinrichs <m.langhinrichs@icloud.com>`_ and `Lisa Buchauer <lisa.buchauer@posteo.de>`_ `@TSB <https://www.dkfz.de/en/modellierung-biologischer-systeme/>`_.
 
 Citation
 ========
