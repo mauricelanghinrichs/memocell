@@ -1,5 +1,7 @@
 # User
 *.DS_Store
+*.pickle
+*.pdf
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
