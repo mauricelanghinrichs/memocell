@@ -137,6 +137,56 @@ def net_estimation(input_var):
     return est
 
 
+def compute_model_probabilities(estimation_instances):
+    """docstring for ."""
+    ### compute probability distribution p(M | D) (probabilities of the models M
+    ### given the data D), assuming uniform model prior; based on Bayes theorem
+    ### p(M | D) = p(D | M) * p(M) / p(D), with model prior p(M)=1/n (n being
+    ### the number of models); NOTE: a model probability depends on the set
+    ### of tested models, while a model evidence p(D | M) is independent of
+    ### the set of other tested models
+
+    # see Goodnotes (bayes_model_distr); an alternative calculation
+    # can be based on the Bayes factors (with respect to the best model)
+
+    # read out evidence list
+    logevids = np.array([est.bay_est_log_evidence for est in estimation_instances])
+
+    # log model prior (log of model number)
+    # assuming uniform model prior
+    logmprior = - np.log(logevids.shape[0])
+
+    # calculate normalising factor p(D)
+    logpdata = np.log(np.sum(np.exp(logevids))) + logmprior
+
+    # calculate model probabilities
+    probs = np.exp(logevids + logmprior - logpdata)
+
+    # check if probabilities sum to 1.0 (within default tolerances),
+    # otherwise raise warning
+    if not np.isclose(np.array([1.0]), np.sum(probs))[0]:
+        warnings.warn('Probabilities do not sum to one.')
+
+    return probs
+
+
+def compute_model_bayes_factors(estimation_instances):
+    """docstring for ."""
+    ### compute the Bayes factors K's with respect to the overall best model
+    ### from estimation_instances following formula K = p(D | M1) / p(D | M2),
+    ### where M1 is the best model, M2 a second model and D the data
+
+    # read out evidence list
+    logevids = np.array([est.bay_est_log_evidence for est in estimation_instances])
+
+    # get best logevid
+    logevidbest = np.max(logevids)
+
+    # calculate bayes factors
+    bayesf = np.exp(logevidbest - logevids)
+    return bayesf
+
+
 ### for plotting routines
 def dots_w_bars_evidence(estimation_instances, settings):
     """docstring for ."""
