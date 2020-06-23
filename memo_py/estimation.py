@@ -527,22 +527,22 @@ class Estimation(object):
         num_sim_ensemble = max(num_sim_ensemble, 5000)
 
         # raise warning if posterior samples are less than drawn samples for sim_ensemble
-        if self.bay_est_samples_temp1.shape[0]<=num_sim_ensemble:
+        if self.bay_est_samples_weighted.shape[0]<=num_sim_ensemble:
             warnings.warn(f'There are less than {num_sim_ensemble} parameter posterior samples to compute model confidence bands from. Consider increasing depth of MCMC sampling.')
 
 
         # recompute the model simulations for a random selection of posterior sample
         # i.e. we obtain different model trajectories according to the parameter posterior distribution
-        inds = np.array(range(0, self.bay_est_samples_temp1.shape[0]))
+        inds = np.array(range(0, self.bay_est_samples_weighted.shape[0]))
         inds_random_selection = np.random.choice(inds, size=(num_sim_ensemble), replace=True)
-        theta_ensemble = self.bay_est_samples_temp1[inds_random_selection, :]
+        theta_ensemble = self.bay_est_samples_weighted[inds_random_selection, :]
 
         sim_ensemble = [self.net_simulation.simulate(self.net_simulation_type, self.net_initial_values,
-                                                                        theta, self.data_time_values_dense,
-                                                                        self.net_simulation.sim_variables,
-                                                                        moment_mean_only=self.net_simulation_mean_only,
-                                                                        estimate_mode=self.net_simulation_estimate_mode)
-                                                                        for theta in theta_ensemble]
+                                                                theta, self.data_time_values_dense,
+                                                                self.net_simulation.sim_variables,
+                                                                moment_mean_only=self.net_simulation_mean_only,
+                                                                estimate_mode=self.net_simulation_estimate_mode)
+                                                                for theta in theta_ensemble]
 
         # then we compute the statistic of the sampled trajectories (means, variances, covariances)
         # and the corresponding 2.5th and 97.5th percentiles for 95%-confidence band (both for all time points)
