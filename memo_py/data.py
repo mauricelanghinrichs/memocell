@@ -609,11 +609,11 @@ class Data(object):
         y_arr_err = np.array(y_list_err)
         return y_arr_err, x_ticks, attributes
 
-    def scatter_at_time_point(self, time_ind, settings):
+    def scatter_at_time_point(self, variable1, variable2, time_ind, settings):
         """docstring for ."""
 
-        var_ind_x = self.data_variables.index(settings['variables'][0])
-        var_ind_y = self.data_variables.index(settings['variables'][1])
+        var_ind_x = self.data_variables.index(variable1)
+        var_ind_y = self.data_variables.index(variable2)
 
         x_arr = self.data_counts[:, var_ind_x, time_ind]
         y_arr = self.data_counts[:, var_ind_y, time_ind]
@@ -625,13 +625,12 @@ class Data(object):
 
         return x_arr, y_arr, attributes
 
-    def histogram_continuous_event_waiting_times(self, settings):
+    def histogram_continuous_event_waiting_times(self, event_results, settings):
         """docstring for ."""
 
         bar_attributes = dict()
         bar_list = list()
 
-        event_results = settings['event']
         tau_list = [event_tau for event_bool, event_tau in event_results if event_bool]
         bar_arr = np.array(tau_list).reshape(len(tau_list), 1)
 
@@ -644,13 +643,12 @@ class Data(object):
 
         return bar_arr, bar_attributes
 
-    def histogram_continuous_event_waiting_times_w_gamma_fit(self, settings):
+    def histogram_continuous_event_waiting_times_w_gamma_fit(self, event_results, settings):
         """docstring for ."""
 
         bar_attributes = dict()
         bar_list = list()
 
-        event_results = settings['event']
         tau_list = [event_tau for event_bool, event_tau in event_results if event_bool]
         bar_arr = np.array(tau_list).reshape(len(tau_list), 1)
 
@@ -665,7 +663,8 @@ class Data(object):
             # compute Gamma distr. fit
             self.gamma_fit_binned_waiting_times(bar_arr)
             gamma_fit_shape, gamma_fit_scale = self.gamma_fit_theta
-            print(gamma_fit_shape, gamma_fit_scale)
+            print('gamma_fit_shape: ', gamma_fit_shape, '\n',
+                    'gamma_fit_scale: ', gamma_fit_scale)
 
             y_line_arr = stats.gamma.pdf(x_line_arr, a=gamma_fit_shape, loc=0.0, scale=gamma_fit_scale)
 

@@ -281,45 +281,74 @@ class Network(object):
         # NOTE: see git before June 2020 for old graphviz code here
 
         # set layout_engine for main networks
-        layout_engine = 'neato' # 'dot', 'neato', 'circo'
+        layout_engine = 'dot' # 'dot', 'neato', 'circo'
 
         # deepcopy network to have a copy for creating the graphviz network
         net_main_graphviz = deepcopy(self.net_main)
 
-        # instantiate lists for adding information
-        node_labels = dict()
-        node_colors = list()
-        node_sizes = 300 # networkx default
+        ### plotting via networkx
+        # # instantiate lists for adding information
+        # node_labels = dict()
+        # node_colors = list()
+        # node_sizes = 300 # networkx default
+        #
+        # edge_labels = dict()
+        # edge_colors = list()
+        ###
 
-        edge_labels = dict()
-        edge_colors = list()
+        ### plotting via graphviz
+        net_main_graphviz.graph['graph'] = {'pad': 0.5, 'nodesep': 0.3}
+        net_main_graphviz.graph['node'] = {'shape': 'circle'}
+        ###
 
         # node settings
         for node in net_main_graphviz.nodes():
-            node_labels[node] = node_settings[self.net_nodes_identifier[node]]['label']
-            node_colors.append(node_settings[self.net_nodes_identifier[node]]['color'])
+            ### plotting via networkx
+            # node_labels[node] = node_settings[self.net_nodes_identifier[node]]['label']
+            # node_colors.append(node_settings[self.net_nodes_identifier[node]]['color'])
+            ###
 
-            # net_main_graphviz.nodes[node]['fillcolor'] = node_settings[self.net_nodes_identifier[node]]['color']
-            # node_label = node_settings[self.net_nodes_identifier[node]]['label']
-            # net_main_graphviz.nodes[node]['label'] = node_label # f'<<I>{node_label}</I>>' # html based italic
-            # net_main_graphviz.nodes[node]['fontsize'] = node_settings[self.net_nodes_identifier[node]]['fontsize']
+            ### plotting via graphviz
+            net_main_graphviz.nodes[node]['color'] = 'white'
+            net_main_graphviz.nodes[node]['style'] = 'filled'
+            net_main_graphviz.nodes[node]['fixedsize'] = 'true'
+            # net_main_graphviz.nodes[node]['margin'] = 0.01 # if fixedsize is 'false', this might be interesting
+            net_main_graphviz.nodes[node]['height'] = 0.4
+            net_main_graphviz.nodes[node]['fillcolor'] = node_settings[self.net_nodes_identifier[node]]['color']
+            net_main_graphviz.nodes[node]['fontsize'] = 11
+            net_main_graphviz.nodes[node]['fontname'] = 'Helvetica'
+            net_main_graphviz.nodes[node]['label'] = node_settings[self.net_nodes_identifier[node]]['label'] # f'<<I>{node_label}</I>>' # html based italic
+            ###
 
         # edge settings
         for node1_id, node2_id, edge_inf in net_main_graphviz.edges(data=True):
             edge = (node1_id, node2_id)
 
             sym_rate = edge_inf['module_rate_symbol']
-            edge_labels[edge] = edge_settings[sym_rate]['label']
-
+            edge_label = edge_settings[sym_rate]['label']
             edge_color = edge_settings[sym_rate]['color']
+            module_steps = edge_inf['module_steps']
+
+            ### plotting via networkx
+            # edge_labels[edge] = edge_label
+            # if edge_color!=None:
+            #     edge_colors.append(edge_color)
+            # else:
+            #     edge_colors.append('black')
+            ###
+
+            ### plotting via graphviz
+            net_main_graphviz.edges[edge]['label'] = f'<  ({edge_label}, {module_steps})  >'
+            net_main_graphviz.edges[edge]['fontsize'] = 11
+            net_main_graphviz.edges[edge]['fontname'] = 'Helvetica'
+
             if edge_color!=None:
-                edge_colors.append(edge_color)
+                net_main_graphviz.edges[edge]['color'] = edge_color
             else:
-                edge_colors.append('black')
+                net_main_graphviz.edges[edge]['color'] = 'black'
+            ###
 
-
-
-        return (net_main_graphviz, layout_engine, node_labels, node_colors, node_sizes, edge_labels, edge_colors)
+        return (net_main_graphviz, layout_engine)
 
     def draw_hidden_network_graph(self, node_settings, edge_settings):
         """docstring for ."""
@@ -331,13 +360,20 @@ class Network(object):
         # deepcopy network to have a copy for creating the graphviz network
         net_hidden_graphviz = deepcopy(self.net_hidden)
 
-        # instantiate lists for adding information
-        node_labels = dict()
-        node_colors = list()
-        node_sizes = list()
+        ### plotting via networkx
+        # # instantiate lists for adding information
+        # node_labels = dict()
+        # node_colors = list()
+        # node_sizes = list()
+        #
+        # edge_labels = dict()
+        # edge_colors = list()
+        ###
 
-        edge_labels = dict()
-        edge_colors = list()
+        ### plotting via graphviz
+        net_hidden_graphviz.graph['graph'] = {'pad': 0.5, 'nodesep': 0.1}
+        net_hidden_graphviz.graph['node'] = {'shape': 'circle'}
+        ###
 
         # node settings
         for node in net_hidden_graphviz.nodes():
@@ -345,13 +381,32 @@ class Network(object):
             node_main = node.split('__')[0]
             node_centric = node.split('__')[1]=='centric'
 
-            node_colors.append(node_settings[self.net_nodes_identifier[node_main]]['color'])
+            ### plotting via networkx
+            # node_colors.append(node_settings[self.net_nodes_identifier[node_main]]['color'])
+            # if node_centric:
+            #     node_labels[node] = node_settings[self.net_nodes_identifier[node_main]]['label']
+            #     node_sizes.append(300) # networkx default
+            # else:
+            #     node_labels[node] = node.split('__')[2]
+            #     node_sizes.append(200) # networkx default
+            ###
+
+            ### plotting graphviz
+            net_hidden_graphviz.nodes[node]['color'] = 'white'
+            net_hidden_graphviz.nodes[node]['style'] = 'filled'
+            net_hidden_graphviz.nodes[node]['fixedsize'] = 'true'
+            # net_hidden_graphviz.nodes[node]['margin'] = 0.01 # if fixedsize is 'false', this might be interesting
+            net_hidden_graphviz.nodes[node]['fillcolor'] = node_settings[self.net_nodes_identifier[node_main]]['color']
+            net_hidden_graphviz.nodes[node]['fontsize'] = 10
+            net_hidden_graphviz.nodes[node]['fontname'] = 'Helvetica'
+
             if node_centric:
-                node_labels[node] = node_settings[self.net_nodes_identifier[node_main]]['label']
-                node_sizes.append(300) # networkx default
+                net_hidden_graphviz.nodes[node]['height'] = 0.3
+                net_hidden_graphviz.nodes[node]['label'] = node_settings[self.net_nodes_identifier[node_main]]['label'] # f'<<I>{node_label}</I>>' # html based italic
             else:
-                node_labels[node] = node.split('__')[2]
-                node_sizes.append(200) # networkx default
+                net_hidden_graphviz.nodes[node]['height'] = 0.2
+                net_hidden_graphviz.nodes[node]['label'] = node.split('__')[2]
+            ###
 
         # edge settings
         for node1_id, node2_id, edge_inf in net_hidden_graphviz.edges(data=True):
@@ -360,17 +415,34 @@ class Network(object):
             sym_rate = edge_inf['module_rate_symbol']
             module_steps = edge_inf['module_steps']
             edge_label = edge_settings[sym_rate]['label']
+            edge_color = edge_settings[sym_rate]['color']
+
+            ### plotting via networkx
+            # if edge_label!='':
+            #     edge_labels[edge] = f' {module_steps} {edge_label} ' # f'<<I>{edge_label}</I>>' # html based italic
+            #
+            # if edge_color!=None:
+            #     edge_colors.append(edge_color)
+            # else:
+            #     edge_colors.append('black')
+            ###
+
+            ### plotting via graphviz
+            net_hidden_graphviz.edges[edge]['weight'] = 4.0
+            net_hidden_graphviz.edges[edge]['arrowsize'] = 0.5
 
             if edge_label!='':
-                edge_labels[edge] = f' {module_steps} {edge_label} ' # f'<<I>{edge_label}</I>>' # html based italic
+                net_hidden_graphviz.edges[edge]['label'] = f'< {module_steps} {edge_label} >'
+                net_hidden_graphviz.edges[edge]['fontsize'] = 10
+                net_hidden_graphviz.edges[edge]['fontname'] = 'Helvetica'
 
-            edge_color = edge_settings[sym_rate]['color']
             if edge_color!=None:
-                edge_colors.append(edge_color)
+                net_hidden_graphviz.edges[edge]['color'] = edge_color
             else:
-                edge_colors.append('black')
+                net_hidden_graphviz.edges[edge]['color'] = 'black'
+            ###
 
-        return (net_hidden_graphviz, layout_engine, node_labels, node_colors, node_sizes, edge_labels, edge_colors)
+        return (net_hidden_graphviz, layout_engine)
 
     ###
 

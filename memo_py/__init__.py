@@ -13,4 +13,4 @@ from .simulation import Simulation
 from .data import Data
 from .estimation import Estimation
 from .selection import select_models
-from .plots import Plots
+from . import plots
