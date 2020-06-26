@@ -4,7 +4,7 @@ import scipy.stats as stats
 import scipy.optimize as optimize
 
 class Data(object):
-    """docstring for ."""
+    """docstring for . TEST TEST"""
 
     def __init__(self, data_name):
 

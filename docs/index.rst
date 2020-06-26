@@ -19,3 +19,4 @@ Content
    usage
    various
    dev_docs
+   api
