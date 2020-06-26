@@ -33,7 +33,27 @@ __all__ = ["net_main_plot", "net_hidden_plot",
 
 def net_main_plot(net, node_settings=None, edge_settings=None,
                                             layout=None, show=True, save=None):
-    """docstring for ."""
+    """Plot the main layer of a network.
+
+    Parameters
+    ----------
+    net : memo_py.network.Network
+        A memo_py network object.
+    node_settings : dict of dict, optional
+        Optional label and color settings for the network nodes.
+    edge_settings : dict of dict, optional
+        Optional label and color settings for the network edges.
+    layout : None or str, optional
+        Specify layout engine for computing node positions; e.g. 'dot', 'neato', 'circo'.
+    show : bool, optional
+        Network plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default node settings
     if node_settings==None:
@@ -68,7 +88,27 @@ def net_main_plot(net, node_settings=None, edge_settings=None,
 
 def net_hidden_plot(net, node_settings=None, edge_settings=None,
                                             layout=None, show=True, save=None):
-    """docstring for ."""
+    """Plot the hidden layer of a network.
+
+    Parameters
+    ----------
+    net : memo_py.network.Network
+        A memo_py network object.
+    node_settings : dict of dict, optional
+        Optional label and color settings for the network nodes.
+    edge_settings : dict of dict, optional
+        Optional label and color settings for the network edges.
+    layout : None or str, optional
+        Specify layout engine for computing node positions; e.g. 'dot', 'neato', 'circo'.
+    show : bool, optional
+        Network plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default node settings
     if node_settings==None:
@@ -105,7 +145,36 @@ def sim_counts_plot(sim, settings=None,
                     x_label='Time', x_lim=None, x_log=False,
                     y_label='Counts', y_lim=None, y_log=False,
                     show=True, save=None):
-    """docstring for ."""
+    """Plot the variable count for a given simulation.
+
+    Parameters
+    ----------
+    sim : memo_py.simulation.Simulation
+        A memo_py simulation object that contains a Gillespie simulation.
+    settings : dict of dict, optional
+        Optional label and color settings for the simulation variables.
+    x_label : str, optional
+        Label for x-axis.
+    x_lim : None or tuple of floats, optional
+        Specify x-axis limits.
+    x_log : bool, optional
+        Logarithmic x-axis if `x_log=True`.
+    y_label : str, optional
+        Label for y-axis.
+    y_lim : None or tuple of floats, optional
+        Specify y-axis limits.
+    y_log : bool, optional
+        Logarithmic y-axis if `y_log=True`.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -125,14 +194,41 @@ def sim_counts_plot(sim, settings=None,
                     y_label=y_label, y_lim=y_lim, y_log=y_log,
                     show=show, save=save)
 
-    pass
-
 
 def sim_mean_plot(sim, settings=None,
                     x_label='Time', x_lim=None, x_log=False,
                     y_label='Mean', y_lim=None, y_log=False,
                     show=True, save=None):
-    """docstring for ."""
+    """Plot the mean (or expectation) dynamics of a given simulation.
+
+    Parameters
+    ----------
+    sim : memo_py.simulation.Simulation
+        A memo_py simulation object that contains a moment simulation.
+    settings : dict of dict, optional
+        Optional label and color settings for the mean traces.
+    x_label : str, optional
+        Label for x-axis.
+    x_lim : None or tuple of floats, optional
+        Specify x-axis limits.
+    x_log : bool, optional
+        Logarithmic x-axis if `x_log=True`.
+    y_label : str, optional
+        Label for y-axis.
+    y_lim : None or tuple of floats, optional
+        Specify y-axis limits.
+    y_log : bool, optional
+        Logarithmic y-axis if `y_log=True`.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -157,7 +253,36 @@ def sim_variance_plot(sim, settings=None,
                     x_label='Time', x_lim=None, x_log=False,
                     y_label='Variance', y_lim=None, y_log=False,
                     show=True, save=None):
-    """docstring for ."""
+    """Plot the variance dynamics of a given simulation.
+
+    Parameters
+    ----------
+    sim : memo_py.simulation.Simulation
+        A memo_py simulation object that contains a moment simulation.
+    settings : dict of dict, optional
+        Optional label and color settings for the variance traces.
+    x_label : str, optional
+        Label for x-axis.
+    x_lim : None or tuple of floats, optional
+        Specify x-axis limits.
+    x_log : bool, optional
+        Logarithmic x-axis if `x_log=True`.
+    y_label : str, optional
+        Label for y-axis.
+    y_lim : None or tuple of floats, optional
+        Specify y-axis limits.
+    y_log : bool, optional
+        Logarithmic y-axis if `y_log=True`.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -183,7 +308,36 @@ def sim_covariance_plot(sim, settings=None,
                     x_label='Time', x_lim=None, x_log=False,
                     y_label='Covariance', y_lim=None, y_log=False,
                     show=True, save=None):
-    """docstring for ."""
+    """Plot the covariance dynamics of a given simulation.
+
+    Parameters
+    ----------
+    sim : memo_py.simulation.Simulation
+        A memo_py simulation object that contains a moment simulation.
+    settings : dict of dict, optional
+        Optional label and color settings for the covariance traces.
+    x_label : str, optional
+        Label for x-axis.
+    x_lim : None or tuple of floats, optional
+        Specify x-axis limits.
+    x_log : bool, optional
+        Logarithmic x-axis if `x_log=True`.
+    y_label : str, optional
+        Label for y-axis.
+    y_lim : None or tuple of floats, optional
+        Specify y-axis limits.
+    y_log : bool, optional
+        Logarithmic y-axis if `y_log=True`.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -209,7 +363,35 @@ def data_mean_plot(data, settings=None,
                     x_label='Time', x_lim=None, x_log=False,
                     y_label='Mean', y_lim=None, y_log=False,
                     show=True, save=None):
-    """docstring for ."""
+    """Plot the mean statistics with standard errors of a data object.
+
+    Parameters
+    ----------
+    data : memo_py.data.Data
+        A memo_py data object.
+    settings : dict of dict, optional
+        Optional label and color settings for the mean traces.
+    x_label : str, optional
+        Label for x-axis.
+    x_lim : None or tuple of floats, optional
+        Specify x-axis limits.
+    x_log : bool, optional
+        Logarithmic x-axis if `x_log=True`.
+    y_label : str, optional
+        Label for y-axis.
+    y_lim : None or tuple of floats, optional
+        Specify y-axis limits.
+    y_log : bool, optional
+        Logarithmic y-axis if `y_log=True`.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -234,7 +416,35 @@ def data_variance_plot(data, settings=None,
                     x_label='Time', x_lim=None, x_log=False,
                     y_label='Variance', y_lim=None, y_log=False,
                     show=True, save=None):
-    """docstring for ."""
+    """Plot the variance statistics with standard errors of a data object.
+
+    Parameters
+    ----------
+    data : memo_py.data.Data
+        A memo_py data object.
+    settings : dict of dict, optional
+        Optional label and color settings for the variance traces.
+    x_label : str, optional
+        Label for x-axis.
+    x_lim : None or tuple of floats, optional
+        Specify x-axis limits.
+    x_log : bool, optional
+        Logarithmic x-axis if `x_log=True`.
+    y_label : str, optional
+        Label for y-axis.
+    y_lim : None or tuple of floats, optional
+        Specify y-axis limits.
+    y_log : bool, optional
+        Logarithmic y-axis if `y_log=True`.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -259,7 +469,35 @@ def data_covariance_plot(data, settings=None,
                     x_label='Time', x_lim=None, x_log=False,
                     y_label='Covariance', y_lim=None, y_log=False,
                     show=True, save=None):
-    """docstring for ."""
+    """Plot the covariance statistics with standard errors of a data object.
+
+    Parameters
+    ----------
+    data : memo_py.data.Data
+        A memo_py data object.
+    settings : dict of dict, optional
+        Optional label and color settings for the covariance traces.
+    x_label : str, optional
+        Label for x-axis.
+    x_lim : None or tuple of floats, optional
+        Specify x-axis limits.
+    x_log : bool, optional
+        Logarithmic x-axis if `x_log=True`.
+    y_label : str, optional
+        Label for y-axis.
+    y_lim : None or tuple of floats, optional
+        Specify y-axis limits.
+    y_log : bool, optional
+        Logarithmic y-axis if `y_log=True`.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -280,11 +518,44 @@ def data_covariance_plot(data, settings=None,
                     show=show, save=save)
 
 
-def data_hist_variables_plot(data, time_ind, settings=None, normalised=False,
+def data_hist_variables_plot(data, time_ind, normalised=False, settings=None,
                             x_label='Variable counts', x_lim=None, x_log=False,
                             y_label='Frequency', y_lim=None, y_log=False,
                             show=True, save=None):
-    """docstring for ."""
+    """Histograms of variable counts of a data object at a given time point.
+
+    Parameters
+    ----------
+    data : memo_py.data.Data
+        A memo_py data object.
+    time_ind : int
+        Time index to take variable counts from; the time point is then given by
+        `data.data_time_values[time_ind]`.
+    normalised : bool, optional
+        Histograms are normalised if `normalised=True`.
+    settings : dict of dict, optional
+        Optional label, color and opacity settings for histogram variables.
+    x_label : str, optional
+        Label for x-axis.
+    x_lim : None or tuple of floats, optional
+        Specify x-axis limits.
+    x_log : bool, optional
+        Logarithmic x-axis if `x_log=True`.
+    y_label : str, optional
+        Label for y-axis.
+    y_lim : None or tuple of floats, optional
+        Specify y-axis limits.
+    y_log : bool, optional
+        Logarithmic y-axis if `y_log=True`.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -305,12 +576,51 @@ def data_hist_variables_plot(data, time_ind, settings=None, normalised=False,
                             show=show, save=save)
 
 
-def data_hist_waiting_times_plot(data, data_events, settings=None,
-                            normalised=True, gamma_fit=True,
+def data_hist_waiting_times_plot(data, data_events, normalised=True,
+                            gamma_fit=True, settings=None,
                             x_label='Waiting time', x_lim=None, x_log=False,
                             y_label='Frequency', y_lim=None, y_log=False,
                             show=True, save=None):
-    """docstring for ."""
+    """Histogram of waiting times of a data object for a given event.
+
+    Parameters
+    ----------
+    data : memo_py.data.Data
+        A memo_py data object.
+    data_events : list of tuples with (bool, float or None)
+        Data events to take waiting times from; e.g. `data.event_all_first_cell_type_conversion`.
+        The `boolean` value of the tuples indicates whether an event happened or not. If not,
+        the second value should be `None`. If yes, the second value should be a float of the waiting time
+        for that event to happen.
+    normalised : bool, optional
+        Histograms are normalised if `normalised=True`.
+    gamma_fit : bool, optional
+        If true, fit a Gamma distribution to binned waiting time data. Fitted shape and scale
+        parameters are printed; fitted shape (=steps `n`) and mean waiting time (`theta` = shape * scale)
+        are shown in the legend label.
+    settings : dict of dict, optional
+        Optional label, color, opacity and gamma_color settings for the histogram.
+    x_label : str, optional
+        Label for x-axis.
+    x_lim : None or tuple of floats, optional
+        Specify x-axis limits.
+    x_log : bool, optional
+        Logarithmic x-axis if `x_log=True`.
+    y_label : str, optional
+        Label for y-axis.
+    y_lim : None or tuple of floats, optional
+        Specify y-axis limits.
+    y_log : bool, optional
+        Logarithmic y-axis if `y_log=True`.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -338,7 +648,42 @@ def data_variable_scatter_plot(data, time_ind, variable1, variable2, settings=No
                                 x_label=None, x_lim=None, x_log=False,
                                 y_label=None, y_lim=None, y_log=False,
                                 show=True, save=None):
-    """docstring for ."""
+    """Scatter plot between counts of two variables of a data object at a given time point.
+
+    Parameters
+    ----------
+    data : memo_py.data.Data
+        A memo_py data object.
+    time_ind : int
+        Time index to take variable counts from; the time point is then given by
+        `data.data_time_values[time_ind]`.
+    variable1 : str
+        First variable of the scatter plot (x-axis).
+    variable2 : str
+        Second variable of the scatter plot (y-axis).
+    settings : dict, optional
+        Optional label, color and opacity settings for the scatter plot.
+    x_label : str, optional
+        Label for x-axis.
+    x_lim : None or tuple of floats, optional
+        Specify x-axis limits.
+    x_log : bool, optional
+        Logarithmic x-axis if `x_log=True`.
+    y_label : str, optional
+        Label for y-axis.
+    y_lim : None or tuple of floats, optional
+        Specify y-axis limits.
+    y_log : bool, optional
+        Logarithmic y-axis if `y_log=True`.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default settings
     if settings==None:
