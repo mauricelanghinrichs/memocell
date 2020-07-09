@@ -1,10 +1,22 @@
 
+"""
+The data module contains the Data class to handle and load data which subsequently
+can be used for statistical inference.
+"""
+
 import numpy as np
 import scipy.stats as stats
 import scipy.optimize as optimize
 
 class Data(object):
-    """docstring for . TEST TEST"""
+    """Class to handle and load data. Main method is `load` which will create a ready-to-use
+    data instance with dynamic summary statistics
+    that can subsequently be used for the statistical inference; for the
+    typical use case this is the only method to call. `load` is a wrapper method
+    for most of the other class methods, so more documentation can be found in the
+    respective individual methods. Further functionalities of this class
+    include stochastic event analysis and Gamma/Erlang fitting to waiting time distributions.
+    """
 
     def __init__(self, data_name):
 
@@ -64,17 +76,114 @@ class Data(object):
         self.gamma_fit_theta = None # parameters for the gamma distribution, shape 'a' and scale
 
 
-    def load(self, data_input):
-        """docstring for ."""
+    def load(self, variables, time_values, count_data, data_type='counts',
+                    mean_data=np.array([]), var_data=np.array([]), cov_data=np.array([]),
+                    bootstrap_samples=10000, basic_sigma=0.0):
+        """Main method of the data class. Method will load data either from dynamic
+        count data (`data_type='counts'`, default) or from already summarised data as
+        mean, variance and covariance statistics (`data_type='summary'`). Depending on the
+        selected data type, different inputs are used: 1) `variables`, `time_values`
+        and `basic_sigma` in both cases 2) `data_type='counts'` additionally uses
+        `count_data` and `bootstrap_samples` 3) `data_type='summary'` additionally uses
+        `mean_data`, `var_data` and `cov_data`. `load` defines many data attributes,
+        the resulting summary statistics particularly are accessible via `data.data_mean`,
+        `data.data_variance` and `data.data_covariance`. For more information on how
+        the order of the summary statistics corresponds to `variables`, see
+        method `data.create_data_variable_order`.
+
+
+        Parameters
+        ----------
+        variables : list of str
+            A list of strings for the data variables.
+        time_values : 1d numpy.ndarray
+            Time values corresponding to time dimension of `count_data` (in case of
+            `data_type='counts'`, default) or of `mean_data`, `var_data` and `cov_data` (in case of
+            `data_type='summary'`).
+        count_data : numpy.ndarray
+            Required input for `data_type='counts'` (default); data object will be
+            computed based on `count_data` to get summary statistics `data_mean`,
+            `data_variance` and `data_covariance` including standard errors
+            by bootstrapping.
+            Shape of `count_data` has to be (`n`, `m`, `t`), with the
+            number of repeats `n`, the number of variables `m`, the number of time points `t`.
+            Order of the variables should match with `variables`.
+        data_type : str, optional
+            String to define the mode how to create the data object; either `'counts'`
+            or `'summary'`.
+        mean_data : numpy.ndarray, optional
+            Required input for `data_type='summary'`; `mean_data` will be directly
+            loaded into `data.data_mean`.
+            `mean_data` contains the dynamic mean statistics and standard
+            errors with shape (2, `len(data_mean_order)`, `len(time_values)`).
+            `mean_data[0, :, :]` contains the statistics;
+            `mean_data[1, :, :]` contains the standard errors.
+        var_data : numpy.ndarray, optional
+            Required input for `data_type='summary'`; `var_data` will be directly
+            loaded into `data.data_variance`.
+            `var_data` contains the dynamic variance statistics and standard
+            errors with shape (2, `len(data_variance_order)`, `len(time_values)`).
+            `var_data[0, :, :]` contains the statistics;
+            `var_data[1, :, :]` contains the standard errors.
+        cov_data : numpy.ndarray, optional
+            Required input for `data_type='summary'`; `cov_data` will be directly
+            loaded into `data.data_covariance`.
+            `cov_data` contains the dynamic covariance statistics and standard
+            errors with shape (2, `len(data_covariance_order)`, `len(time_values)`).
+            `cov_data[0, :, :]` contains the statistics;
+            `cov_data[1, :, :]` contains the standard errors.
+        bootstrap_samples : int, optional
+            Integer to set the number of bootstrap samples (in case of
+            `data_type='counts'`, default). Number between
+            `bootstrap_samples=10000` (default) and `bootstrap_samples=100000`
+            is typically sufficient. For more information, see
+            method `data.bootstrap_count_data_to_summary_stats` and methods therein.
+        basic_sigma : float, optional
+            Non-negative float value for `basic_sigma`. For more information, see
+            method `data.introduce_basic_sigma`.
+
+        Returns
+        -------
+        None
+
+
+        Examples
+        --------
+        >>> import memo_py as me
+        >>> import numpy as np
+        >>> data = me.Data('my_data')
+        >>> variables = ['A', 'B']
+        >>> time_values = np.linspace(0.0, 4.0, num=5)
+        >>> count_data = np.array([[[0.0, 0.0, 2.0, 2.0, 4.0], [1.0, 1.0, 1.0, 1.0, 0.0]],
+        >>>                        [[0.0, 1.0, 2.0, 4.0, 4.0], [1.0, 1.0, 0.0, 0.0, 0.0]],
+        >>>                        [[0.0, 1.0, 1.0, 4.0, 4.0], [1.0, 1.0, 0.0, 0.0, 0.0]],
+        >>>                        [[0.0, 0.0, 0.0, 2.0, 4.0], [1.0, 0.0, 0.0, 0.0, 0.0]]])
+        >>> data.load(variables, time_values, count_data)
+        >>> data.data_mean
+        [[[0.         0.5        1.25       3.         4.        ]
+          [1.         0.75       0.25       0.25       0.        ]]
+         [[0.         0.25096378 0.41313568 0.50182694 0.        ]
+          [0.         0.21847682 0.21654396 0.21624184 0.        ]]]
+        >>> data.data_variance
+        [[[0.         0.33333333 0.91666667 1.33333333 0.        ]
+          [0.         0.25       0.25       0.25       0.        ]]
+         [[0.         0.10247419 0.39239737 0.406103   0.        ]
+          [0.         0.13197367 0.13279328 0.13272021 0.        ]]]
+        >>> data.data_covariance
+        [[[ 0.          0.16666667  0.25       -0.33333333  0.        ]]
+         [[ 0.          0.11379549  0.18195518  0.22722941  0.        ]]]
+        """
 
         # validate the user's data_input
-        self.validate_data_input(data_input)
+        self._validate_data_input(variables, time_values, count_data, data_type,
+                        mean_data, var_data, cov_data,
+                        bootstrap_samples, basic_sigma)
 
         # initialise information from data_input
-        self.data_variables = data_input['variables']
-        self.data_type = data_input['data_type']
-        self.data_time_values = data_input['time_values']
-        self.data_basic_sigma = data_input['basic_sigma']
+        self.data_variables = variables
+        self.data_type = data_type
+        self.data_time_values = time_values
+        self.data_basic_sigma = basic_sigma
 
         # obtain the number of variables and time_values, respectively
         self.data_num_variables = len(self.data_variables)
@@ -87,14 +196,14 @@ class Data(object):
 
         # dependent on data_type, load data as summary statistics or count data
         if self.data_type=='summary':
-            self.data_mean = data_input['mean_data']
-            self.data_variance = data_input['var_data']
-            self.data_covariance = data_input['cov_data']
+            self.data_mean = mean_data
+            self.data_variance = var_data
+            self.data_covariance = cov_data
 
         # in case of count data, bootstrapping is used to compute the summary statistics
         elif self.data_type=='counts':
-            self.data_counts = data_input['count_data']
-            self.data_bootstrap_samples = data_input['bootstrap_samples']
+            self.data_counts = count_data
+            self.data_bootstrap_samples = bootstrap_samples
 
             (self.data_mean,
             self.data_variance,
@@ -120,7 +229,38 @@ class Data(object):
 
     @staticmethod
     def create_data_variable_order(data_variables):
-        """docstring for ."""
+        """Creates objects to define the order of data variables for mean,
+        variance and covariance. Mean and variance order follows the order of the
+        input; covariances are ordered with a priority for what comes first in the
+        input.
+
+        Parameters
+        ----------
+        data_variables : list of str
+            A list of strings for the data variables.
+
+        Returns
+        -------
+        data_mean_order : list of dict
+            Variable order for the data means.
+        data_variance_order : list of dict
+            Variable order for the data variances.
+        data_covariance_order : list of dict
+            Variable order for the data covariances.
+
+        Examples
+        --------
+        >>> me.Data.create_data_variable_order(['A', 'B', 'C'])
+        ([{'variables': 'A', 'summary_indices': 0, 'count_indices': (0,)},
+          {'variables': 'B', 'summary_indices': 1, 'count_indices': (1,)},
+          {'variables': 'C', 'summary_indices': 2, 'count_indices': (2,)}],
+         [{'variables': ('A', 'A'), 'summary_indices': 0, 'count_indices': (0, 0)},
+          {'variables': ('B', 'B'), 'summary_indices': 1, 'count_indices': (1, 1)},
+          {'variables': ('C', 'C'), 'summary_indices': 2, 'count_indices': (2, 2)}],
+         [{'variables': ('A', 'B'), 'summary_indices': 0, 'count_indices': (0, 1)},
+          {'variables': ('A', 'C'), 'summary_indices': 1, 'count_indices': (0, 2)},
+          {'variables': ('B', 'C'), 'summary_indices': 2, 'count_indices': (1, 2)}])
+        """
 
         # order of mean and variance indices just matches the data_variables order
         data_mean_order = [{'variables': var,  'summary_indices': i, 'count_indices': (i, )}
@@ -148,7 +288,53 @@ class Data(object):
                                                 data_covariance_order,
                                                 count_data,
                                                 bootstrap_samples):
-        """docstring for ."""
+        """Bootstraps dynamic count data to mean, variance and covariance statistics
+        over time with associated standard errors.
+
+        Parameters
+        ----------
+        data_num_time_values : int
+            Number of time values; typical usage with `data_num_time_values=data.data_num_time_values`
+            of a memo_py data object.
+        data_mean_order : list of dict
+            Data mean order of a memo_py data object; typical usage with
+            `data_mean_order=data.data_mean_order`.
+        data_variance_order : list of dict
+            Data variance order of a memo_py data object; typical usage with
+            `data_variance_order=data.data_variance_order`.
+        data_covariance_order : list of dict
+            Data covariance order of a memo_py data object; typical usage with
+            `data_covariance_order=data.data_covariance_order`.
+        count_data : numpy.ndarray
+            Numpy array of the count data to bootstrap with shape (`n`, `m`, `t`); the
+            number of repeats `n`, the number of variables `m`, the number of time points `t`.
+            Typical usage with `count_data=data.data_counts` of a memo_py data object.
+            Order of the variables should match with `data_mean_order`,
+            `data_variance_order` and `data_covariance_order`. Time points `t` should be
+            equal to `data_num_time_values`.
+        bootstrap_samples : int
+            Integer to set the number of bootstrap samples. Typically `bootstrap_samples=100000`
+            is sufficient; typical usage with `data.data_bootstrap_samples`.
+
+        Returns
+        -------
+        data_mean : numpy.ndarray
+            Numpy array of the bootstrapped dynamic mean statistics and standard
+            errors with shape (2, `len(data_mean_order)`, `data_num_time_values`).
+            `data_mean[0, :, :]` contains the statistics;
+            `data_mean[1, :, :]` contains the standard errors.
+        data_var : numpy.ndarray
+            Numpy array of the bootstrapped dynamic variance statistics and standard
+            errors with shape (2, `len(data_variance_order)`, `data_num_time_values`).
+            `data_var[0, :, :]` contains the statistics;
+            `data_var[1, :, :]` contains the standard errors.
+        data_cov : numpy.ndarray
+            Numpy array of the bootstrapped dynamic covariance statistics and standard
+            errors with shape (2, `len(data_covariance_order)`, `data_num_time_values`).
+            `data_cov[0, :, :]` contains the statistics;
+            `data_cov[1, :, :]` contains the standard errors.
+
+        """
 
         # preallocate numpy arrays for summary statistics
         # the first axis has dimension two; to save statistic and standard error of that statistic
@@ -211,7 +397,30 @@ class Data(object):
 
     @staticmethod
     def bootstrapping_mean(sample, num_resamples):
-        """docstring for ."""
+        """Compute mean and associated standard error of the mean of a given
+        1-dimensional sample. Standard error is obtained by bootstrapping.
+
+        Parameters
+        ----------
+        sample : 1d numpy.ndarray
+            Sample used to compute mean and standard error of the mean.
+        num_resamples : int
+            Integer to set the number of bootstrap samples. Typically `num_resamples=100000`
+            is sufficient.
+
+        Returns
+        -------
+        stat_sample : numpy.float64
+            Mean of the sample.
+        se_stat_sample : numpy.float64
+            Standard error of the mean of the sample obtained by bootstrapping.
+
+        Examples
+        --------
+        >>> me.Data.bootstrapping_mean(np.array([1.0, 2.0, 3.0]), 100000)
+        (2.0, 0.4705758644290084)
+        """
+
         ### sample should be a one-dimensional, flat array
 
         ### calculate the statistic of the sample
@@ -232,7 +441,30 @@ class Data(object):
 
     @staticmethod
     def bootstrapping_variance(sample, num_resamples):
-        """docstring for ."""
+        """Compute variance and associated standard error of the variance of a given
+        1-dimensional sample. Standard error is obtained by bootstrapping.
+
+        Parameters
+        ----------
+        sample : 1d numpy.ndarray
+            Sample used to compute variance and standard error of the variance.
+        num_resamples : int
+            Integer to set the number of bootstrap samples. Typically `num_resamples=100000`
+            is sufficient.
+
+        Returns
+        -------
+        stat_sample : numpy.float64
+            Variance of the sample (ddof=1).
+        se_stat_sample : numpy.float64
+            Standard error of the variance of the sample obtained by bootstrapping.
+
+        Examples
+        --------
+        >>> me.Data.bootstrapping_variance(np.array([1.0, 2.0, 3.0]), 100000)
+        (1.0, 0.4707057737121149)
+        """
+
         ### sample should be a one-dimensional, flat array
 
         ### calculate the statistic of the sample
@@ -253,7 +485,33 @@ class Data(object):
 
     @staticmethod
     def bootstrapping_covariance(sample1, sample2, num_resamples):
-        """docstring for ."""
+        """Compute covariance and associated standard error of the covariance of two given
+        1-dimensional samples. Standard error is obtained by bootstrapping.
+
+        Parameters
+        ----------
+        sample1 : 1d numpy.ndarray
+            Sample used to compute covariance and standard error of the covariance.
+            Same length as `sample2`.
+        sample2 : 1d numpy.ndarray
+            Sample used to compute covariance and standard error of the covariance.
+            Same length as `sample1`.
+        num_resamples : int
+            Integer to set the number of bootstrap samples. Typically `num_resamples=100000`
+            is sufficient.
+
+        Returns
+        -------
+        stat_sample : numpy.float64
+            Covariance of the sample (ddof=1).
+        se_stat_sample : numpy.float64
+            Standard error of the covariance of the sample obtained by bootstrapping.
+
+        Examples
+        --------
+        >>> me.Data.bootstrapping_covariance(np.array([1.0, 2.0, 3.0]), np.array([3.0, 2.0, 1.0]), 10000)
+        (-1.0, 0.47186781968816127)
+        """
 
         sample = np.array([sample1, sample2])
 
@@ -278,7 +536,45 @@ class Data(object):
 
     @staticmethod
     def introduce_basic_sigma(basic_sigma, data):
-        """docstring for ."""
+        """Handles zero-valued or almost zero-valued standard errors by
+        introducing a `basic_sigma` standard error value for those entries;
+        this is required for numerical stability of the likelihood calculation
+        and allows to remove too strong weights on certain data points. Zero or almost-zero
+        standard errors can occur when bootstrapping data features that are not
+        adequately represented by the actual data sample used in the bootstrap.
+        `Important note:` In such a situation a `basic_sigma` can be introduced but the
+        specific value has to be chosen very carefully, as its choice can strongly
+        influence model selection results. One can test different choices on artificial
+        `in silico` data; or use guidelines based on
+        `additive smoothing <https://en.wikipedia.org/wiki/Additive_smoothing>`_ and
+        `the rule of succession <https://en.wikipedia.org/wiki/Rule_of_succession>`_.
+
+        Parameters
+        ----------
+        basic_sigma : float
+            Non-negative float value for `basic_sigma`.
+        data : numpy.ndarray
+            Data to introduce a `basic_sigma` to; more specifically, the standard
+            errors (in `data[1, :, :]`) will be replaced by `basic_sigma` if they are
+            smaller than `basic_sigma`.
+
+        Returns
+        -------
+        data : numpy.ndarray
+            Returns data with standard errors larger or equal to `basic_sigma`.
+
+        Examples
+        --------
+        >>> data = np.array([[[0.        , 0.02272727, 2.93181818],
+        >>>                   [1.        , 0.97727273, 0.15909091]],
+        >>>                  [[0.        , 0.01998622, 0.40653029],
+        >>>                   [0.        , 0.02294546, 0.05969529]]])
+        >>> me.Data.introduce_basic_sigma(0.01, data)
+        array([[[0.        , 0.02272727, 2.93181818],
+                [1.        , 0.97727273, 0.15909091]],
+                [[0.01      , 0.01998622, 0.40653029],
+                [0.01      , 0.02294546, 0.05969529]]])
+        """
 
         ### this function handles zero-valued or almost zero-valued standard errors by
         ### introducing a basic_sigma standard error value for those entries;
@@ -294,7 +590,29 @@ class Data(object):
 
     @staticmethod
     def get_number_data_points(data_mean, data_var, data_cov):
-        """docstring for ."""
+        """Get the number of total data points `n` used in the inference.
+        This is the number of data points of mean, variance and covariance statistics
+        (default inference) or the number of mean data points only (mean-only modes).
+
+        Parameters
+        ----------
+        data_mean : numpy.ndarray
+            Numpy array of the dynamic mean statistics and standard
+            errors with shape (2, `len(data_mean_order)`, `data_num_time_values`).
+        data_var : numpy.ndarray
+            Numpy array of the dynamic variance statistics and standard
+            errors with shape (2, `len(data_variance_order)`, `data_num_time_values`).
+        data_cov : numpy.ndarray
+            Numpy array of the dynamic covariance statistics and standard
+            errors with shape (2, `len(data_covariance_order)`, `data_num_time_values`).
+
+        Returns
+        -------
+        data_num_values : int
+            Number of data points of mean, variance and covariance statistics.
+        data_num_values_mean_only : int
+            Number of data points of mean statistics.
+        """
 
         # calculate the number of data points along their last two dimensions
         # number of variables * number of time points
@@ -306,7 +624,9 @@ class Data(object):
 
 
     def events_find_all(self):
-        """docstring for ."""
+        """Wrapper method to call a set of event functions on dynamic count data in `data.data_counts`.
+        Results are accessible via data event attributes; for example
+        `data.event_all_first_cell_type_conversion`."""
 
         self.event_all_first_change_from_inital_conditions = [
                 self.event_find_first_change_from_inital_conditions(self.data_counts[trace_ind, :, :], self.data_time_values)
@@ -350,7 +670,34 @@ class Data(object):
     # NOTE: we have currently no event function for backwards conversion (there is one well for this)
 
     def event_find_first_change_from_inital_conditions(self, well_trace, time_values):
-        """docstring for ."""
+        """Find events of first change from initial conditions (state at first
+        time point).
+
+        Parameters
+        ----------
+        well_trace : numpy.ndarray
+            Dynamic variable counts of one well / one stochastic realisation with shape
+            (`number of variables`, `len(time_values)`).
+        time_values : 1d numpy.ndarray
+            Time values corresponding to variable counts (`len(time_values)` should
+            match `well_trace.shape[1]`).
+
+        Returns
+        -------
+        event_bool : bool
+            `True` if an event occurs in this `well_trace`, `False` otherwise.
+        event_tau : float or None
+            If `event_bool=True`, `event_tau` provides the waiting time when the
+            event occured (according to `time_values`); `None` otherwise.
+
+        Examples
+        --------
+        >>> me.Data.event_find_first_change_from_inital_conditions(data,
+        >>>                              np.array([[0.0, 0.0, 1.0, 2.0],
+        >>>                                        [0.0, 0.0, 0.0, 1.0]]),
+        >>>                              np.array([0.0, 1.0, 2.0, 3.0]))
+        (True, 2.0)
+        """
 
         # initial setting that event did not happen
         event_bool = False
@@ -370,7 +717,34 @@ class Data(object):
 
 
     def event_find_first_cell_count_increase(self, well_trace, time_values):
-        """docstring for ."""
+        """Find events of first cell count increase; calculation based on total cell
+        count compared to initial condition (state at first time point).
+
+        Parameters
+        ----------
+        well_trace : numpy.ndarray
+            Dynamic variable counts of one well / one stochastic realisation with shape
+            (`number of variables`, `len(time_values)`).
+        time_values : 1d numpy.ndarray
+            Time values corresponding to variable counts (`len(time_values)` should
+            match `well_trace.shape[1]`).
+
+        Returns
+        -------
+        event_bool : bool
+            `True` if an event occurs in this `well_trace`, `False` otherwise.
+        event_tau : float or None
+            If `event_bool=True`, `event_tau` provides the waiting time when the
+            event occured (according to `time_values`); `None` otherwise.
+
+        Examples
+        --------
+        >>> me.Data.event_find_first_cell_count_increase(data,
+        >>>                         np.array([[4.0, 4.0, 4.0, 4.0],
+        >>>                                   [1.0, 1.0, 2.0, 3.0]]),
+        >>>                         np.array([0.0, 1.0, 2.0, 3.0]))
+        (True, 2.0)
+        """
 
         ### here we check for the first increase in TOTAL cell numbers
         ### (not an increase in any individual cell type population)
@@ -396,7 +770,35 @@ class Data(object):
 
 
     def event_find_first_cell_type_conversion(self, well_trace, time_values):
-        """docstring for ."""
+        """Find events of first cell type conversion (e.g., differentiation
+        between different cell types / count variables); calculation looks for
+        change of cell state despite maintenance of total cell counts.
+
+        Parameters
+        ----------
+        well_trace : numpy.ndarray
+            Dynamic variable counts of one well / one stochastic realisation with shape
+            (`number of variables`, `len(time_values)`).
+        time_values : 1d numpy.ndarray
+            Time values corresponding to variable counts (`len(time_values)` should
+            match `well_trace.shape[1]`).
+
+        Returns
+        -------
+        event_bool : bool
+            `True` if an event occurs in this `well_trace`, `False` otherwise.
+        event_tau : float or None
+            If `event_bool=True`, `event_tau` provides the waiting time when the
+            event occured (according to `time_values`); `None` otherwise.
+
+        Examples
+        --------
+        >>> me.Data.event_find_first_cell_type_conversion(data,
+        >>>                         np.array([[4.0, 4.0, 3.0, 3.0],
+        >>>                                   [1.0, 1.0, 2.0, 2.0]]),
+        >>>                         np.array([0.0, 1.0, 2.0, 3.0]))
+        (True, 2.0)
+        """
 
         ### here we check for any event with a change in state space
         ### but maintenance of the total cell numbers
@@ -422,7 +824,48 @@ class Data(object):
 
 
     def event_find_first_cell_count_increase_after_cell_type_conversion(self, well_trace, time_values, diff=True):
-        """docstring for ."""
+        """Find events of first cell count increase after cell type conversion.
+        Calculation looks first for the conditioned event (cell type conversion,
+        based on `event_find_first_cell_type_conversion` method).
+        If this event exists, the `well_trace` and `time_values` are shortened and
+        then searched for a first cell count increase (based on
+        `event_find_first_cell_count_increase` method).
+
+        Parameters
+        ----------
+        well_trace : numpy.ndarray
+            Dynamic variable counts of one well / one stochastic realisation with shape
+            (`number of variables`, `len(time_values)`).
+        time_values : 1d numpy.ndarray
+            Time values corresponding to variable counts (`len(time_values)` should
+            match `well_trace.shape[1]`).
+        diff : bool
+            If `diff=True`, `event_tau` will provide the waiting time starting
+            at the conditioned event; otherwise the waiting time is provided starting
+            at the first time point.
+
+        Returns
+        -------
+        event_bool : bool
+            `True` if an event occurs in this `well_trace`, `False` otherwise.
+        event_tau : float or None
+            If `event_bool=True`, `event_tau` provides the waiting time when the
+            event occured (according to `time_values`); `None` otherwise.
+
+        Examples
+        --------
+        >>> me.Data.event_find_first_cell_count_increase_after_cell_type_conversion(data,
+        >>>                         np.array([[4.0, 3.0, 3.0, 4.0],
+        >>>                                   [1.0, 2.0, 2.0, 2.0]]),
+        >>>                         np.array([0.0, 1.0, 2.0, 3.0]))
+        (True, 2.0)
+
+        >>> me.Data.event_find_first_cell_count_increase_after_cell_type_conversion(data,
+        >>>                         np.array([[4.0, 3.0, 3.0, 4.0],
+        >>>                                   [1.0, 2.0, 2.0, 2.0]]),
+        >>>                         np.array([0.0, 1.0, 2.0, 3.0]), diff=False)
+        (True, 3.0)
+        """
 
         ### this event is checked by the sequential use of the event
         ### functions 'conversion' and 'cell count increase'
@@ -456,7 +899,51 @@ class Data(object):
 
 
     def event_find_second_cell_count_increase_after_first_cell_count_increase_after_cell_type_conversion(self, well_trace, time_values, diff=True):
-        """docstring for ."""
+        """Find events of a second cell count increase after a first cell count increase
+        and (even more before that) a cell type conversion.
+        Calculation looks first for the conditioned event (first increase and cell type conversion,
+        based on `event_find_first_cell_count_increase_after_cell_type_conversion` method).
+        If this event exists, the `well_trace` and `time_values` are shortened and
+        then searched for another "first" cell count increase (based on
+        `event_find_first_cell_count_increase` method).
+
+        Parameters
+        ----------
+        well_trace : numpy.ndarray
+            Dynamic variable counts of one well / one stochastic realisation with shape
+            (`number of variables`, `len(time_values)`).
+        time_values : 1d numpy.ndarray
+            Time values corresponding to variable counts (`len(time_values)` should
+            match `well_trace.shape[1]`).
+        diff : bool
+            If `diff=True`, `event_tau` will provide the waiting time starting
+            at the conditioned event; otherwise the waiting time is provided starting
+            at the first time point.
+
+        Returns
+        -------
+        event_bool : bool
+            `True` if an event occurs in this `well_trace`, `False` otherwise.
+        event_tau : float or None
+            If `event_bool=True`, `event_tau` provides the waiting time when the
+            event occured (according to `time_values`); `None` otherwise.
+
+        Examples
+        --------
+        >>> me.Data.event_find_second_cell_count_increase_after_first_cell_count_increase_after_cell_type_conversion(
+        >>>                         data,
+        >>>                         np.array([[4.0, 3.0, 3.0, 4.0, 5.0],
+        >>>                                   [1.0, 2.0, 2.0, 2.0, 2.0]]),
+        >>>                         np.array([0.0, 1.0, 2.0, 3.0, 4.0]))
+        (True, 1.0)
+
+        >>> me.Data.event_find_second_cell_count_increase_after_first_cell_count_increase_after_cell_type_conversion(
+        >>>                         data,
+        >>>                         np.array([[4.0, 3.0, 3.0, 4.0, 5.0],
+        >>>                                   [1.0, 2.0, 2.0, 2.0, 2.0]]),
+        >>>                         np.array([0.0, 1.0, 2.0, 3.0, 4.0]), diff=False)
+        (True, 4.0)
+        """
 
         # initial setting that event did not happen
         event_bool = False
@@ -487,7 +974,51 @@ class Data(object):
 
 
     def event_find_third_cell_count_increase_after_first_and_second_cell_count_increase_after_cell_type_conversion(self, well_trace, time_values, diff=True):
-        """docstring for ."""
+        """Find events of a third cell count increase after a first and second cell count increase
+        and (even more before that) a cell type conversion.
+        Calculation looks first for the conditioned event (first and second increase and cell type conversion,
+        based on `event_find_second_cell_count_increase_after_first_cell_count_increase_after_cell_type_conversion` method).
+        If this event exists, the `well_trace` and `time_values` are shortened and
+        then searched for another "first" cell count increase (based on
+        `event_find_first_cell_count_increase` method).
+
+        Parameters
+        ----------
+        well_trace : numpy.ndarray
+            Dynamic variable counts of one well / one stochastic realisation with shape
+            (`number of variables`, `len(time_values)`).
+        time_values : 1d numpy.ndarray
+            Time values corresponding to variable counts (`len(time_values)` should
+            match `well_trace.shape[1]`).
+        diff : bool
+            If `diff=True`, `event_tau` will provide the waiting time starting
+            at the conditioned event; otherwise the waiting time is provided starting
+            at the first time point.
+
+        Returns
+        -------
+        event_bool : bool
+            `True` if an event occurs in this `well_trace`, `False` otherwise.
+        event_tau : float or None
+            If `event_bool=True`, `event_tau` provides the waiting time when the
+            event occured (according to `time_values`); `None` otherwise.
+
+        Examples
+        --------
+        >>> me.Data.event_find_third_cell_count_increase_after_first_and_second_cell_count_increase_after_cell_type_conversion(
+        >>>                         data,
+        >>>                         np.array([[4.0, 3.0, 3.0, 4.0, 5.0, 5.0],
+        >>>                                   [1.0, 2.0, 2.0, 2.0, 2.0, 3.0]]),
+        >>>                         np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0]))
+        (True, 1.0)
+
+        >>> me.Data.event_find_third_cell_count_increase_after_first_and_second_cell_count_increase_after_cell_type_conversion(
+        >>>                         data,
+        >>>                         np.array([[4.0, 3.0, 3.0, 4.0, 5.0, 5.0],
+        >>>                                   [1.0, 2.0, 2.0, 2.0, 2.0, 3.0]]),
+        >>>                         np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0]), diff=False)
+        (True, 5.0)
+        """
 
         # initial setting that event did not happen
         event_bool = False
@@ -519,7 +1050,39 @@ class Data(object):
 
     ### methods for fitting binned waiting times with the Gamma distribution
     def gamma_fit_binned_waiting_times(self, waiting_times_arr):
-        """docstring for ."""
+        """Fit a Gamma distribution with parameter `theta` (`theta[0]` shape parameter
+        and `theta[1]` scale parameter) to a data sample of waiting times (`waiting_times_arr`).
+        Fitting is based on binning the waiting time data first, so this method works
+        equally well for continuous and discrete waiting times (when continuous
+        observation is experimentally not accessible). The bin edges are given by
+        `[-np.inf, data.data_time_values, np.inf]` where individual bins are
+        left-open, right-closed intervals of the bins edges (of form `(a, b]`). See utility
+        methods `data.gamma_compute_bin_probabilities` and
+        `data.gamma_negative_multinomial_log_likelihood` for more information of code
+        specifics.
+
+        Parameters
+        ----------
+        waiting_times_arr : 1d numpy.ndarray or list of float or int
+            Continuous or discrete waiting times to fit the Gamma distribution to.
+
+        Returns
+        -------
+        theta : 1d numpy.ndarray
+            Result of the fit of a `Gamma(theta)` distribution to the data of
+            `waiting_times_arr`; with `theta[0]` shape parameter
+            and `theta[1]` scale parameter of the `Gamma` distribution.
+
+        Examples
+        --------
+        >>> data = me.Data('data_init')
+        >>> data.data_time_values = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
+        >>> theta = [4.0, 0.5]
+        >>> waiting_times_arr = np.random.gamma(theta[0], theta[1], 100000)
+        >>> data.gamma_fit_binned_waiting_times(waiting_times_arr)
+        >>> data.gamma_fit_theta
+        array([4.01966125, 0.49769529])
+        """
 
         ### IDEA: for a given Gamma distribution the probability to find a
         ### drawn waiting time within an interval (a, b] is given by the cumulative
@@ -561,15 +1124,42 @@ class Data(object):
         # print(self.gamma_fit_theta_init)
 
         # optimise the multinomial log likelihood to find theta
-        self.gamma_fit_result = optimize.minimize(self.negative_multinomial_log_likelihood,
+        self.gamma_fit_result = optimize.minimize(self.gamma_negative_multinomial_log_likelihood,
                                                     self.gamma_fit_theta_init,
                                                     method='L-BFGS-B',
                                                     bounds=[(0, None)]*len(self.gamma_fit_theta_init))
         self.gamma_fit_theta = self.gamma_fit_result['x']
 
 
-    def compute_bin_probabilities(self, theta):
-        """docstring for ."""
+    def gamma_compute_bin_probabilities(self, theta):
+        """Utility method for fitting Gamma/Erlang distribution to waiting time
+        histogram. This method computes bin probabilities for bins in `data.gamma_fit_bins`
+        for a given `theta`, where `theta[0]` and `theta[1]` are the shape and scale
+        parameter of the Gamma distribution, respectively. More specifically, the
+        probability of a continuous waiting time `tau` to be in the bin `(a, b]` is calculated
+        by `p(tau in (a, b]) = F_theta(b) - F_theta(a)`, with `F_theta` being the
+        cumulative density function of the Gamma distribution for parameters `theta`.
+
+        Parameters
+        ----------
+        theta : list of float
+            Shape (`theta[0]`) and scale (`theta[1]`) parameter for the Gamma distribution.
+
+        Returns
+        -------
+        bins_probs : 1d numpy.ndarray
+            Probabilities to find a continuous waiting time following a Gamma(`theta`)
+            distribution in the bins given by `data.gamma_fit_bins`.
+
+        Examples
+        --------
+        >>> data = me.Data('data_init')
+        >>> data_time_values = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
+        >>> data.gamma_fit_bins = np.concatenate(([-np.inf], data_time_values, [np.inf]))
+        >>> data.gamma_compute_bin_probabilities([4.0, 0.5])
+        np.array([0.        , 0.14287654, 0.42365334, 0.28226624, 0.10882377,
+                  0.03204406, 0.01033605])
+        """
 
         # the probability to be in bin (a, b] are given by prob(theta) = Gamma_cdf_theta(b) - Gamma_cdf_theta(a)
         # F(time_values[1:]) - F(time_values[:-1]) achieves bin-wise calculation of
@@ -578,20 +1168,37 @@ class Data(object):
         return bins_probs
 
 
-    def negative_multinomial_log_likelihood(self, theta):
-        """docstring for ."""
+    def gamma_negative_multinomial_log_likelihood(self, theta):
+        """Utility method for fitting Gamma/Erlang distribution to waiting time
+        histogram. This method computes the negative logarithmic likelihood to see
+        a certain waiting time histogram (in the form of
+        `data.gamma_fit_bin_inds_all_occ`) for given bin probabilities based on a
+        Gamma waiting time distribution with parameters `theta`. Likelihood calculation
+        is based on a multinomial model.
+
+        Parameters
+        ----------
+        theta : list of float
+            Shape (`theta[0]`) and scale (`theta[1]`) parameter for the Gamma distribution.
+
+        Returns
+        -------
+        neg_log_likelihood : float
+            Negative logarithmic likelihood `p(D | Gamma(theta))` to see waiting time
+            histogram data `D` given waiting time distribution `Gamma(theta)`.
+        """
 
         # calculate the bin probabilities for a given theta = (shape, scale)
-        bin_probs = self.compute_bin_probabilities(theta)
+        bin_probs = self.gamma_compute_bin_probabilities(theta)
 
         # use a multinomial model to compute the log likelihood of observing the data (counts in each bin) for the given bins probs
         log_likelihood = stats.multinomial.logpmf(self.gamma_fit_bin_inds_all_occ, n=np.sum(self.gamma_fit_bin_inds_all_occ), p=bin_probs)
-        return - log_likelihood
+        return -log_likelihood
     ###
 
     ### plotting helper functions
-    def event_percentages(self, settings):
-        """docstring for ."""
+    def _event_percentages(self, settings):
+        """Private plotting helper method."""
 
         y_list_err = list()
         x_ticks = list()
@@ -609,8 +1216,8 @@ class Data(object):
         y_arr_err = np.array(y_list_err)
         return y_arr_err, x_ticks, attributes
 
-    def scatter_at_time_point(self, variable1, variable2, time_ind, settings):
-        """docstring for ."""
+    def _scatter_at_time_point(self, variable1, variable2, time_ind, settings):
+        """Private plotting helper method."""
 
         var_ind_x = self.data_variables.index(variable1)
         var_ind_y = self.data_variables.index(variable2)
@@ -625,8 +1232,8 @@ class Data(object):
 
         return x_arr, y_arr, attributes
 
-    def histogram_continuous_event_waiting_times(self, event_results, settings):
-        """docstring for ."""
+    def _histogram_continuous_event_waiting_times(self, event_results, settings):
+        """Private plotting helper method."""
 
         bar_attributes = dict()
         bar_list = list()
@@ -643,8 +1250,8 @@ class Data(object):
 
         return bar_arr, bar_attributes
 
-    def histogram_continuous_event_waiting_times_w_gamma_fit(self, event_results, settings):
-        """docstring for ."""
+    def _histogram_continuous_event_waiting_times_w_gamma_fit(self, event_results, settings):
+        """Private plotting helper method."""
 
         bar_attributes = dict()
         bar_list = list()
@@ -671,12 +1278,12 @@ class Data(object):
             # # KS test for if data follows Gamma distr.
             # ks_stat, pval = stats.kstest(bar_arr, 'gamma', args=(fit_alpha, fit_loc, fit_beta))
 
-            return x_line_arr, y_line_arr, f'$\Gamma$($n$={round(gamma_fit_shape, 1)}, $θ$={round(gamma_fit_shape * gamma_fit_scale, 1)})', settings['gamma_color'] # , KS $p$-value {round(pval, 2)}
+            return x_line_arr, y_line_arr, r'$\Gamma$' + f'($n$={round(gamma_fit_shape, 1)}, $θ$={round(gamma_fit_shape * gamma_fit_scale, 1)})', settings['gamma_color'] # , KS $p$-value {round(pval, 2)}
 
         return bar_arr, bar_attributes, gamma_fit_func
 
-    def histogram_discrete_cell_counts_at_time_point(self, time_ind, settings):
-        """docstring for ."""
+    def _histogram_discrete_cell_counts_at_time_point(self, time_ind, settings):
+        """Private plotting helper method."""
 
         bar_arr = self.data_counts[:, :, time_ind]
         bar_attributes = dict()
@@ -688,8 +1295,8 @@ class Data(object):
 
         return bar_arr, bar_attributes
 
-    def dots_w_bars_evolv_mean(self, settings):
-        """docstring for ."""
+    def _dots_w_bars_evolv_mean(self, settings):
+        """Private plotting helper method."""
 
         x_arr = self.data_time_values
         y_arr = np.zeros((len(self.data_mean_order), self.data_num_time_values, 2))
@@ -707,8 +1314,8 @@ class Data(object):
 
         return x_arr, y_arr, attributes
 
-    def dots_w_bars_evolv_variance(self, settings):
-        """docstring for ."""
+    def _dots_w_bars_evolv_variance(self, settings):
+        """Private plotting helper method."""
 
         x_arr = self.data_time_values
         y_arr = np.zeros((len(self.data_variance_order), self.data_num_time_values, 2))
@@ -726,8 +1333,8 @@ class Data(object):
 
         return x_arr, y_arr, attributes
 
-    def dots_w_bars_evolv_covariance(self, settings):
-        """docstring for ."""
+    def _dots_w_bars_evolv_covariance(self, settings):
+        """Private plotting helper method."""
 
         x_arr = self.data_time_values
         y_arr = np.zeros((len(self.data_covariance_order), self.data_num_time_values, 2))
@@ -751,78 +1358,71 @@ class Data(object):
     ###
 
     @staticmethod
-    def validate_data_input(data_input):
-        """docstring for ."""
+    def _validate_data_input(variables, time_values, count_data, data_type,
+                    mean_data, var_data, cov_data,
+                    bootstrap_samples, basic_sigma):
+        """Private validation method."""
         # TODO: there could be more validation: check the shapes of all data-related inputs
 
-        # check general data_input dictionary structure
-        if isinstance(data_input, dict):
-            if set(data_input.keys()) == set(['variables', 'data_type', 'time_values', 'mean_data', 'var_data', 'cov_data', 'count_data', 'bootstrap_samples', 'basic_sigma']):
+        # check data input variables
+        if isinstance(variables, list):
+            if all(isinstance(var, str) for var in variables):
                 pass
             else:
-                raise ValueError('Method load() expects a dictionary for the data_input with keys \'variables\', \'data_type\', \'time_values\', \'mean_data\', \'var_data\', \'cov_data\', \'count_data\', \'bootstrap_samples\' and \'basic_sigma\' (as strings).')
+                raise TypeError('List with string items expected for variables.')
         else:
-            raise TypeError('Method load() expects a dictionary as variable for the data_input.')
+            raise TypeError('List expected for variables.')
 
-        # check data_input variables
-        if isinstance(data_input['variables'], list):
-            if all(isinstance(var, str) for var in data_input['variables']):
+        # check data input type
+        if isinstance(data_type, str):
+            if data_type=='summary' or data_type=='counts':
                 pass
             else:
-                raise TypeError('List with string items expected as value of key \'variables\' of dictionary data_input.')
+                raise ValueError('String \'summary\' or \'counts\' expected for data_type.')
         else:
-            raise TypeError('List expected as value of key \'variables\' of dictionary data_input.')
+            raise TypeError('String expected for data_type.')
 
-        # check data_input type
-        if isinstance(data_input['data_type'], str):
-            if data_input['data_type']=='summary' or data_input['data_type']=='counts':
-                pass
-            else:
-                raise ValueError('String \'summary\' or \'counts\' expected as value of key \'data_type\' of dictionary data_input.')
-        else:
-            raise TypeError('String expected as value of key \'data_type\' of dictionary data_input.')
-
-        # check data_input time values
-        if isinstance(data_input['time_values'], np.ndarray):
+        # check data input time values
+        if isinstance(time_values, np.ndarray):
             pass
         else:
-            raise TypeError('Numpy array expected as value of key \'time_values\' of dictionary data_input.')
+            raise TypeError('Numpy array expected for time_values.')
 
-        # check data_input mean_data
-        if isinstance(data_input['mean_data'], np.ndarray):
+        # check data input mean_data
+        if isinstance(mean_data, np.ndarray):
             pass
         else:
-            raise TypeError('Numpy array expected as value of key \'mean_data\' of dictionary data_input.')
+            raise TypeError('Numpy array expected for mean_data.')
 
-        # check data_input var_data
-        if isinstance(data_input['var_data'], np.ndarray):
+        # check data input var_data
+        if isinstance(var_data, np.ndarray):
             pass
         else:
-            raise TypeError('Numpy array expected as value of key \'var_data\' of dictionary data_input.')
+            raise TypeError('Numpy array expected for var_data.')
 
-        # check data_input cov_data
-        if isinstance(data_input['cov_data'], np.ndarray):
+        # check data input cov_data
+        if isinstance(cov_data, np.ndarray):
             pass
         else:
-            raise TypeError('Numpy array expected as value of key \'cov_data\' of dictionary data_input.')
+            raise TypeError('Numpy array expected for cov_data.')
 
-        # check data_input count_data
-        if isinstance(data_input['count_data'], np.ndarray):
+        # check data input count_data
+        if isinstance(count_data, np.ndarray):
             pass
         else:
-            raise TypeError('Numpy array expected as value of key \'count_data\' of dictionary data_input.')
+            raise TypeError('Numpy array expected for count_data.')
 
-        # check data_input bootstrap_samples
-        if isinstance(data_input['bootstrap_samples'], int):
+        # check data input bootstrap_samples
+        if isinstance(bootstrap_samples, int):
             pass
         else:
-            raise TypeError('Integer expected as value of key \'bootstrap_samples\' of dictionary data_input.')
+            raise TypeError('Integer expected for bootstrap_samples.')
 
-        # check data_input basic_sigma
-        if isinstance(data_input['basic_sigma'], float):
+        # check data input basic_sigma
+        if isinstance(basic_sigma, float):
             pass
         else:
-            raise TypeError('Float value expected as value of key \'basic_sigma\' of dictionary data_input.')
+            raise TypeError('Float value expected for basic_sigma.')
 
 
 

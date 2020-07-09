@@ -10,7 +10,7 @@ from cycler import cycler
 import os
 from IPython.display import Image, display
 
-from .selection import dots_w_bars_evidence, dots_wo_bars_likelihood_max, dots_wo_bars_bic, dots_wo_bars_evidence_from_bic
+from .selection import _dots_w_bars_evidence, _dots_wo_bars_likelihood_max, _dots_wo_bars_bic, _dots_wo_bars_evidence_from_bic
 import warnings
 # NOTE: mark as comment for cluster computations
 # import graphviz
@@ -71,7 +71,7 @@ def net_main_plot(net, node_settings=None, edge_settings=None,
             edge_settings[rate] = {'label': rate, 'color': 'black'}
 
     # create net object with plotting info for graphviz
-    net_graphviz, layout_engine = net.draw_main_network_graph(node_settings, edge_settings)
+    net_graphviz, layout_engine = net._draw_main_network_graph(node_settings, edge_settings)
     pdot = nx.drawing.nx_pydot.to_pydot(net_graphviz)
 
     # overwrite default layout_engine if specified
@@ -126,7 +126,7 @@ def net_hidden_plot(net, node_settings=None, edge_settings=None,
             edge_settings[rate] = {'label': rate, 'color': 'black'}
 
     # create net object with plotting info for graphviz
-    net_graphviz, layout_engine = net.draw_hidden_network_graph(node_settings, edge_settings)
+    net_graphviz, layout_engine = net._draw_hidden_network_graph(node_settings, edge_settings)
     pdot = nx.drawing.nx_pydot.to_pydot(net_graphviz)
 
     # overwrite default layout_engine if specified
@@ -186,10 +186,10 @@ def sim_counts_plot(sim, settings=None,
             settings[var] = {'label': var, 'color': colors[i]}
 
     # create plotting information from simulation
-    x_arr, y_arr, attributes = sim.line_evolv_counts(settings)
+    x_arr, y_arr, attributes = sim._line_evolv_counts(settings)
 
     # plot by line_evolv utility plotting function
-    line_evolv(x_arr, y_arr, attributes,
+    _line_evolv(x_arr, y_arr, attributes,
                     x_label=x_label, x_lim=x_lim, x_log=x_log,
                     y_label=y_label, y_lim=y_lim, y_log=y_log,
                     show=show, save=save)
@@ -240,10 +240,10 @@ def sim_mean_plot(sim, settings=None,
             settings[var] = {'label': f'E({var})', 'color': colors[i]}
 
     # create plotting information from simulation
-    x_arr, y_arr, attributes = sim.line_evolv_mean(settings)
+    x_arr, y_arr, attributes = sim._line_evolv_mean(settings)
 
     # plot by line_evolv utility plotting function
-    line_evolv(x_arr, y_arr, attributes,
+    _line_evolv(x_arr, y_arr, attributes,
                     x_label=x_label, x_lim=x_lim, x_log=x_log,
                     y_label=y_label, y_lim=y_lim, y_log=y_log,
                     show=show, save=save)
@@ -295,10 +295,10 @@ def sim_variance_plot(sim, settings=None,
             settings[var] = {'label': f'Var({var[0]})', 'color': colors[i]}
 
     # create plotting information from simulation
-    x_arr, y_arr, attributes = sim.line_evolv_variance(settings)
+    x_arr, y_arr, attributes = sim._line_evolv_variance(settings)
 
     # plot by line_evolv utility plotting function
-    line_evolv(x_arr, y_arr, attributes,
+    _line_evolv(x_arr, y_arr, attributes,
                     x_label=x_label, x_lim=x_lim, x_log=x_log,
                     y_label=y_label, y_lim=y_lim, y_log=y_log,
                     show=show, save=save)
@@ -350,10 +350,10 @@ def sim_covariance_plot(sim, settings=None,
             settings[var] = {'label': f'Cov({var[0]}, {var[1]})', 'color': colors[i]}
 
     # create plotting information from simulation
-    x_arr, y_arr, attributes = sim.line_evolv_covariance(settings)
+    x_arr, y_arr, attributes = sim._line_evolv_covariance(settings)
 
     # plot by line_evolv utility plotting function
-    line_evolv(x_arr, y_arr, attributes,
+    _line_evolv(x_arr, y_arr, attributes,
                     x_label=x_label, x_lim=x_lim, x_log=x_log,
                     y_label=y_label, y_lim=y_lim, y_log=y_log,
                     show=show, save=save)
@@ -403,10 +403,10 @@ def data_mean_plot(data, settings=None,
             settings[var] = {'label': f'E({var})', 'color': colors[i]}
 
     # create plotting information from data
-    x_arr, y_arr, attributes = data.dots_w_bars_evolv_mean(settings)
+    x_arr, y_arr, attributes = data._dots_w_bars_evolv_mean(settings)
 
     # plot by dots_w_bars_evolv utility plotting function
-    dots_w_bars_evolv(x_arr, y_arr, attributes,
+    _dots_w_bars_evolv(x_arr, y_arr, attributes,
                     x_label=x_label, x_lim=x_lim, x_log=x_log,
                     y_label=y_label, y_lim=y_lim, y_log=y_log,
                     show=show, save=save)
@@ -456,10 +456,10 @@ def data_variance_plot(data, settings=None,
             settings[var] = {'label': f'Var({var[0]})', 'color': colors[i]}
 
     # create plotting information from data
-    x_arr, y_arr, attributes = data.dots_w_bars_evolv_variance(settings)
+    x_arr, y_arr, attributes = data._dots_w_bars_evolv_variance(settings)
 
     # plot by dots_w_bars_evolv utility plotting function
-    dots_w_bars_evolv(x_arr, y_arr, attributes,
+    _dots_w_bars_evolv(x_arr, y_arr, attributes,
                     x_label=x_label, x_lim=x_lim, x_log=x_log,
                     y_label=y_label, y_lim=y_lim, y_log=y_log,
                     show=show, save=save)
@@ -509,10 +509,10 @@ def data_covariance_plot(data, settings=None,
             settings[var] = {'label': f'Cov({var[0]}, {var[1]})', 'color': colors[i]}
 
     # create plotting information from data
-    x_arr, y_arr, attributes = data.dots_w_bars_evolv_covariance(settings)
+    x_arr, y_arr, attributes = data._dots_w_bars_evolv_covariance(settings)
 
     # plot by dots_w_bars_evolv utility plotting function
-    dots_w_bars_evolv(x_arr, y_arr, attributes,
+    _dots_w_bars_evolv(x_arr, y_arr, attributes,
                     x_label=x_label, x_lim=x_lim, x_log=x_log,
                     y_label=y_label, y_lim=y_lim, y_log=y_log,
                     show=show, save=save)
@@ -567,10 +567,10 @@ def data_hist_variables_plot(data, time_ind, normalised=False, settings=None,
             settings[var] = {'label': var, 'color': colors[i], 'opacity': 0.5}
 
     # create plotting information from data
-    bar_arr, bar_attributes = data.histogram_discrete_cell_counts_at_time_point(time_ind, settings)
+    bar_arr, bar_attributes = data._histogram_discrete_cell_counts_at_time_point(time_ind, settings)
 
     # plot by histogram_discrete utility plotting function
-    histogram_discrete(bar_arr, bar_attributes, normalised=normalised,
+    _histogram_discrete(bar_arr, bar_attributes, normalised=normalised,
                             x_label=x_label, x_lim=x_lim, x_log=x_log,
                             y_label=y_label, y_lim=y_lim, y_log=y_log,
                             show=show, save=save)
@@ -595,7 +595,7 @@ def data_hist_waiting_times_plot(data, data_events, normalised=True,
     normalised : bool, optional
         Histograms are normalised if `normalised=True`.
     gamma_fit : bool, optional
-        If true, fit a Gamma distribution to binned waiting time data. Fitted shape and scale
+        If `gamma_fit=True`, fit a Gamma distribution to binned waiting time data. Fitted shape and scale
         parameters are printed; fitted shape (=steps `n`) and mean waiting time (`theta` = shape * scale)
         are shown in the legend label.
     settings : dict of dict, optional
@@ -631,14 +631,14 @@ def data_hist_waiting_times_plot(data, data_events, normalised=True,
     # plot by respective continuous histogram utility plotting functions
     if gamma_fit:
         normalised = True # overwrite normalised, gamma fit currently only as pdf
-        bar_arr, bar_attributes, gamma_fit_func = data.histogram_continuous_event_waiting_times_w_gamma_fit(data_events, settings)
-        histogram_continuous_w_line(bar_arr, bar_attributes, gamma_fit_func, normalised=normalised,
+        bar_arr, bar_attributes, gamma_fit_func = data._histogram_continuous_event_waiting_times_w_gamma_fit(data_events, settings)
+        _histogram_continuous_w_line(bar_arr, bar_attributes, gamma_fit_func, normalised=normalised,
                                 x_label=x_label, x_lim=x_lim, x_log=x_log,
                                 y_label=y_label, y_lim=y_lim, y_log=y_log,
                                 show=show, save=save)
     else:
-        bar_arr, bar_attributes = data.histogram_continuous_event_waiting_times(data_events, settings)
-        histogram_continuous(bar_arr, bar_attributes, normalised=normalised,
+        bar_arr, bar_attributes = data._histogram_continuous_event_waiting_times(data_events, settings)
+        _histogram_continuous(bar_arr, bar_attributes, normalised=normalised,
                                 x_label=x_label, x_lim=x_lim, x_log=x_log,
                                 y_label=y_label, y_lim=y_lim, y_log=y_log,
                                 show=show, save=save)
@@ -690,10 +690,10 @@ def data_variable_scatter_plot(data, time_ind, variable1, variable2, settings=No
         settings = {'color': 'orange', 'opacity': 0.5, 'label': None}
 
     # create plotting information from data
-    x_arr, y_arr, attributes = data.scatter_at_time_point(variable1, variable2, time_ind, settings)
+    x_arr, y_arr, attributes = data._scatter_at_time_point(variable1, variable2, time_ind, settings)
 
     # plot by scatter utility plotting function
-    scatter(x_arr, y_arr, attributes,
+    _scatter(x_arr, y_arr, attributes,
                                 x_label=x_label, x_lim=x_lim, x_log=x_log,
                                 y_label=y_label, y_lim=y_lim, y_log=y_log,
                                 show=show, save=save)
@@ -704,7 +704,46 @@ def selection_plot(estimation_instances, est_type='evidence',
                     x_label=None, x_lim=None, x_log=False,
                     y_label=None, y_lim=None, y_log=False,
                     show=True, save=None):
-    """docstring for ."""
+    """Scatter plot between counts of two variables of a data object at a given time point.
+
+    Parameters
+    ----------
+    estimation_instances : list of memo_py.estimation.Estimation
+        A list of memo_py estimation objects.
+    est_type : str, optional
+        Specify type of selection plot. `est_type='evidence'` (default) to plot logarithmic
+        evidence values from nested sampling. `est_type='likelihood'` to plot the maximal
+        logarithmic likelihood value from nested sampling. `est_type='bic'` to plot the
+        Bayesian information criterion based on the maximal logarithmic likelihood
+        (from nested sampling), number of data points n and number of parameters k
+        (BIC = ln(n) k - 2 ln(Lmax)). `est_type='evidence_from_bic'` to plot logarithmic
+        evidence values (approximated from the BIC values via evidence ≈ exp(-BIC / 2)).
+    settings : dict of dict, optional
+        Optional label and color for the estimation instances.
+    show_errorbar : bool, optional
+        Error bars are shown if `show_errorbar=True` (default). Only available for
+        `est_type='evidence'`.
+    x_label : str, optional
+        Label for x-axis.
+    x_lim : None or tuple of floats, optional
+        Specify x-axis limits.
+    x_log : bool, optional
+        Logarithmic x-axis if `x_log=True`.
+    y_label : str, optional
+        Label for y-axis.
+    y_lim : None or tuple of floats, optional
+        Specify y-axis limits.
+    y_log : bool, optional
+        Logarithmic y-axis if `y_log=True`.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -717,30 +756,47 @@ def selection_plot(estimation_instances, est_type='evidence',
     # create plotting information from estimation_instances
     if est_type=='evidence':
         y_label = 'Log(Evidence)'
-        y_arr_err, x_ticks, attributes = dots_w_bars_evidence(estimation_instances, settings)
+        y_arr_err, x_ticks, attributes = _dots_w_bars_evidence(estimation_instances, settings)
     elif est_type=='likelihood':
         y_label = 'Max. Log(Likelihood)'
-        y_arr_err, x_ticks, attributes = dots_wo_bars_likelihood_max(estimation_instances, settings)
+        y_arr_err, x_ticks, attributes = _dots_wo_bars_likelihood_max(estimation_instances, settings)
     elif est_type=='bic':
         y_label = 'BIC'
-        y_arr_err, x_ticks, attributes = dots_wo_bars_bic(estimation_instances, settings)
+        y_arr_err, x_ticks, attributes = _dots_wo_bars_bic(estimation_instances, settings)
     elif est_type=='evidence_from_bic':
         y_label = 'Log(Evidence) [approx. from BIC]'
-        y_arr_err, x_ticks, attributes = dots_wo_bars_evidence_from_bic(estimation_instances, settings)
+        y_arr_err, x_ticks, attributes = _dots_wo_bars_evidence_from_bic(estimation_instances, settings)
     else:
         warnings.warn('Unknown est_type for model selection plot; default est_type will be used')
         y_label = 'Log(Evidence)'
-        y_arr_err, x_ticks, attributes = dots_w_bars_evidence(estimation_instances, settings)
+        y_arr_err, x_ticks, attributes = _dots_w_bars_evidence(estimation_instances, settings)
 
     # plot by dots_w_bars utility plotting function
-    dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=show_errorbar,
+    _dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=show_errorbar,
                 x_label=x_label, x_lim=x_lim, x_log=x_log,
                 y_label=y_label, y_lim=y_lim, y_log=y_log,
                 show=show, save=save)
 
 
 def est_runplot(estimation, color='limegreen', show=True, save=None):
-    """docstring for ."""
+    """Wrapper to runplot of `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_
+    nested sampling module.
+
+    Parameters
+    ----------
+    estimation : memo_py.estimation.Estimation
+        A memo_py estimation object.
+    color : str, optional
+        Optional color passed to `dynesty`'s `runplot`.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # get plotting information from estimation instance
     sampler_result = estimation.bay_nested_sampler_res
@@ -756,7 +812,24 @@ def est_runplot(estimation, color='limegreen', show=True, save=None):
 
 
 def est_traceplot(estimation, settings=None, show=True, save=None):
-    """docstring for ."""
+    """Wrapper to traceplot of `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_
+    nested sampling module.
+
+    Parameters
+    ----------
+    estimation : memo_py.estimation.Estimation
+        A memo_py estimation object.
+    settings : dict of dict, optional
+        Optional labels for parameters.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -766,7 +839,7 @@ def est_traceplot(estimation, settings=None, show=True, save=None):
             settings[param] = {'label': param}
 
     # get plotting information from estimation instance
-    sampler_result, params_labels = estimation.sampling_res_and_labels(settings)
+    sampler_result, params_labels = estimation._sampling_res_and_labels(settings)
 
     # generate plot by dynesty plotting methods
     fig, axes = dyplot.traceplot(sampler_result,
@@ -790,7 +863,38 @@ def est_parameter_plot(estimation, settings=None, show_errorbar=True,
             x_label=None, x_lim=None,
             y_label="Parameter values", y_lim=None, y_log=False,
             show=True, save=None):
-    """docstring for ."""
+    """Plot summary of 1-dimensional marginal parameter posteriors as median and
+    95% credible interval (2.5th and 97.5th percentiles; error bars).
+
+    Parameters
+    ----------
+    estimation : memo_py.estimation.Estimation
+        A memo_py estimation object.
+    settings : dict of dict, optional
+        Optional label and color for parameters.
+    show_errorbar : bool, optional
+        Error bars are shown if `show_errorbar=True` (default). Error bars show
+        95% credible intervals based on 2.5th and 97.5th percentiles for each
+        parameter's 1-dimensional marginal posterior distribution.
+    x_label : str, optional
+        Label for x-axis.
+    x_lim : None or tuple of floats, optional
+        Specify x-axis limits.
+    y_label : str, optional
+        Label for y-axis.
+    y_lim : None or tuple of floats, optional
+        Specify y-axis limits.
+    y_log : bool, optional
+        Logarithmic y-axis if `y_log=True`.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -800,17 +904,35 @@ def est_parameter_plot(estimation, settings=None, show_errorbar=True,
             settings[param] = {'label': param, 'color': 'dodgerblue'}
 
     # create plotting information from estimation instance
-    y_arr_err, x_ticks, attributes = estimation.dots_w_bars_parameters(settings)
+    y_arr_err, x_ticks, attributes = estimation._dots_w_bars_parameters(settings)
 
     # plot by dots_w_bars utility plotting function
-    dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=show_errorbar,
+    _dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=show_errorbar,
                 x_label=x_label, x_lim=x_lim, x_log=False,
                 y_label=y_label, y_lim=y_lim, y_log=y_log,
                 show=show, save=save)
 
 
 def est_corner_plot(estimation, settings=None, show=True, save=None):
-    """docstring for ."""
+    """Wrapper to corner plot of `corner <https://corner.readthedocs.io/en/latest/>`_ module;
+    visualisation of the parameter posterior distribution by all 2-dimensional and
+    1-dimensional marginals.
+
+    Parameters
+    ----------
+    estimation : memo_py.estimation.Estimation
+        A memo_py estimation object.
+    settings : dict of dict, optional
+        Optional labels for parameters.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -820,7 +942,7 @@ def est_corner_plot(estimation, settings=None, show=True, save=None):
             settings[param] = {'label': param}
 
     # get plotting information from estimation instance
-    samples, labels = estimation.samples_corner_parameters(settings)
+    samples, labels = estimation._samples_corner_parameters(settings)
 
     # use corner package for this plot
     fig = corner.corner(samples, labels=labels)
@@ -833,7 +955,25 @@ def est_corner_plot(estimation, settings=None, show=True, save=None):
 
 
 def est_corner_kernel_plot(estimation, settings=None, show=True, save=None):
-    """docstring for ."""
+    """Wrapper to corner plot of `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_
+    nested sampling module; visualisation of the parameter posterior distribution
+    by all 2-dimensional and 1-dimensional marginals (kernel smoothed).
+
+    Parameters
+    ----------
+    estimation : memo_py.estimation.Estimation
+        A memo_py estimation object.
+    settings : dict of dict, optional
+        Optional labels for parameters.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -843,7 +983,7 @@ def est_corner_kernel_plot(estimation, settings=None, show=True, save=None):
             settings[param] = {'label': param}
 
     # get plotting information from estimation instance
-    sampler_result, params_labels = estimation.sampling_res_and_labels(settings)
+    sampler_result, params_labels = estimation._sampling_res_and_labels(settings)
 
     # generate plot by dynesty plotting methods
     fig, axes = dyplot.cornerplot(sampler_result,
@@ -861,7 +1001,24 @@ def est_corner_kernel_plot(estimation, settings=None, show=True, save=None):
 
 
 def est_corner_weight_plot(estimation, settings=None, show=True, save=None):
-    """docstring for ."""
+    """Wrapper to cornerpoints plot of `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_
+    nested sampling module.
+
+    Parameters
+    ----------
+    estimation : memo_py.estimation.Estimation
+        A memo_py estimation object.
+    settings : dict of dict, optional
+        Optional labels for parameters.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -871,7 +1028,7 @@ def est_corner_weight_plot(estimation, settings=None, show=True, save=None):
             settings[param] = {'label': param}
 
     # get plotting information from estimation instance
-    sampler_result, params_labels = estimation.sampling_res_and_labels(settings)
+    sampler_result, params_labels = estimation._sampling_res_and_labels(settings)
 
     # generate plot by dynesty plotting methods
     fig, axes = dyplot.cornerpoints(sampler_result,
@@ -886,7 +1043,27 @@ def est_corner_weight_plot(estimation, settings=None, show=True, save=None):
 
 
 def est_corner_bounds_plot(estimation, num_iter=14, settings=None, show=True, save=None):
-    """docstring for ."""
+    """Wrapper to cornerbound plots of `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_
+    nested sampling module.
+
+    Parameters
+    ----------
+    estimation : memo_py.estimation.Estimation
+        A memo_py estimation object.
+    num_iter : int, optional
+        Number of iterations/subplots (iterations that are selected for plotting
+        lie uniformly between first and last iteration of the nested sampling run).
+    settings : dict of dict, optional
+        Optional labels for parameters.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -896,7 +1073,7 @@ def est_corner_bounds_plot(estimation, num_iter=14, settings=None, show=True, sa
             settings[param] = {'label': param}
 
     # get plotting information from estimation instance
-    sampler_result, params_labels, prior_transform = estimation.sampling_res_and_labels_and_priortransform(settings)
+    sampler_result, params_labels, prior_transform = estimation._sampling_res_and_labels_and_priortransform(settings)
 
     # create subplots
     num_it_segs = num_iter
@@ -939,13 +1116,45 @@ def est_chains_plot(estimation, weighted=True,
                     x_label='Sample iteration', x_lim=None, x_log=False,
                     y_label='Parameter values', y_lim=None, y_log=False,
                     show=True, save=None):
-    """docstring for ."""
+    """Plot (weighted) parameter samples over the iterations of the nested sampling
+    run.
+
+    Parameters
+    ----------
+    estimation : memo_py.estimation.Estimation
+        A memo_py estimation object.
+    weighted : bool, optional
+        Plot parameter samples of the nested sampling run weighted (default)
+        or unweighted. Samples need to be weighted to correspond to the actual
+        parameter posterior.
+    x_label : str, optional
+        Label for x-axis.
+    x_lim : None or tuple of floats, optional
+        Specify x-axis limits.
+    x_log : bool, optional
+        Logarithmic x-axis if `x_log=True`.
+    y_label : str, optional
+        Label for y-axis.
+    y_lim : None or tuple of floats, optional
+        Specify y-axis limits.
+    y_log : bool, optional
+        Logarithmic y-axis if `y_log=True`.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+
+    """
 
     # get plotting information from estimation instance
     if weighted:
-        samples, num_params = estimation.samples_weighted_chains_parameters()
+        samples, num_params = estimation._samples_weighted_chains_parameters()
     else:
-        samples, num_params = estimation.samples_chains_parameters()
+        samples, num_params = estimation._samples_chains_parameters()
 
     # generate plot
     fig = plt.figure()
@@ -983,7 +1192,48 @@ def est_bestfit_mean_plot(estimation, settings=None, data=True, conf=True,
                             x_label='Time', x_lim=None, x_log=False,
                             y_label='Mean', y_lim=None, y_log=False,
                             show=True, save=None):
-    """docstring for ."""
+    """Plot the model mean trajectories based on the estimated parameter posterior
+    distribution. `Note:` As a summary, a model trajectory based on the median of the individual
+    1-dimensional marginal parameter posteriors is shown; for multimodal
+    parameter posteriors this will yield an inaccurate summary (here, it is advised to
+    take the credible band with `conf=True`).
+
+    Parameters
+    ----------
+    estimation : memo_py.estimation.Estimation
+        A memo_py estimation object.
+    settings : dict of dict, optional
+        Optional label and color settings for the mean traces.
+    data : bool, optional
+        If `data=True` (default), plot the data mean statistics with standard errors
+        in the background (grey color).
+    conf : bool, optional
+        If `conf=True` (default), 95% credible bands of the model means are shown;
+        based on 2.5th and 97.5th percentiles for each time point of model
+        trajectories drawn from the estimated parameter posterior distribution.
+        `Note:` The computation of credible bands can be expensive for complex
+        models; in this case you might want to start plotting with `conf=False`.
+    x_label : str, optional
+        Label for x-axis.
+    x_lim : None or tuple of floats, optional
+        Specify x-axis limits.
+    x_log : bool, optional
+        Logarithmic x-axis if `x_log=True`.
+    y_label : str, optional
+        Label for y-axis.
+    y_lim : None or tuple of floats, optional
+        Specify y-axis limits.
+    y_log : bool, optional
+        Logarithmic y-axis if `y_log=True`.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -998,33 +1248,33 @@ def est_bestfit_mean_plot(estimation, settings=None, data=True, conf=True,
     # plot by respective utility plotting function
     if data:
         if conf:
-            x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes = estimation.dots_w_bars_and_line_w_band_evolv_mean_confidence(settings)
+            x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes = estimation._dots_w_bars_and_line_w_band_evolv_mean_confidence(settings)
 
-            dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err,
+            _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err,
                                             y_line, y_lower, y_upper, attributes,
                                             x_label=x_label, x_lim=x_lim, x_log=x_log,
                                             y_label=y_label, y_lim=y_lim, y_log=y_log,
                                             show=show, save=save)
         else:
-            x_arr_dots, x_arr_line, y_dots_err, y_line, attributes = estimation.dots_w_bars_and_line_evolv_bestfit_mean_data(settings)
+            x_arr_dots, x_arr_line, y_dots_err, y_line, attributes = estimation._dots_w_bars_and_line_evolv_bestfit_mean_data(settings)
 
-            dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line, y_dots_err, y_line, attributes,
+            _dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line, y_dots_err, y_line, attributes,
                                             x_label=x_label, x_lim=x_lim, x_log=x_log,
                                             y_label=y_label, y_lim=y_lim, y_log=y_log,
                                             show=show, save=save)
 
     else:
         if conf:
-            x_arr, y_line, y_lower, y_upper, attributes = estimation.line_w_band_evolv_mean_confidence(settings)
+            x_arr, y_line, y_lower, y_upper, attributes = estimation._line_w_band_evolv_mean_confidence(settings)
 
-            line_w_band_evolv(x_arr, y_line, y_lower, y_upper, attributes,
+            _line_w_band_evolv(x_arr, y_line, y_lower, y_upper, attributes,
                                             x_label=x_label, x_lim=x_lim, x_log=x_log,
                                             y_label=y_label, y_lim=y_lim, y_log=y_log,
                                             show=show, save=save)
         else:
-            x_arr, y_arr, attributes = estimation.line_evolv_bestfit_mean(settings)
+            x_arr, y_arr, attributes = estimation._line_evolv_bestfit_mean(settings)
 
-            line_evolv(x_arr, y_arr, attributes,
+            _line_evolv(x_arr, y_arr, attributes,
                                             x_label=x_label, x_lim=x_lim, x_log=x_log,
                                             y_label=y_label, y_lim=y_lim, y_log=y_log,
                                             show=show, save=save)
@@ -1034,7 +1284,48 @@ def est_bestfit_variance_plot(estimation, settings=None, data=True, conf=True,
                             x_label='Time', x_lim=None, x_log=False,
                             y_label='Variance', y_lim=None, y_log=False,
                             show=True, save=None):
-    """docstring for ."""
+    """Plot the model variance trajectories based on the estimated parameter posterior
+    distribution. `Note:` As a summary, a model trajectory based on the median of the individual
+    1-dimensional marginal parameter posteriors is shown; for multimodal
+    parameter posteriors this will yield an inaccurate summary (here, it is advised to
+    take the credible band with `conf=True`).
+
+    Parameters
+    ----------
+    estimation : memo_py.estimation.Estimation
+        A memo_py estimation object.
+    settings : dict of dict, optional
+        Optional label and color settings for the variance traces.
+    data : bool, optional
+        If `data=True` (default), plot the data variance statistics with standard errors
+        in the background (grey color).
+    conf : bool, optional
+        If `conf=True` (default), 95% credible bands of the model variances are shown;
+        based on 2.5th and 97.5th percentiles for each time point of model
+        trajectories drawn from the estimated parameter posterior distribution.
+        `Note:` The computation of credible bands can be expensive for complex
+        models; in this case you might want to start plotting with `conf=False`.
+    x_label : str, optional
+        Label for x-axis.
+    x_lim : None or tuple of floats, optional
+        Specify x-axis limits.
+    x_log : bool, optional
+        Logarithmic x-axis if `x_log=True`.
+    y_label : str, optional
+        Label for y-axis.
+    y_lim : None or tuple of floats, optional
+        Specify y-axis limits.
+    y_log : bool, optional
+        Logarithmic y-axis if `y_log=True`.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -1050,33 +1341,33 @@ def est_bestfit_variance_plot(estimation, settings=None, data=True, conf=True,
     # plot by respective utility plotting function
     if data:
         if conf:
-            x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes = estimation.dots_w_bars_and_line_w_band_evolv_variance_confidence(settings)
+            x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes = estimation._dots_w_bars_and_line_w_band_evolv_variance_confidence(settings)
 
-            dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err,
+            _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err,
                                             y_line, y_lower, y_upper, attributes,
                                             x_label=x_label, x_lim=x_lim, x_log=x_log,
                                             y_label=y_label, y_lim=y_lim, y_log=y_log,
                                             show=show, save=save)
         else:
-            x_arr_dots, x_arr_line, y_dots_err, y_line, attributes = estimation.dots_w_bars_and_line_evolv_bestfit_variance_data(settings)
+            x_arr_dots, x_arr_line, y_dots_err, y_line, attributes = estimation._dots_w_bars_and_line_evolv_bestfit_variance_data(settings)
 
-            dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line, y_dots_err, y_line, attributes,
+            _dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line, y_dots_err, y_line, attributes,
                                             x_label=x_label, x_lim=x_lim, x_log=x_log,
                                             y_label=y_label, y_lim=y_lim, y_log=y_log,
                                             show=show, save=save)
 
     else:
         if conf:
-            x_arr, y_line, y_lower, y_upper, attributes = estimation.line_w_band_evolv_variance_confidence(settings)
+            x_arr, y_line, y_lower, y_upper, attributes = estimation._line_w_band_evolv_variance_confidence(settings)
 
-            line_w_band_evolv(x_arr, y_line, y_lower, y_upper, attributes,
+            _line_w_band_evolv(x_arr, y_line, y_lower, y_upper, attributes,
                                             x_label=x_label, x_lim=x_lim, x_log=x_log,
                                             y_label=y_label, y_lim=y_lim, y_log=y_log,
                                             show=show, save=save)
         else:
-            x_arr, y_arr, attributes = estimation.line_evolv_bestfit_variance(settings)
+            x_arr, y_arr, attributes = estimation._line_evolv_bestfit_variance(settings)
 
-            line_evolv(x_arr, y_arr, attributes,
+            _line_evolv(x_arr, y_arr, attributes,
                                             x_label=x_label, x_lim=x_lim, x_log=x_log,
                                             y_label=y_label, y_lim=y_lim, y_log=y_log,
                                             show=show, save=save)
@@ -1086,7 +1377,48 @@ def est_bestfit_covariance_plot(estimation, settings=None, data=True, conf=True,
                             x_label='Time', x_lim=None, x_log=False,
                             y_label='Covariance', y_lim=None, y_log=False,
                             show=True, save=None):
-    """docstring for ."""
+    """Plot the model covariance trajectories based on the estimated parameter posterior
+    distribution. `Note:` As a summary, a model trajectory based on the median of the individual
+    1-dimensional marginal parameter posteriors is shown; for multimodal
+    parameter posteriors this will yield an inaccurate summary (here, it is advised to
+    take the credible band with `conf=True`).
+
+    Parameters
+    ----------
+    estimation : memo_py.estimation.Estimation
+        A memo_py estimation object.
+    settings : dict of dict, optional
+        Optional label and color settings for the covariance traces.
+    data : bool, optional
+        If `data=True` (default), plot the data covariance statistics with standard errors
+        in the background (grey color).
+    conf : bool, optional
+        If `conf=True` (default), 95% credible bands of the model covariances are shown;
+        based on 2.5th and 97.5th percentiles for each time point of model
+        trajectories drawn from the estimated parameter posterior distribution.
+        `Note:` The computation of credible bands can be expensive for complex
+        models; in this case you might want to start plotting with `conf=False`.
+    x_label : str, optional
+        Label for x-axis.
+    x_lim : None or tuple of floats, optional
+        Specify x-axis limits.
+    x_log : bool, optional
+        Logarithmic x-axis if `x_log=True`.
+    y_label : str, optional
+        Label for y-axis.
+    y_lim : None or tuple of floats, optional
+        Specify y-axis limits.
+    y_log : bool, optional
+        Logarithmic y-axis if `y_log=True`.
+    show : bool, optional
+        Plot is shown if `show=True`.
+    save : None or str, optional
+        Provide a path to save the plot.
+
+    Returns
+    -------
+    None
+    """
 
     # if not given, create some default settings
     if settings==None:
@@ -1102,33 +1434,33 @@ def est_bestfit_covariance_plot(estimation, settings=None, data=True, conf=True,
     # plot by respective utility plotting function
     if data:
         if conf:
-            x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes = estimation.dots_w_bars_and_line_w_band_evolv_covariance_confidence(settings)
+            x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes = estimation._dots_w_bars_and_line_w_band_evolv_covariance_confidence(settings)
 
-            dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err,
+            _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err,
                                             y_line, y_lower, y_upper, attributes,
                                             x_label=x_label, x_lim=x_lim, x_log=x_log,
                                             y_label=y_label, y_lim=y_lim, y_log=y_log,
                                             show=show, save=save)
         else:
-            x_arr_dots, x_arr_line, y_dots_err, y_line, attributes = estimation.dots_w_bars_and_line_evolv_bestfit_covariance_data(settings)
+            x_arr_dots, x_arr_line, y_dots_err, y_line, attributes = estimation._dots_w_bars_and_line_evolv_bestfit_covariance_data(settings)
 
-            dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line, y_dots_err, y_line, attributes,
+            _dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line, y_dots_err, y_line, attributes,
                                             x_label=x_label, x_lim=x_lim, x_log=x_log,
                                             y_label=y_label, y_lim=y_lim, y_log=y_log,
                                             show=show, save=save)
 
     else:
         if conf:
-            x_arr, y_line, y_lower, y_upper, attributes = estimation.line_w_band_evolv_covariance_confidence(settings)
+            x_arr, y_line, y_lower, y_upper, attributes = estimation._line_w_band_evolv_covariance_confidence(settings)
 
-            line_w_band_evolv(x_arr, y_line, y_lower, y_upper, attributes,
+            _line_w_band_evolv(x_arr, y_line, y_lower, y_upper, attributes,
                                             x_label=x_label, x_lim=x_lim, x_log=x_log,
                                             y_label=y_label, y_lim=y_lim, y_log=y_log,
                                             show=show, save=save)
         else:
-            x_arr, y_arr, attributes = estimation.line_evolv_bestfit_covariance(settings)
+            x_arr, y_arr, attributes = estimation._line_evolv_bestfit_covariance(settings)
 
-            line_evolv(x_arr, y_arr, attributes,
+            _line_evolv(x_arr, y_arr, attributes,
                                             x_label=x_label, x_lim=x_lim, x_log=x_log,
                                             y_label=y_label, y_lim=y_lim, y_log=y_log,
                                             show=show, save=save)
@@ -1138,41 +1470,44 @@ def est_bestfit_covariance_plot(estimation, settings=None, data=True, conf=True,
 ### PLOTTING UTILITY FUNCTIONS ###
 ##################################
 
-def dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=True,
+def _dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=True,
                 x_label=None, x_lim=None, x_log=False,
                 y_label=None, y_lim=None, y_log=False,
                 show=True, save=None):
-    """
-    Plot dots with error bars (values in y axis, iteration over x axis).
+    """Private plotting utility function."""
 
-    parameters
-    ----------
-    y_arr_err
-        numpy array with shape (# dots, 2); errors are given in the second
-        dimension
-    attributes
-        dictionary specifying the keys 'color'
-    x_ticks (set None to ignore)
-        list of labels for dots which are plotted below x axis.
-    output
-        dictionary specifying the keys 'output_folder' and 'plot_name'
-
-
-    example
-    -------
-    y_arr_err = np.array([
-    [1, 0.2],
-    [2, 0.8],
-    [3, 0.3]
-    ])
-
-    x_ticks = ['a', 'b', 'c']
-
-    attributes = {'color': 'dodgerblue'}
-
-    output = {'output_folder': './test_figures',
-            'plot_name': 'fig_test_dots_bars'}
-    """
+    # OLD DOCS, maybe helpful for later use
+    # """
+    # Plot dots with error bars (values in y axis, iteration over x axis).
+    #
+    # parameters
+    # ----------
+    # y_arr_err
+    #     numpy array with shape (# dots, 2); errors are given in the second
+    #     dimension
+    # attributes
+    #     dictionary specifying the keys 'color'
+    # x_ticks (set None to ignore)
+    #     list of labels for dots which are plotted below x axis.
+    # output
+    #     dictionary specifying the keys 'output_folder' and 'plot_name'
+    #
+    #
+    # example
+    # -------
+    # y_arr_err = np.array([
+    # [1, 0.2],
+    # [2, 0.8],
+    # [3, 0.3]
+    # ])
+    #
+    # x_ticks = ['a', 'b', 'c']
+    #
+    # attributes = {'color': 'dodgerblue'}
+    #
+    # output = {'output_folder': './test_figures',
+    #         'plot_name': 'fig_test_dots_bars'}
+    # """
 
     # initialise figure and axis settings
     fig = plt.figure()
@@ -1210,40 +1545,44 @@ def dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=True,
         plt.show(fig, block=False)
 
 
-def dots_w_bars_evolv(x_arr, y_arr_err, var_attributes,
+def _dots_w_bars_evolv(x_arr, y_arr_err, var_attributes,
                         x_label=None, x_lim=None, x_log=False,
                         y_label=None, y_lim=None, y_log=False,
                         show=True, save=None):
-    """
-    Plot multiple evolving (e.g. over time) dots with error bars.
+    """Private plotting utility function."""
 
-    parameters
-    ----------
-    x_arr
-        numpy array with shape (# time points, )
-    y_arr_err
-        numpy array with shape (# variables, # time points, 2); third
-        dimension includes [value, error value]
-    var_attributes
-        dictionary specifying the keys 0, 1, ..., # variables - 1
-        with tuples (string for legend label, plt color code for variable)
-    output
-        dictionary specifying the keys 'output_folder' and 'plot_name'
+    # OLD DOCS, maybe helpful for later use
+    # """
+    # Plot multiple evolving (e.g. over time) dots with error bars.
+    #
+    # parameters
+    # ----------
+    # x_arr
+    #     numpy array with shape (# time points, )
+    # y_arr_err
+    #     numpy array with shape (# variables, # time points, 2); third
+    #     dimension includes [value, error value]
+    # var_attributes
+    #     dictionary specifying the keys 0, 1, ..., # variables - 1
+    #     with tuples (string for legend label, plt color code for variable)
+    # output
+    #     dictionary specifying the keys 'output_folder' and 'plot_name'
+    #
+    # example
+    # -------
+    # x_arr = np.linspace(0, 2, num=3, endpoint=True)
+    # y_arr_err = np.array([
+    #                     [[1, 0.1], [2, 0.2], [3, 0.3]],
+    #                     [[2, 0.4], [1, 0.1], [4, 0.5]]
+    #                     ])
+    #
+    # # use var_ind as specified in var_order
+    # var_attributes = {1: ('$A_t$ (ON gene)', 'limegreen'),
+    #                 0: ('$B_t$ (OFF gene)', 'tomato')}
+    # output = {'output_folder': './test_figures',
+    #         'plot_name': 'fig_test_dots_time'}
+    # """
 
-    example
-    -------
-    x_arr = np.linspace(0, 2, num=3, endpoint=True)
-    y_arr_err = np.array([
-                        [[1, 0.1], [2, 0.2], [3, 0.3]],
-                        [[2, 0.4], [1, 0.1], [4, 0.5]]
-                        ])
-
-    # use var_ind as specified in var_order
-    var_attributes = {1: ('$A_t$ (ON gene)', 'limegreen'),
-                    0: ('$B_t$ (OFF gene)', 'tomato')}
-    output = {'output_folder': './test_figures',
-            'plot_name': 'fig_test_dots_time'}
-    """
     # initialise figure and axis settings
     fig = plt.figure()
 
@@ -1282,39 +1621,43 @@ def dots_w_bars_evolv(x_arr, y_arr_err, var_attributes,
         plt.show(fig, block=False)
 
 
-def line_evolv(x_arr, y_line, var_attributes,
+def _line_evolv(x_arr, y_line, var_attributes,
                 x_label=None, x_lim=None, x_log=False,
                 y_label=None, y_lim=None, y_log=False,
                 show=True, save=None):
-    """
-    Plot multiple evolving (e.g. over time) lines.
+    """Private plotting utility function."""
 
-    parameters
-    ----------
-    x_arr
-        numpy array with shape (# time points, )
-    y_line
-        numpy array setting the multiple lines with shape (# variables, # time points)
-    var_attributes
-        dictionary specifying the keys 0, 1, ..., # variables - 1
-        with tuples (string for legend label, plt color code for variable)
-    output
-        dictionary specifying the keys 'output_folder' and 'plot_name'
+    # OLD DOCS, maybe helpful for later use
+    # """
+    # Plot multiple evolving (e.g. over time) lines.
+    #
+    # parameters
+    # ----------
+    # x_arr
+    #     numpy array with shape (# time points, )
+    # y_line
+    #     numpy array setting the multiple lines with shape (# variables, # time points)
+    # var_attributes
+    #     dictionary specifying the keys 0, 1, ..., # variables - 1
+    #     with tuples (string for legend label, plt color code for variable)
+    # output
+    #     dictionary specifying the keys 'output_folder' and 'plot_name'
+    #
+    # example
+    # -------
+    # x_arr = np.linspace(0, 2, num=3, endpoint=True)
+    #
+    # y_line = np.array([
+    # [1, 2, 3],
+    # [2, 1, 4]
+    # ])
+    #
+    # var_attributes = {1: ('$A_t$ (ON gene)', 'limegreen'),
+    #                 0: ('$B_t$ (OFF gene)', 'tomato')}
+    # output = {'output_folder': './test_figures',
+    #         'plot_name': 'fig_test_line_evolv'}
+    # """
 
-    example
-    -------
-    x_arr = np.linspace(0, 2, num=3, endpoint=True)
-
-    y_line = np.array([
-    [1, 2, 3],
-    [2, 1, 4]
-    ])
-
-    var_attributes = {1: ('$A_t$ (ON gene)', 'limegreen'),
-                    0: ('$B_t$ (OFF gene)', 'tomato')}
-    output = {'output_folder': './test_figures',
-            'plot_name': 'fig_test_line_evolv'}
-    """
     # initialise figure and axis settings
     fig = plt.figure()
 
@@ -1352,55 +1695,59 @@ def line_evolv(x_arr, y_line, var_attributes,
         plt.show(fig, block=False)
 
 
-def line_w_band_evolv(x_arr, y_line, y_lower, y_upper, var_attributes,
+def _line_w_band_evolv(x_arr, y_line, y_lower, y_upper, var_attributes,
                                     x_label=None, x_lim=None, x_log=False,
                                     y_label=None, y_lim=None, y_log=False,
                                     show=True, save=None):
-    """
-    Plot multiple evolving (e.g. over time) lines with error/prediction bands.
+    """Private plotting utility function."""
 
-    parameters
-    ----------
-    x_arr
-        numpy array with shape (# time points, )
-    y_line
-        numpy array setting the multiple lines with shape (# variables, # time points)
-    y_lower
-        numpy array setting the lower bounds of the band
-        with shape (# variables, # time points)
-    y_upper
-        numpy array setting the upper bounds of the band
-        with shape (# variables, # time points)
-    var_attributes
-        dictionary specifying the keys 0, 1, ..., # variables - 1
-        with tuples (string for legend label, plt color code for variable)
-    output
-        dictionary specifying the keys 'output_folder' and 'plot_name'
+    # OLD DOCS, maybe helpful for later use
+    # """
+    # Plot multiple evolving (e.g. over time) lines with error/prediction bands.
+    #
+    # parameters
+    # ----------
+    # x_arr
+    #     numpy array with shape (# time points, )
+    # y_line
+    #     numpy array setting the multiple lines with shape (# variables, # time points)
+    # y_lower
+    #     numpy array setting the lower bounds of the band
+    #     with shape (# variables, # time points)
+    # y_upper
+    #     numpy array setting the upper bounds of the band
+    #     with shape (# variables, # time points)
+    # var_attributes
+    #     dictionary specifying the keys 0, 1, ..., # variables - 1
+    #     with tuples (string for legend label, plt color code for variable)
+    # output
+    #     dictionary specifying the keys 'output_folder' and 'plot_name'
+    #
+    # example
+    # -------
+    # x_arr = np.linspace(0, 2, num=3, endpoint=True)
+    #
+    # y_line = np.array([
+    # [1, 2, 3],
+    # [2, 1, 4]
+    # ])
+    #
+    # y_lower = np.array([
+    # [0.5, 1, 2],
+    # [1.8, 0.8, 3.5]
+    # ])
+    #
+    # y_upper = np.array([
+    # [1.4, 2.7, 3.1],
+    # [2.1, 1.3, 4.4]
+    # ])
+    #
+    # var_attributes = {1: ('$A_t$ (ON gene)', 'limegreen'),
+    #                 0: ('$B_t$ (OFF gene)', 'tomato')}
+    # output = {'output_folder': './test_figures',
+    #         'plot_name': 'fig_test_line_band'}
+    # """
 
-    example
-    -------
-    x_arr = np.linspace(0, 2, num=3, endpoint=True)
-
-    y_line = np.array([
-    [1, 2, 3],
-    [2, 1, 4]
-    ])
-
-    y_lower = np.array([
-    [0.5, 1, 2],
-    [1.8, 0.8, 3.5]
-    ])
-
-    y_upper = np.array([
-    [1.4, 2.7, 3.1],
-    [2.1, 1.3, 4.4]
-    ])
-
-    var_attributes = {1: ('$A_t$ (ON gene)', 'limegreen'),
-                    0: ('$B_t$ (OFF gene)', 'tomato')}
-    output = {'output_folder': './test_figures',
-            'plot_name': 'fig_test_line_band'}
-    """
     # initialise figure and axis settings
     fig = plt.figure()
 
@@ -1440,50 +1787,54 @@ def line_w_band_evolv(x_arr, y_line, y_lower, y_upper, var_attributes,
         plt.show(fig, block=False)
 
 
-def dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line,
+def _dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line,
                                             y_dots_err, y_line, var_attributes,
                                             x_label=None, x_lim=None, x_log=False,
                                             y_label=None, y_lim=None, y_log=False,
                                             show=True, save=None):
-    """
-    Plot multiple evolving (e.g. over time) lines with error/prediction bands.
+    """Private plotting utility function."""
 
-    parameters
-    ----------
-    x_arr_dots
-        numpy array with shape (# time points, ); used for aligment with
-        y_dots_err
-    x_arr_line
-        numpy array with shape (# time points, ); used for aligment with
-        y_line, y_lower and y_upper
-    y_dots_err
-        numpy array with shape (# variables, # time points, 2); third
-        dimension includes [value, error value]
-    y_line
-        numpy array setting the multiple lines with shape (# variables, # time points)
-    var_attributes
-        dictionary specifying the keys 0, 1, ..., # variables - 1
-        with tuples (string for legend label, plt color code for variable)
-    output
-        dictionary specifying the keys 'output_folder' and 'plot_name'
+    # OLD DOCS, maybe helpful for later use
+    # """
+    # Plot multiple evolving (e.g. over time) lines with error/prediction bands.
+    #
+    # parameters
+    # ----------
+    # x_arr_dots
+    #     numpy array with shape (# time points, ); used for aligment with
+    #     y_dots_err
+    # x_arr_line
+    #     numpy array with shape (# time points, ); used for aligment with
+    #     y_line, y_lower and y_upper
+    # y_dots_err
+    #     numpy array with shape (# variables, # time points, 2); third
+    #     dimension includes [value, error value]
+    # y_line
+    #     numpy array setting the multiple lines with shape (# variables, # time points)
+    # var_attributes
+    #     dictionary specifying the keys 0, 1, ..., # variables - 1
+    #     with tuples (string for legend label, plt color code for variable)
+    # output
+    #     dictionary specifying the keys 'output_folder' and 'plot_name'
+    #
+    # example
+    # -------
+    # x_arr_dots = np.linspace(0, 1, num=2, endpoint=True)
+    # x_arr_line = np.linspace(0, 2, num=3, endpoint=True)
+    # y_dots_err = np.array([
+    #                     [[1, 0.1], [2, 0.3]],
+    #                     [[2, 0.4], [1, 0.5]]
+    #                     ])
+    # y_line = np.array([
+    # [1, 2, 3],
+    # [2, 1, 4]
+    # ])
+    # var_attributes = {1: ('$A_t$ (ON gene)', 'limegreen'),
+    #                 0: ('$B_t$ (OFF gene)', 'tomato')}
+    # output = {'output_folder': './test_figures',
+    #         'plot_name': 'fig_test_line_band_dots_bars'}
+    # """
 
-    example
-    -------
-    x_arr_dots = np.linspace(0, 1, num=2, endpoint=True)
-    x_arr_line = np.linspace(0, 2, num=3, endpoint=True)
-    y_dots_err = np.array([
-                        [[1, 0.1], [2, 0.3]],
-                        [[2, 0.4], [1, 0.5]]
-                        ])
-    y_line = np.array([
-    [1, 2, 3],
-    [2, 1, 4]
-    ])
-    var_attributes = {1: ('$A_t$ (ON gene)', 'limegreen'),
-                    0: ('$B_t$ (OFF gene)', 'tomato')}
-    output = {'output_folder': './test_figures',
-            'plot_name': 'fig_test_line_band_dots_bars'}
-    """
     # initialise figure and axis settings
     fig = plt.figure()
 
@@ -1541,64 +1892,68 @@ def dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line,
         plt.show(fig, block=False)
 
 
-def dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err, y_line,
+def _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err, y_line,
                                         y_lower, y_upper, var_attributes,
                                         x_label=None, x_lim=None, x_log=False,
                                         y_label=None, y_lim=None, y_log=False,
                                         show=True, save=None):
-    """
-    Plot multiple evolving (e.g. over time) lines with error/prediction bands.
+    """Private plotting utility function."""
 
-    parameters
-    ----------
-    x_arr_dots
-        numpy array with shape (# time points, ); used for aligment with
-        y_dots_err
-    x_arr_line
-        numpy array with shape (# time points, ); used for aligment with
-        y_line, y_lower and y_upper
-    y_dots_err
-        numpy array with shape (# variables, # time points, 2); third
-        dimension includes [value, error value]
-    y_line
-        numpy array setting the multiple lines with shape (# variables, # time points)
-    y_lower
-        numpy array setting the lower bounds of the band
-        with shape (# variables, # time points)
-    y_upper
-        numpy array setting the upper bounds of the band
-        with shape (# variables, # time points)
-    var_attributes
-        dictionary specifying the keys 0, 1, ..., # variables - 1
-        with tuples (string for legend label, plt color code for variable)
-    output
-        dictionary specifying the keys 'output_folder' and 'plot_name'
+    # OLD DOCS, maybe helpful for later use
+    # """
+    # Plot multiple evolving (e.g. over time) lines with error/prediction bands.
+    #
+    # parameters
+    # ----------
+    # x_arr_dots
+    #     numpy array with shape (# time points, ); used for aligment with
+    #     y_dots_err
+    # x_arr_line
+    #     numpy array with shape (# time points, ); used for aligment with
+    #     y_line, y_lower and y_upper
+    # y_dots_err
+    #     numpy array with shape (# variables, # time points, 2); third
+    #     dimension includes [value, error value]
+    # y_line
+    #     numpy array setting the multiple lines with shape (# variables, # time points)
+    # y_lower
+    #     numpy array setting the lower bounds of the band
+    #     with shape (# variables, # time points)
+    # y_upper
+    #     numpy array setting the upper bounds of the band
+    #     with shape (# variables, # time points)
+    # var_attributes
+    #     dictionary specifying the keys 0, 1, ..., # variables - 1
+    #     with tuples (string for legend label, plt color code for variable)
+    # output
+    #     dictionary specifying the keys 'output_folder' and 'plot_name'
+    #
+    # example
+    # -------
+    # x_arr_dots = np.linspace(0, 1, num=2, endpoint=True)
+    # x_arr_line = np.linspace(0, 2, num=3, endpoint=True)
+    # y_dots_err = np.array([
+    #                     [[1, 0.1], [2, 0.3]],
+    #                     [[2, 0.4], [1, 0.5]]
+    #                     ])
+    # y_line = np.array([
+    # [1, 2, 3],
+    # [2, 1, 4]
+    # ])
+    # y_lower = np.array([
+    # [0.5, 1, 2],
+    # [1.8, 0.8, 3.5]
+    # ])
+    # y_upper = np.array([
+    # [1.4, 2.7, 3.1],
+    # [2.1, 1.3, 4.4]
+    # ])
+    # var_attributes = {1: ('$A_t$ (ON gene)', 'limegreen'),
+    #                 0: ('$B_t$ (OFF gene)', 'tomato')}
+    # output = {'output_folder': './test_figures',
+    #         'plot_name': 'fig_test_line_band_dots_bars'}
+    # """
 
-    example
-    -------
-    x_arr_dots = np.linspace(0, 1, num=2, endpoint=True)
-    x_arr_line = np.linspace(0, 2, num=3, endpoint=True)
-    y_dots_err = np.array([
-                        [[1, 0.1], [2, 0.3]],
-                        [[2, 0.4], [1, 0.5]]
-                        ])
-    y_line = np.array([
-    [1, 2, 3],
-    [2, 1, 4]
-    ])
-    y_lower = np.array([
-    [0.5, 1, 2],
-    [1.8, 0.8, 3.5]
-    ])
-    y_upper = np.array([
-    [1.4, 2.7, 3.1],
-    [2.1, 1.3, 4.4]
-    ])
-    var_attributes = {1: ('$A_t$ (ON gene)', 'limegreen'),
-                    0: ('$B_t$ (OFF gene)', 'tomato')}
-    output = {'output_folder': './test_figures',
-            'plot_name': 'fig_test_line_band_dots_bars'}
-    """
     # initialise figure and axis settings
     fig = plt.figure()
 
@@ -1641,33 +1996,36 @@ def dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err, y_line
         plt.show(fig, block=False)
 
 
-def histogram_discrete(bar_arr, bar_attributes, normalised=False,
+def _histogram_discrete(bar_arr, bar_attributes, normalised=False,
                         x_label=None, x_lim=None, x_log=False,
                         y_label=None, y_lim=None, y_log=False,
                         show=True, save=None):
-    """
-    Plot a histogram for discrete values.
+    """Private plotting utility function."""
 
-    parameters
-    ----------
-    bar_arr
-        numpy array of discrete values with shape (#realisations, #variables),
-        histograms are computed over all realisations for each variable
-
-    bar_attributes
-        dictionary with keys specifying a general bin 'label' and bin 'color'
-    output
-        dictionary specifying the keys 'output_folder' and 'plot_name'
-
-    example
-    -------
-    bar_arr = np.random.poisson(10, size=10).reshape(10, 1)
-
-    bar_attributes = {0 : {'label': 'some bins', 'color': 'dodgerblue', 'opacity': 1.0}}
-
-    output = {'output_folder': './test_figures',
-            'plot_name': 'hist_disc_test'}
-    """
+    # OLD DOCS, maybe helpful for later use
+    # """
+    # Plot a histogram for discrete values.
+    #
+    # parameters
+    # ----------
+    # bar_arr
+    #     numpy array of discrete values with shape (#realisations, #variables),
+    #     histograms are computed over all realisations for each variable
+    #
+    # bar_attributes
+    #     dictionary with keys specifying a general bin 'label' and bin 'color'
+    # output
+    #     dictionary specifying the keys 'output_folder' and 'plot_name'
+    #
+    # example
+    # -------
+    # bar_arr = np.random.poisson(10, size=10).reshape(10, 1)
+    #
+    # bar_attributes = {0 : {'label': 'some bins', 'color': 'dodgerblue', 'opacity': 1.0}}
+    #
+    # output = {'output_folder': './test_figures',
+    #         'plot_name': 'hist_disc_test'}
+    # """
 
     # initialise figure and axis settings
     fig = plt.figure()
@@ -1723,33 +2081,36 @@ def histogram_discrete(bar_arr, bar_attributes, normalised=False,
         plt.show(fig, block=False)
 
 
-def histogram_discrete_w_line(bar_arr, bar_attributes, line_function, normalised=False,
+def _histogram_discrete_w_line(bar_arr, bar_attributes, line_function, normalised=False,
                             x_label=None, x_lim=None, x_log=False,
                             y_label=None, y_lim=None, y_log=False,
                             show=True, save=None):
-    """
-    Plot a histogram for discrete values with line.
+    """Private plotting utility function."""
 
-    parameters
-    ----------
-    bar_arr
-        numpy array of discrete values with shape (#realisations, #variables),
-        histograms are computed over all realisations for each variable
-
-    bar_attributes
-        dictionary with keys specifying a general bin 'label' and bin 'color'
-    output
-        dictionary specifying the keys 'output_folder' and 'plot_name'
-
-    example
-    -------
-    bar_arr = np.random.poisson(10, size=10).reshape(10, 1)
-
-    bar_attributes = {0 : {'label': 'some bins', 'color': 'dodgerblue', 'opacity': 1.0}}
-
-    output = {'output_folder': './test_figures',
-            'plot_name': 'hist_disc_test'}
-    """
+    # OLD DOCS, maybe helpful for later use
+    # """
+    # Plot a histogram for discrete values with line.
+    #
+    # parameters
+    # ----------
+    # bar_arr
+    #     numpy array of discrete values with shape (#realisations, #variables),
+    #     histograms are computed over all realisations for each variable
+    #
+    # bar_attributes
+    #     dictionary with keys specifying a general bin 'label' and bin 'color'
+    # output
+    #     dictionary specifying the keys 'output_folder' and 'plot_name'
+    #
+    # example
+    # -------
+    # bar_arr = np.random.poisson(10, size=10).reshape(10, 1)
+    #
+    # bar_attributes = {0 : {'label': 'some bins', 'color': 'dodgerblue', 'opacity': 1.0}}
+    #
+    # output = {'output_folder': './test_figures',
+    #         'plot_name': 'hist_disc_test'}
+    # """
 
     # initialise figure and axis settings
     fig = plt.figure()
@@ -1808,40 +2169,43 @@ def histogram_discrete_w_line(bar_arr, bar_attributes, line_function, normalised
         plt.show(fig, block=False)
 
 
-def histogram_continuous(bar_arr, bar_attributes, normalised=False,
+def _histogram_continuous(bar_arr, bar_attributes, normalised=False,
                         x_label=None, x_lim=None, x_log=False,
                         y_label=None, y_lim=None, y_log=False,
                         show=True, save=None):
-    """
-    Plot a histogram for continuous values.
+    """Private plotting utility function."""
 
-    parameters
-    ----------
-    bar_arr
-        numpy array of continuous values with shape (#realisations, #variables),
-        histograms are computed over all realisations for each variable
-
-    bar_attributes
-        dictionary with keys specifying a general bin 'label', bin 'color',
-        bin 'edges' and bin edges 'interval_type' ('[)' (default) or '(]')
-
-    normalised
-        True or False
-
-    interval
-
-    output
-        dictionary specifying the keys 'output_folder' and 'plot_name'
-
-    example
-    -------
-    bar_arr = np.random.poisson(10, size=10).reshape(10, 1)
-
-    bar_attributes = {0 : {'label': 'some bins', 'color': 'dodgerblue', 'opacity': 1.0}}
-
-    output = {'output_folder': './test_figures',
-            'plot_name': 'hist_disc_test'}
-    """
+    # OLD DOCS, maybe helpful for later use
+    # """
+    # Plot a histogram for continuous values.
+    #
+    # parameters
+    # ----------
+    # bar_arr
+    #     numpy array of continuous values with shape (#realisations, #variables),
+    #     histograms are computed over all realisations for each variable
+    #
+    # bar_attributes
+    #     dictionary with keys specifying a general bin 'label', bin 'color',
+    #     bin 'edges' and bin edges 'interval_type' ('[)' (default) or '(]')
+    #
+    # normalised
+    #     True or False
+    #
+    # interval
+    #
+    # output
+    #     dictionary specifying the keys 'output_folder' and 'plot_name'
+    #
+    # example
+    # -------
+    # bar_arr = np.random.poisson(10, size=10).reshape(10, 1)
+    #
+    # bar_attributes = {0 : {'label': 'some bins', 'color': 'dodgerblue', 'opacity': 1.0}}
+    #
+    # output = {'output_folder': './test_figures',
+    #         'plot_name': 'hist_disc_test'}
+    # """
 
     # initialise figure and axis settings
     fig = plt.figure()
@@ -1890,40 +2254,43 @@ def histogram_continuous(bar_arr, bar_attributes, normalised=False,
         plt.show(fig, block=False)
 
 
-def histogram_continuous_w_line(bar_arr, bar_attributes, line_function, normalised=False,
+def _histogram_continuous_w_line(bar_arr, bar_attributes, line_function, normalised=False,
                                 x_label=None, x_lim=None, x_log=False,
                                 y_label=None, y_lim=None, y_log=False,
                                 show=True, save=None):
-    """
-    Plot a histogram for continuous values with line.
+    """Private plotting utility function."""
 
-    parameters
-    ----------
-    bar_arr
-        numpy array of continuous values with shape (#realisations, #variables),
-        histograms are computed over all realisations for each variable
-
-    bar_attributes
-        dictionary with keys specifying a general bin 'label', bin 'color',
-        bin 'edges' and bin edges 'interval_type' ('[)' (default) or '(]')
-
-    normalised
-        True or False
-
-    interval
-
-    output
-        dictionary specifying the keys 'output_folder' and 'plot_name'
-
-    example
-    -------
-    bar_arr = np.random.poisson(10, size=10).reshape(10, 1)
-
-    bar_attributes = {0 : {'label': 'some bins', 'color': 'dodgerblue', 'opacity': 1.0}}
-
-    output = {'output_folder': './test_figures',
-            'plot_name': 'hist_disc_test'}
-    """
+    # OLD DOCS, maybe helpful for later use
+    # """
+    # Plot a histogram for continuous values with line.
+    #
+    # parameters
+    # ----------
+    # bar_arr
+    #     numpy array of continuous values with shape (#realisations, #variables),
+    #     histograms are computed over all realisations for each variable
+    #
+    # bar_attributes
+    #     dictionary with keys specifying a general bin 'label', bin 'color',
+    #     bin 'edges' and bin edges 'interval_type' ('[)' (default) or '(]')
+    #
+    # normalised
+    #     True or False
+    #
+    # interval
+    #
+    # output
+    #     dictionary specifying the keys 'output_folder' and 'plot_name'
+    #
+    # example
+    # -------
+    # bar_arr = np.random.poisson(10, size=10).reshape(10, 1)
+    #
+    # bar_attributes = {0 : {'label': 'some bins', 'color': 'dodgerblue', 'opacity': 1.0}}
+    #
+    # output = {'output_folder': './test_figures',
+    #         'plot_name': 'hist_disc_test'}
+    # """
 
     # initialise figure and axis settings
     fig = plt.figure()
@@ -1978,10 +2345,10 @@ def histogram_continuous_w_line(bar_arr, bar_attributes, line_function, normalis
         plt.show(fig, block=False)
 
 
-def scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
+def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
                                     y_label=None, y_lim=None, y_log=False,
                                     show=True, save=None):
-    """docstring for ."""
+    """Private plotting utility function."""
 
     # initialise figure and axis settings
     fig = plt.figure()
