@@ -19,6 +19,7 @@ Package name ideas:
 *  memoprocess (MemoProcess.jl)
 *  memoryprocess (MemoryProcess.jl)
 *  phaseprocess (PhaseProcess.jl)
+*  ginkgo (Ginkgo.jl)
 
 Consideration:
 
