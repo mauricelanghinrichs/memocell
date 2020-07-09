@@ -188,8 +188,8 @@ def compute_model_bayes_factors(estimation_instances):
 
 
 ### for plotting routines
-def dots_w_bars_evidence(estimation_instances, settings):
-    """docstring for ."""
+def _dots_w_bars_evidence(estimation_instances, settings):
+    """Private plotting helper method."""
 
     y_arr_err = np.zeros((len(estimation_instances), 3))
     x_ticks = list()
@@ -208,8 +208,8 @@ def dots_w_bars_evidence(estimation_instances, settings):
     return y_arr_err, x_ticks, attributes
 
 
-def dots_wo_bars_likelihood_max(estimation_instances, settings):
-    """docstring for ."""
+def _dots_wo_bars_likelihood_max(estimation_instances, settings):
+    """Private plotting helper method."""
 
     y_arr_err = np.zeros((len(estimation_instances), 3))
     x_ticks = list()
@@ -227,8 +227,8 @@ def dots_wo_bars_likelihood_max(estimation_instances, settings):
     return y_arr_err, x_ticks, attributes
 
 
-def dots_wo_bars_bic(estimation_instances, settings):
-    """docstring for ."""
+def _dots_wo_bars_bic(estimation_instances, settings):
+    """Private plotting helper method."""
 
     y_arr_err = np.zeros((len(estimation_instances), 3))
     x_ticks = list()
@@ -246,8 +246,8 @@ def dots_wo_bars_bic(estimation_instances, settings):
     return y_arr_err, x_ticks, attributes
 
 
-def dots_wo_bars_evidence_from_bic(estimation_instances, settings):
-    """docstring for ."""
+def _dots_wo_bars_evidence_from_bic(estimation_instances, settings):
+    """Private plotting helper method."""
 
     y_arr_err = np.zeros((len(estimation_instances), 3))
     x_ticks = list()

@@ -9,7 +9,7 @@ class Simulation(object):
     def __init__(self, network):
 
         # validate network input (has to be instance of Network class) and instantiate
-        self.net = self.validate_network_input(network)
+        self.net = self._validate_network_input(network)
 
         # initialise instances of MomentsSim and GillespieSim simulation classes
         self.sim_moments = MomentsSim(self.net)
@@ -52,16 +52,16 @@ class Simulation(object):
         # user input has to be checked and theta values have to be ordered
         if not estimate_mode:
             # check user input for the simulation_type
-            self.validate_simulation_type_input(simulation_type)
+            self._validate_simulation_type_input(simulation_type)
 
             # check user input for the initial values
-            self.validate_initial_values_input(self.net.net_nodes_identifier, simulation_type, initial_values)
+            self._validate_initial_values_input(self.net.net_nodes_identifier, simulation_type, initial_values)
 
             # check user input for the rate parameters (theta)
-            self.validate_theta_values_input(self.net.net_rates_identifier, theta_values)
+            self._validate_theta_values_input(self.net.net_rates_identifier, theta_values)
 
             # check user input for the time values
-            self.validate_time_values_input(time_values)
+            self._validate_time_values_input(time_values)
             self.sim_time_values = time_values
 
             # read out initial_values and theta_values (dictionaries) according to node or theta order
@@ -138,7 +138,7 @@ class Simulation(object):
         """docstring for ."""
 
         # validate the user input information
-        self.sim_variables = self.validate_simulation_variables_input(simulation_variables, self.net.net_nodes_identifier)
+        self.sim_variables = self._validate_simulation_variables_input(simulation_variables, self.net.net_nodes_identifier)
 
         # create unique identifiers for the simulation variables ('V_<integer>')
         self.sim_variables_identifier = self.create_variables_identifiers(self.sim_variables)
@@ -192,8 +192,8 @@ class Simulation(object):
 
 
     ### plotting helper functions
-    def line_evolv_mean(self, settings):
-        """docstring for ."""
+    def _line_evolv_mean(self, settings):
+        """Private plotting helper method."""
 
         sim_variables_order_mean = self.sim_variables_order[0]
         sim_variables_identifier = self.sim_variables_identifier
@@ -211,8 +211,8 @@ class Simulation(object):
         return x_arr, y_arr, attributes
 
 
-    def line_evolv_variance(self, settings):
-        """docstring for ."""
+    def _line_evolv_variance(self, settings):
+        """Private plotting helper method."""
 
         sim_variables_order_var = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.sim_variables_order[1] if variable1_id==variable2_id]
         sim_variables_identifier = self.sim_variables_identifier
@@ -230,8 +230,8 @@ class Simulation(object):
         return x_arr, y_arr, attributes
 
 
-    def line_evolv_covariance(self, settings):
-        """docstring for ."""
+    def _line_evolv_covariance(self, settings):
+        """Private plotting helper method."""
 
         sim_variables_order_cov = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.sim_variables_order[1] if variable1_id!=variable2_id]
         sim_variables_identifier = self.sim_variables_identifier
@@ -253,8 +253,8 @@ class Simulation(object):
         return x_arr, y_arr, attributes
 
 
-    def line_evolv_counts(self, settings):
-        """docstring for ."""
+    def _line_evolv_counts(self, settings):
+        """Private plotting helper method."""
 
         sim_variables_order_main = [var for (var, ) in self.sim_variables_order[0]]
         sim_variables_identifier = self.sim_variables_identifier
@@ -349,8 +349,8 @@ class Simulation(object):
     #         raise ValueError('Unknown simulation type: \'moments\' or \'gillespie\' are expected.')
 
     @staticmethod
-    def validate_simulation_variables_input(variables, net_nodes_identifier):
-        """docstring for ."""
+    def _validate_simulation_variables_input(variables, net_nodes_identifier):
+        """Private validation method."""
 
         # validate variables user input
         if not isinstance(variables, dict):
@@ -373,8 +373,8 @@ class Simulation(object):
 
 
     @staticmethod
-    def validate_simulation_type_input(simulation_type):
-        """docstring for ."""
+    def _validate_simulation_type_input(simulation_type):
+        """Private validation method."""
 
         # check for user input if
         if simulation_type=='moments' or simulation_type=='gillespie':
@@ -386,8 +386,8 @@ class Simulation(object):
 
 
     @staticmethod
-    def validate_network_input(network):
-        """docstring for ."""
+    def _validate_network_input(network):
+        """Private validation method."""
 
         # check for instance of Network class
         if isinstance(network, Network):
@@ -397,8 +397,8 @@ class Simulation(object):
         return network
 
     @staticmethod
-    def validate_initial_values_input(net_nodes_identifier, simulation_type, initial_values):
-        """docstring for ."""
+    def _validate_initial_values_input(net_nodes_identifier, simulation_type, initial_values):
+        """Private validation method."""
 
         # check for correct user input for the initial values
         if isinstance(initial_values, dict):
@@ -414,8 +414,8 @@ class Simulation(object):
             raise TypeError('Initial values are expected to be provided as a dictionary.')
 
     @staticmethod
-    def validate_theta_values_input(net_rates_identifier, theta_values):
-        """docstring for ."""
+    def _validate_theta_values_input(net_rates_identifier, theta_values):
+        """Private validation method."""
 
         # check for correct user input for the rate parameters (theta)
         if isinstance(theta_values, dict):
@@ -430,8 +430,8 @@ class Simulation(object):
             raise TypeError('Rate parameters (theta) are expected to be provided as a dictionary.')
 
     @staticmethod
-    def validate_time_values_input(time_values):
-        """docstring for ."""
+    def _validate_time_values_input(time_values):
+        """Private validation method."""
 
         # check for correct user input for the time values
         if isinstance(time_values, np.ndarray):

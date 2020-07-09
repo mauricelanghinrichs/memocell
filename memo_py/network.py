@@ -8,7 +8,7 @@ class Network(object):
 
     def __init__(self, net_name):
         # set a name for a Network class instance
-        self.validate_net_name_input(net_name)
+        self._validate_net_name_input(net_name)
         self.net_name = net_name
 
         # initialise the main network as networkx DiGraph
@@ -37,7 +37,7 @@ class Network(object):
         """docstring for ."""
 
         # validate the user input
-        self.validate_net_structure(net_structure)
+        self._validate_net_structure(net_structure)
 
         # create the network modules
         self.net_modules, self.net_nodes_identifier, self.net_rates_identifier = self.create_net_modules_and_identifiers(net_structure)
@@ -276,8 +276,8 @@ class Network(object):
 
 
     ### plotting helper function
-    def draw_main_network_graph(self, node_settings, edge_settings):
-        """docstring for ."""
+    def _draw_main_network_graph(self, node_settings, edge_settings):
+        """Private plotting helper method."""
         # NOTE: see git before June 2020 for old graphviz code here
 
         # set layout_engine for main networks
@@ -350,8 +350,8 @@ class Network(object):
 
         return (net_main_graphviz, layout_engine)
 
-    def draw_hidden_network_graph(self, node_settings, edge_settings):
-        """docstring for ."""
+    def _draw_hidden_network_graph(self, node_settings, edge_settings):
+        """Private plotting helper method."""
         # NOTE: see git before June 2020 for old graphviz code here
 
         # set layout_engine for hidden networks
@@ -447,8 +447,8 @@ class Network(object):
     ###
 
     @staticmethod
-    def validate_net_name_input(net_name):
-        """docstring for ."""
+    def _validate_net_name_input(net_name):
+        """Private validation method."""
 
         # validate user input for network name
         if isinstance(net_name, str):
@@ -458,8 +458,8 @@ class Network(object):
 
     # validate the user input to define the network structure
     @staticmethod
-    def validate_net_structure(net_structure):
-        """docstring for ."""
+    def _validate_net_structure(net_structure):
+        """Private validation method."""
 
         # network structure has to be defined by a list of dictionaries
         if isinstance(net_structure, list):

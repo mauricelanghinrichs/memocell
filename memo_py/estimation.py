@@ -25,11 +25,11 @@ class Estimation(object):
         self.est_iter = est_iter
 
         # validate network input (has to be instance of Network class) and instantiate
-        self.net = self.validate_network_input(network)
+        self.net = self._validate_network_input(network)
 
         # validate data input (has to be instance of Data class) and instantiate
         # other objects for data input
-        self.data = self.validate_data_input(data)
+        self.data = self._validate_data_input(data)
         self.data_time_values = None
         self.data_mean_values = None
         self.data_var_values = None
@@ -190,7 +190,7 @@ class Estimation(object):
 
         # the 2.5th, 50th and 97.5th percentiles of parameter distributions are extracted
         # params_conf then contains the tuple (median (50th), lower bound (2.5th), upper bound (97.5th))
-        # to provide a 95%-confidence interval
+        # to provide a 95%-confidence interval / 95%-credible interval
         params_conf = tuple(map(lambda v: (v[1], v[0], v[2]), zip(*np.percentile(samples, [2.5, 50, 97.5], axis=0))))
         return params_conf
 
@@ -240,12 +240,12 @@ class Estimation(object):
         """docstring for ."""
         ### initialise network related settings
         # validate theta bounds user input and assign to numpy array object
-        self.validate_theta_bounds_input(self.net.net_rates_identifier, network_setup['theta_bounds'])
+        self._validate_theta_bounds_input(self.net.net_rates_identifier, network_setup['theta_bounds'])
         self.net_theta_bounds = self.initialise_net_theta_bounds(self.net.net_theta_symbolic, self.net.net_rates_identifier, network_setup['theta_bounds'])
 
         # validate initial values user input and assign to self
         # (further processing is done in the called simulation class methods)
-        self.validate_initial_values_input(self.net.net_nodes_identifier, self.net_simulation_type, network_setup['initial_values'])
+        self._validate_initial_values_input(self.net.net_nodes_identifier, self.net_simulation_type, network_setup['initial_values'])
         self.net_initial_values = network_setup['initial_values']
 
         # set the mean only mode (True or False)
@@ -495,7 +495,7 @@ class Estimation(object):
 
         return (data_mean_ordered, data_var_ordered, data_cov_ordered)
 
-    ### plotting helper functions
+
     def compute_bestfit_simulation(self):
         """docstring for ."""
 
@@ -575,16 +575,17 @@ class Estimation(object):
         self.net_simulation_confidence_band_exists = True
 
 
-    def dots_w_bars_parameters(self, settings):
-        """docstring for ."""
+    ### plotting helper functions
+    def _dots_w_bars_parameters(self, settings):
+        """Private plotting helper method."""
 
         y_arr_err = np.zeros((len(self.net.net_theta_symbolic), 3))
         x_ticks = list()
         attributes = dict()
 
         for i, theta_id in enumerate(self.net.net_theta_symbolic):
-            (median, perc_5, perc_95) = self.bay_est_params_conf[i]
-            y_arr_err[i, :] = np.array([median, median - perc_5, perc_95 - median])
+            (median, perc_2p5, perc_97p5) = self.bay_est_params_conf[i]
+            y_arr_err[i, :] = np.array([median, median - perc_2p5, perc_97p5 - median])
 
             param_setting = settings[self.net.net_rates_identifier[theta_id]]
             attributes[i] = (param_setting['label'], param_setting['color'])
@@ -593,42 +594,42 @@ class Estimation(object):
         return y_arr_err, x_ticks, attributes
 
 
-    def samples_corner_parameters(self, settings):
-        """docstring for ."""
+    def _samples_corner_parameters(self, settings):
+        """Private plotting helper method."""
 
         samples = self.bay_est_samples_weighted
         labels = [settings[self.net.net_rates_identifier[theta_id]]['label'] for theta_id in self.net.net_theta_symbolic]
         return samples, labels
 
 
-    def samples_chains_parameters(self):
-        """docstring for ."""
+    def _samples_chains_parameters(self):
+        """Private plotting helper method."""
 
         return self.bay_est_samples, self.bay_nested_ndims
 
 
-    def samples_weighted_chains_parameters(self):
-        """docstring for ."""
+    def _samples_weighted_chains_parameters(self):
+        """Private plotting helper method."""
 
         return self.bay_est_samples_weighted, self.bay_nested_ndims
 
 
-    def sampling_res_and_labels(self, settings):
-        """docstring for ."""
+    def _sampling_res_and_labels(self, settings):
+        """Private plotting helper method."""
 
         labels = [settings[self.net.net_rates_identifier[theta_id]]['label'] for theta_id in self.net.net_theta_symbolic]
         return self.bay_nested_sampler_res, labels
 
 
-    def sampling_res_and_labels_and_priortransform(self, settings):
-        """docstring for ."""
+    def _sampling_res_and_labels_and_priortransform(self, settings):
+        """Private plotting helper method."""
 
         labels = [settings[self.net.net_rates_identifier[theta_id]]['label'] for theta_id in self.net.net_theta_symbolic]
         return self.bay_nested_sampler_res, labels, self.prior_transform
 
 
-    def line_evolv_bestfit_mean(self, settings):
-        """docstring for ."""
+    def _line_evolv_bestfit_mean(self, settings):
+        """Private plotting helper method."""
 
         if not self.net_simulation_bestfit_exists:
             self.compute_bestfit_simulation()
@@ -650,8 +651,8 @@ class Estimation(object):
         return x_arr, y_arr, attributes
 
 
-    def dots_w_bars_and_line_evolv_bestfit_mean_data(self, settings):
-        """docstring for ."""
+    def _dots_w_bars_and_line_evolv_bestfit_mean_data(self, settings):
+        """Private plotting helper method."""
 
         if not self.net_simulation_bestfit_exists:
             self.compute_bestfit_simulation()
@@ -680,8 +681,8 @@ class Estimation(object):
         return x_arr_dots, x_arr_line, y_dots_err, y_line, attributes
 
 
-    def line_w_band_evolv_mean_confidence(self, settings, num_sim_ensemble=5000):
-        """docstring for ."""
+    def _line_w_band_evolv_mean_confidence(self, settings, num_sim_ensemble=5000):
+        """Private plotting helper method."""
 
         # compute the best-fit simulation and confidence bands in case they do not exist already
         if not self.net_simulation_bestfit_exists:
@@ -713,8 +714,8 @@ class Estimation(object):
         return x_arr, y_line, y_lower, y_upper, attributes
 
 
-    def dots_w_bars_and_line_w_band_evolv_mean_confidence(self, settings, num_sim_ensemble=5000):
-        """docstring for ."""
+    def _dots_w_bars_and_line_w_band_evolv_mean_confidence(self, settings, num_sim_ensemble=5000):
+        """Private plotting helper method."""
 
         # compute the best-fit simulation and confidence bands in case they do not exist already
         if not self.net_simulation_bestfit_exists:
@@ -751,8 +752,8 @@ class Estimation(object):
         return x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes
 
 
-    def line_evolv_bestfit_variance(self, settings):
-        """docstring for ."""
+    def _line_evolv_bestfit_variance(self, settings):
+        """Private plotting helper method."""
 
         if not self.net_simulation_bestfit_exists:
             self.compute_bestfit_simulation()
@@ -774,8 +775,8 @@ class Estimation(object):
         return x_arr, y_arr, attributes
 
 
-    def dots_w_bars_and_line_evolv_bestfit_variance_data(self, settings):
-        """docstring for ."""
+    def _dots_w_bars_and_line_evolv_bestfit_variance_data(self, settings):
+        """Private plotting helper method."""
 
         if not self.net_simulation_bestfit_exists:
             self.compute_bestfit_simulation()
@@ -804,8 +805,8 @@ class Estimation(object):
         return x_arr_dots, x_arr_line, y_dots_err, y_line, attributes
 
 
-    def line_w_band_evolv_variance_confidence(self, settings, num_sim_ensemble=5000):
-        """docstring for ."""
+    def _line_w_band_evolv_variance_confidence(self, settings, num_sim_ensemble=5000):
+        """Private plotting helper method."""
 
         # compute the best-fit simulation and confidence bands in case they do not exist already
         if not self.net_simulation_bestfit_exists:
@@ -837,8 +838,8 @@ class Estimation(object):
         return x_arr, y_line, y_lower, y_upper, attributes
 
 
-    def dots_w_bars_and_line_w_band_evolv_variance_confidence(self, settings, num_sim_ensemble=5000):
-        """docstring for ."""
+    def _dots_w_bars_and_line_w_band_evolv_variance_confidence(self, settings, num_sim_ensemble=5000):
+        """Private plotting helper method."""
 
         # compute the best-fit simulation and confidence bands in case they do not exist already
         if not self.net_simulation_bestfit_exists:
@@ -875,8 +876,8 @@ class Estimation(object):
         return x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes
 
 
-    def line_evolv_bestfit_covariance(self, settings):
-        """docstring for ."""
+    def _line_evolv_bestfit_covariance(self, settings):
+        """Private plotting helper method."""
 
         if not self.net_simulation_bestfit_exists:
             self.compute_bestfit_simulation()
@@ -902,8 +903,8 @@ class Estimation(object):
         return x_arr, y_arr, attributes
 
 
-    def dots_w_bars_and_line_evolv_bestfit_covariance_data(self, settings):
-        """docstring for ."""
+    def _dots_w_bars_and_line_evolv_bestfit_covariance_data(self, settings):
+        """Private plotting helper method."""
 
         if not self.net_simulation_bestfit_exists:
             self.compute_bestfit_simulation()
@@ -936,8 +937,8 @@ class Estimation(object):
         return x_arr_dots, x_arr_line, y_dots_err, y_line, attributes
 
 
-    def line_w_band_evolv_covariance_confidence(self, settings, num_sim_ensemble=5000):
-        """docstring for ."""
+    def _line_w_band_evolv_covariance_confidence(self, settings, num_sim_ensemble=5000):
+        """Private plotting helper method."""
 
         # compute the best-fit simulation and confidence bands in case they do not exist already
         if not self.net_simulation_bestfit_exists:
@@ -973,8 +974,8 @@ class Estimation(object):
         return x_arr, y_line, y_lower, y_upper, attributes
 
 
-    def dots_w_bars_and_line_w_band_evolv_covariance_confidence(self, settings, num_sim_ensemble=5000):
-        """docstring for ."""
+    def _dots_w_bars_and_line_w_band_evolv_covariance_confidence(self, settings, num_sim_ensemble=5000):
+        """Private plotting helper method."""
 
         # compute the best-fit simulation and confidence bands in case they do not exist already
         if not self.net_simulation_bestfit_exists:
@@ -1016,8 +1017,8 @@ class Estimation(object):
     ###
 
     @staticmethod
-    def validate_network_input(network):
-        """docstring for ."""
+    def _validate_network_input(network):
+        """Private validation method."""
 
         # check for instance of Network class
         if isinstance(network, Network):
@@ -1027,8 +1028,8 @@ class Estimation(object):
         return network
 
     @staticmethod
-    def validate_data_input(data):
-        """docstring for ."""
+    def _validate_data_input(data):
+        """Private validation method."""
 
         # check for instance of Data class
         if isinstance(data, Data):
@@ -1038,8 +1039,8 @@ class Estimation(object):
         return data
 
     @staticmethod
-    def validate_initial_values_input(net_nodes_identifier, simulation_type, initial_values):
-        """docstring for ."""
+    def _validate_initial_values_input(net_nodes_identifier, simulation_type, initial_values):
+        """Private validation method."""
 
         # check for correct user input for the initial values
         if isinstance(initial_values, dict):
@@ -1055,8 +1056,8 @@ class Estimation(object):
             raise TypeError('Initial values are expected to be provided as a dictionary.')
 
     @staticmethod
-    def validate_theta_bounds_input(net_rates_identifier, theta_bounds):
-        """docstring for ."""
+    def _validate_theta_bounds_input(net_rates_identifier, theta_bounds):
+        """Private validation method."""
 
         # check for correct user input for the rate parameters (theta)
         if isinstance(theta_bounds, dict):
