@@ -59,11 +59,14 @@ class Estimation(object):
         self.net_simulation_estimate_mode = True
 
         # instantiate object to store best-fit simulation
+        # (best-fit computed by median parameter values of their 1d marginals)
         self.net_simulation_bestfit = None
         self.net_simulation_bestfit_exists = False
 
         # instantiate object to store best-fit simulation with confidence band
+        # (conf band best-fit computed by median over simulation posterior samples)
         self.net_simulation_confidence_band = None
+        self.net_simulation_confidence_band_bestfit = None
         self.net_simulation_confidence_band_exists = False
         ###
 
@@ -547,19 +550,22 @@ class Estimation(object):
         # then we compute the statistic of the sampled trajectories (means, variances, covariances)
         # and the corresponding 2.5th and 97.5th percentiles for 95%-confidence band (both for all time points)
         mean_samples = np.array([sim[0] for sim in sim_ensemble])
-        mean_percentiles = np.percentile(mean_samples, (2.5, 97.5), axis=0)
+        mean_percentiles = np.percentile(mean_samples, (2.5, 50.0, 97.5), axis=0)
         mean_lower_bound = mean_percentiles[0, :, :]
-        mean_upper_bound = mean_percentiles[1, :, :]
+        mean_bestfit_band = mean_percentiles[1, :, :]
+        mean_upper_bound = mean_percentiles[2, :, :]
 
         var_samples = np.array([sim[1] for sim in sim_ensemble])
-        var_percentiles = np.percentile(var_samples, (2.5, 97.5), axis=0)
+        var_percentiles = np.percentile(var_samples, (2.5, 50.0, 97.5), axis=0)
         var_lower_bound = var_percentiles[0, :, :]
-        var_upper_bound = var_percentiles[1, :, :]
+        var_bestfit_band = var_percentiles[1, :, :]
+        var_upper_bound = var_percentiles[2, :, :]
 
         cov_samples = np.array([sim[2] for sim in sim_ensemble])
-        cov_percentiles = np.percentile(cov_samples, (2.5, 97.5), axis=0)
+        cov_percentiles = np.percentile(cov_samples, (2.5, 50.0, 97.5), axis=0)
         cov_lower_bound = cov_percentiles[0, :, :]
-        cov_upper_bound = cov_percentiles[1, :, :]
+        cov_bestfit_band = cov_percentiles[1, :, :]
+        cov_upper_bound = cov_percentiles[2, :, :]
 
         # store the information for the confidence band
         # with structure:
@@ -571,6 +577,10 @@ class Estimation(object):
         [var_lower_bound, var_upper_bound],
         [cov_lower_bound, cov_upper_bound]
         ]
+
+        self.net_simulation_confidence_band_bestfit = (mean_bestfit_band,
+                                                        var_bestfit_band,
+                                                        cov_bestfit_band)
 
         self.net_simulation_confidence_band_exists = True
 
@@ -685,13 +695,11 @@ class Estimation(object):
         """Private plotting helper method."""
 
         # compute the best-fit simulation and confidence bands in case they do not exist already
-        if not self.net_simulation_bestfit_exists:
-            self.compute_bestfit_simulation()
-
         if not self.net_simulation_confidence_band_exists:
             self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
 
-        mean_m, __, __  = self.net_simulation_bestfit
+        # in the case of confidence bands, best-fit is taken from the simulation samples
+        mean_m, __, __  = self.net_simulation_confidence_band_bestfit
         mean_band = self.net_simulation_confidence_band[0]
 
         sim_variables_order_mean = self.net_simulation.sim_variables_order[0]
@@ -718,13 +726,11 @@ class Estimation(object):
         """Private plotting helper method."""
 
         # compute the best-fit simulation and confidence bands in case they do not exist already
-        if not self.net_simulation_bestfit_exists:
-            self.compute_bestfit_simulation()
-
         if not self.net_simulation_confidence_band_exists:
             self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
 
-        mean_m, __, __  = self.net_simulation_bestfit
+        # in the case of confidence bands, best-fit is taken from the simulation samples
+        mean_m, __, __  = self.net_simulation_confidence_band_bestfit
         mean_band = self.net_simulation_confidence_band[0]
 
         sim_variables_order_mean = self.net_simulation.sim_variables_order[0]
@@ -809,13 +815,11 @@ class Estimation(object):
         """Private plotting helper method."""
 
         # compute the best-fit simulation and confidence bands in case they do not exist already
-        if not self.net_simulation_bestfit_exists:
-            self.compute_bestfit_simulation()
-
         if not self.net_simulation_confidence_band_exists:
             self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
 
-        __, var_m, __  = self.net_simulation_bestfit
+        # in the case of confidence bands, best-fit is taken from the simulation samples
+        __, var_m, __  = self.net_simulation_confidence_band_bestfit
         var_band = self.net_simulation_confidence_band[1]
 
         sim_variables_order_var = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.net_simulation.sim_variables_order[1] if variable1_id==variable2_id]
@@ -842,13 +846,11 @@ class Estimation(object):
         """Private plotting helper method."""
 
         # compute the best-fit simulation and confidence bands in case they do not exist already
-        if not self.net_simulation_bestfit_exists:
-            self.compute_bestfit_simulation()
-
         if not self.net_simulation_confidence_band_exists:
             self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
 
-        __, var_m, __  = self.net_simulation_bestfit
+        # in the case of confidence bands, best-fit is taken from the simulation samples
+        __, var_m, __  = self.net_simulation_confidence_band_bestfit
         var_band = self.net_simulation_confidence_band[1]
 
         sim_variables_order_var = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.net_simulation.sim_variables_order[1] if variable1_id==variable2_id]
@@ -941,13 +943,11 @@ class Estimation(object):
         """Private plotting helper method."""
 
         # compute the best-fit simulation and confidence bands in case they do not exist already
-        if not self.net_simulation_bestfit_exists:
-            self.compute_bestfit_simulation()
-
         if not self.net_simulation_confidence_band_exists:
             self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
 
-        __, __, cov_m  = self.net_simulation_bestfit
+        # in the case of confidence bands, best-fit is taken from the simulation samples
+        __, __, cov_m  = self.net_simulation_confidence_band_bestfit
         cov_band = self.net_simulation_confidence_band[2]
 
         sim_variables_order_cov = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.net_simulation.sim_variables_order[1] if variable1_id!=variable2_id]
@@ -978,13 +978,11 @@ class Estimation(object):
         """Private plotting helper method."""
 
         # compute the best-fit simulation and confidence bands in case they do not exist already
-        if not self.net_simulation_bestfit_exists:
-            self.compute_bestfit_simulation()
-
         if not self.net_simulation_confidence_band_exists:
             self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
 
-        __, __, cov_m  = self.net_simulation_bestfit
+        # in the case of confidence bands, best-fit is taken from the simulation samples
+        __, __, cov_m  = self.net_simulation_confidence_band_bestfit
         cov_band = self.net_simulation_confidence_band[2]
 
         sim_variables_order_cov = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.net_simulation.sim_variables_order[1] if variable1_id!=variable2_id]
@@ -1046,10 +1044,10 @@ class Estimation(object):
         if isinstance(initial_values, dict):
             if set(net_nodes_identifier.values()) - set(['env']) == set(initial_values.keys()):
                 if ((simulation_type=='gillespie' and all(isinstance(val, int) for val in initial_values.values())) or
-                    (simulation_type=='moments' and all(isinstance(val, float) for val in initial_values.values()))):
+                    (simulation_type=='moments' and all(isinstance(val, float) or isinstance(val, int) for val in initial_values.values()))):
                     pass
                 else:
-                    raise ValueError('Initial values are expected to provide integer or float values for Gillespie or Moment simulations, respectively.')
+                    raise ValueError('Initial values are expected to provide integer or float/integer values for Gillespie or Moment simulations, respectively.')
             else:
                 raise ValueError('Initial values are expected to provide a set of keys identical to the nodes of the main network.')
         else:

@@ -343,7 +343,7 @@ def sim_covariance_plot(sim, settings=None,
     if settings==None:
         vars = [(sim.sim_variables_identifier[var[0]][0], sim.sim_variables_identifier[var[1]][0])
                     for var in sim.sim_variables_order[1] if var[0]!=var[1]]
-        colors = sns.color_palette('muted', n_colors=len(vars)).as_hex()
+        colors = sns.color_palette('Set2', n_colors=len(vars)).as_hex() # 'muted'
         settings = dict()
 
         for i, var in enumerate(vars):
@@ -1193,10 +1193,11 @@ def est_bestfit_mean_plot(estimation, settings=None, data=True, conf=True,
                             y_label='Mean', y_lim=None, y_log=False,
                             show=True, save=None):
     """Plot the model mean trajectories based on the estimated parameter posterior
-    distribution. `Note:` As a summary, a model trajectory based on the median of the individual
-    1-dimensional marginal parameter posteriors is shown; for multimodal
-    parameter posteriors this will yield an inaccurate summary (here, it is advised to
-    take the credible band with `conf=True`).
+    distribution. `Note:` A summary model trajectory is shown based on the median of the individual
+    1-dimensional marginal parameter posteriors (`conf=False`) or based on the 50th
+    percentile of model trajectory samples from the complete parameter posterior; for multimodal
+    parameter posteriors the `conf=False` option can yield an inaccurate summary
+    (here, it is advised to use `conf=True`).
 
     Parameters
     ----------
@@ -1208,11 +1209,14 @@ def est_bestfit_mean_plot(estimation, settings=None, data=True, conf=True,
         If `data=True` (default), plot the data mean statistics with standard errors
         in the background (grey color).
     conf : bool, optional
-        If `conf=True` (default), 95% credible bands of the model means are shown;
-        based on 2.5th and 97.5th percentiles for each time point of model
+        If `conf=True` (default), a median trajectory with 95% credible bands of the
+        model means are shown;
+        based on 2.5th, 50th and 97.5th percentiles for each time point of model
         trajectories drawn from the estimated parameter posterior distribution.
         `Note:` The computation of credible bands can be expensive for complex
         models; in this case you might want to start plotting with `conf=False`.
+        If `conf=False`, no band is shown and the summary trajectory is computed
+        by taking median parameters of the individual 1-dimensional posterior marginals.
     x_label : str, optional
         Label for x-axis.
     x_lim : None or tuple of floats, optional
@@ -1285,10 +1289,11 @@ def est_bestfit_variance_plot(estimation, settings=None, data=True, conf=True,
                             y_label='Variance', y_lim=None, y_log=False,
                             show=True, save=None):
     """Plot the model variance trajectories based on the estimated parameter posterior
-    distribution. `Note:` As a summary, a model trajectory based on the median of the individual
-    1-dimensional marginal parameter posteriors is shown; for multimodal
-    parameter posteriors this will yield an inaccurate summary (here, it is advised to
-    take the credible band with `conf=True`).
+    distribution. `Note:` A summary model trajectory is shown based on the median of the individual
+    1-dimensional marginal parameter posteriors (`conf=False`) or based on the 50th
+    percentile of model trajectory samples from the complete parameter posterior; for multimodal
+    parameter posteriors the `conf=False` option can yield an inaccurate summary
+    (here, it is advised to use `conf=True`).
 
     Parameters
     ----------
@@ -1300,11 +1305,14 @@ def est_bestfit_variance_plot(estimation, settings=None, data=True, conf=True,
         If `data=True` (default), plot the data variance statistics with standard errors
         in the background (grey color).
     conf : bool, optional
-        If `conf=True` (default), 95% credible bands of the model variances are shown;
-        based on 2.5th and 97.5th percentiles for each time point of model
+        If `conf=True` (default), a median trajectory with 95% credible bands of the
+        model variances are shown;
+        based on 2.5th, 50th and 97.5th percentiles for each time point of model
         trajectories drawn from the estimated parameter posterior distribution.
         `Note:` The computation of credible bands can be expensive for complex
         models; in this case you might want to start plotting with `conf=False`.
+        If `conf=False`, no band is shown and the summary trajectory is computed
+        by taking median parameters of the individual 1-dimensional posterior marginals.
     x_label : str, optional
         Label for x-axis.
     x_lim : None or tuple of floats, optional
@@ -1378,10 +1386,11 @@ def est_bestfit_covariance_plot(estimation, settings=None, data=True, conf=True,
                             y_label='Covariance', y_lim=None, y_log=False,
                             show=True, save=None):
     """Plot the model covariance trajectories based on the estimated parameter posterior
-    distribution. `Note:` As a summary, a model trajectory based on the median of the individual
-    1-dimensional marginal parameter posteriors is shown; for multimodal
-    parameter posteriors this will yield an inaccurate summary (here, it is advised to
-    take the credible band with `conf=True`).
+    distribution. `Note:` A summary model trajectory is shown based on the median of the individual
+    1-dimensional marginal parameter posteriors (`conf=False`) or based on the 50th
+    percentile of model trajectory samples from the complete parameter posterior; for multimodal
+    parameter posteriors the `conf=False` option can yield an inaccurate summary
+    (here, it is advised to use `conf=True`).
 
     Parameters
     ----------
@@ -1393,11 +1402,14 @@ def est_bestfit_covariance_plot(estimation, settings=None, data=True, conf=True,
         If `data=True` (default), plot the data covariance statistics with standard errors
         in the background (grey color).
     conf : bool, optional
-        If `conf=True` (default), 95% credible bands of the model covariances are shown;
-        based on 2.5th and 97.5th percentiles for each time point of model
+        If `conf=True` (default), a median trajectory with 95% credible bands of the
+        model covariances are shown;
+        based on 2.5th, 50th and 97.5th percentiles for each time point of model
         trajectories drawn from the estimated parameter posterior distribution.
         `Note:` The computation of credible bands can be expensive for complex
         models; in this case you might want to start plotting with `conf=False`.
+        If `conf=False`, no band is shown and the summary trajectory is computed
+        by taking median parameters of the individual 1-dimensional posterior marginals.
     x_label : str, optional
         Label for x-axis.
     x_lim : None or tuple of floats, optional
@@ -1424,7 +1436,7 @@ def est_bestfit_covariance_plot(estimation, settings=None, data=True, conf=True,
     if settings==None:
         vars = [(estimation.net_simulation.sim_variables_identifier[var[0]][0], estimation.net_simulation.sim_variables_identifier[var[1]][0])
                     for var in estimation.net_simulation.sim_variables_order[1] if var[0]!=var[1]]
-        colors = sns.color_palette('muted', n_colors=len(vars)).as_hex()
+        colors = sns.color_palette('Set2', n_colors=len(vars)).as_hex()
         settings = dict()
 
         for i, var in enumerate(vars):
