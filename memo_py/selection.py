@@ -186,7 +186,11 @@ def compute_model_probabilities_from_log_evidences(logevids, mprior=None):
         # in log-space, this is -log(n)
         logmprior = np.full(logevids.shape, -np.log(logevids.shape[0]))
     else:
-        # use the specific mprior if provided, convert to log-space
+        ### use the specific mprior if provided, convert to log-space
+        # check if mprior sums to 1.0 (within default tolerances),
+        # otherwise raise warning
+        if not np.isclose(np.array([1.0]), np.sum(mprior))[0]:
+            warnings.warn('Model prior probabilities do not sum to one.')
         # check if mprior has same shape as logevids
         if logevids.shape==mprior.shape:
             logmprior = np.log(mprior)
