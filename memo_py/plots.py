@@ -987,7 +987,7 @@ def est_corner_kernel_plot(estimation, settings=None, show=True, save=None):
 
     # generate plot by dynesty plotting methods
     fig, axes = dyplot.cornerplot(sampler_result,
-                            color='dodgerblue',
+                            color='#A0B1BA',
                             show_titles=True,
                             labels=params_labels,
                             title_fmt='.4f')
@@ -1595,6 +1595,9 @@ def _dots_w_bars_evolv(x_arr, y_arr_err, var_attributes,
     #         'plot_name': 'fig_test_dots_time'}
     # """
 
+    # internal setting to switch between paper figures and normal
+    normal_mode = False # for paper, set False
+
     # initialise figure and axis settings
     fig = plt.figure()
 
@@ -1611,7 +1614,8 @@ def _dots_w_bars_evolv(x_arr, y_arr_err, var_attributes,
 
         plt.errorbar(x_arr, y_arr_err[var_ind, :, 0], yerr=y_arr_err[var_ind, :, 1],
                     label=var_name, markeredgecolor=var_color, color=var_color, fmt='o',
-                    capsize=4.0, elinewidth=2.5, markeredgewidth=2.5, markersize=4.5)
+                    capsize=4.0 if normal_mode else 1.0, elinewidth=2.5 if normal_mode else 0.4,
+                    markeredgewidth=2.5 if normal_mode else 0.5, markersize=4.5 if normal_mode else 1.0)
 
     # final axis setting
     ax.set_xlim(x_lim)
@@ -1966,6 +1970,9 @@ def _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err, y_lin
     #         'plot_name': 'fig_test_line_band_dots_bars'}
     # """
 
+    # internal setting to switch between paper figures and normal
+    normal_mode = False # for paper, set False
+
     # initialise figure and axis settings
     fig = plt.figure()
 
@@ -1983,10 +1990,10 @@ def _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err, y_lin
         ax.fill_between(x_arr_line, y_lower[var_ind, :], y_upper[var_ind, :],
                         color=var_color, alpha=0.5, linewidth=0.0, zorder=1000)
         plt.plot(x_arr_line, y_line[var_ind, :], label=var_name,
-                        color=var_color, linewidth=2.5, zorder=3000)
+                        color=var_color, linewidth=2.5 if normal_mode else 1.0, zorder=3000)
         plt.errorbar(x_arr_dots, y_dots_err[var_ind, :, 0], yerr=y_dots_err[var_ind, :, 1],
-                    fmt='o', capsize=4.0, elinewidth=2.5, #label='data' if var_ind==0 else '',
-                    markeredgewidth=2.5, markersize=4.5, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
+                    fmt='o', capsize=4.0 if normal_mode else 1.0, elinewidth=2.5 if normal_mode else 0.5, #label='data' if var_ind==0 else '',
+                    markeredgewidth=2.5 if normal_mode else 0.5, markersize=4.5 if normal_mode else 1.0, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
 
     # final axis setting
     ax.set_xlim(x_lim)
