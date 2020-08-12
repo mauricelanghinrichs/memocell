@@ -1,0 +1,82 @@
+hi maurice, das hab ich aufgeschrieben waehrend dem gm:
+
+
+comments
+
+"occur" pronunciation
+
+"estimate" verb vs noun pronunciation
+
+
+fig. 1
+------
+
+a)
+
+mean time is more natural than θ here.
+
+choose the same mean for the wt distribution to make the difference
+(shape) more transparent?
+
+"sample variance" to indicate that these are still random variables
+
+d)
+
+too much visual weight for the argument -> supplement
+
+e)
+
+latex font for the shown moment equations clashes with font for the rest.
+
+grey arrows are a bit small
+
+angle brackets instead of E[..] ? matter of taste, but this would be
+more compact
+
+how to get mean and variance from moments is basic algebra -- may not
+merit a depiction.
+
+
+fig. 2
+------
+
+https://pypi.org/project/memopy/
+
+about gaussian likelihood:
+
+i think it's not problematic because your models can only produce
+reasonable, positive variances. the fact that the likelihood does not
+exclude unphysical solutions explicitly, is therefore not important.
+
+about the error covariances: in general the values at different times
+will be correlated, and this is a relevant feature of the biological
+process that generates the data. you could in principle estimate all the
+error correlations, probably not statistically less defined than the
+error variances themselves. the gaussian likelihood that respects these
+error correlations is also relatively simple, and numerically not
+problematic, i think. this extension of the framework would be
+relatively little effort i therefore think. maybe something for the
+future or for version 2.0
+
+fig. 3
+------
+
+h) double-check definition of bayes factor (i think i have seen
+something different than evidence/max.evidence.
+
+
+fig. 4
+------
+
+
+e) i didn't get why there is no experimental data for the division time?
+no continuous cell tracking?
+
+
+f) aspect ratio 1:1 is better
+
+
+fig. 5
+------
+
+c) linear interpolation make no sense? better to do it stepwise?
