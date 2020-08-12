@@ -16,6 +16,7 @@ import numpy as np
 from multiprocessing import Pool
 from tqdm.autonotebook import tqdm
 
+import warnings
 
 def select_models(input_dict, parallel={'do': True, 'num_processes': None}):
     """docstring for ."""
