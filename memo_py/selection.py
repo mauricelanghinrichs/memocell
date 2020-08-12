@@ -138,30 +138,75 @@ def net_estimation(input_var):
     return est
 
 
-def compute_model_probabilities(estimation_instances):
+def compute_model_probabilities(estimation_instances, mprior=None):
+    """docstring for ."""
+    ### wrapper for compute_model_probabilities_from_log_evidences
+    ### on estimation_instances from selection results; optional
+    ### specification of model priors (otherwise (default) a uniform
+    ### model prior is used)
+
+    # read out log evidence list
+    logevids = np.array([est.bay_est_log_evidence for est in estimation_instances])
+
+    # compute model probabilities and return
+    return compute_model_probabilities_from_log_evidences(logevids, mprior=mprior)
+
+
+def compute_model_probabilities_from_log_evidences(logevids, mprior=None):
     """docstring for ."""
     ### compute probability distribution p(M | D) (probabilities of the models M
-    ### given the data D), assuming uniform model prior; based on Bayes theorem
-    ### p(M | D) = p(D | M) * p(M) / p(D), with model prior p(M)=1/n (n being
-    ### the number of models); NOTE: a model probability depends on the set
+    ### given the data D), assuming uniform model prior (mprior=None) or assuming
+    ### a specified model prior; based on Bayes theorem
+    ### p(M | D) = p(D | M) * p(M) / p(D), e.g. with uniform model prior
+    ### p(M)=1/n (n being the number of models);
+    ### NOTE: a model probability depends on the set
     ### of tested models, while a model evidence p(D | M) is independent of
     ### the set of other tested models
 
     # see Goodnotes (bayes_model_distr); an alternative calculation
-    # can be based on the Bayes factors (with respect to the best model)
+    # can be based on the Bayes factors (with respect to the best model); an old
+    # version can be seen below; the current version (also in bayes_model_distr)
+    # uses the log-sum-exp trick to prevent overflow issue in logpdata calculation;
+    # version can accept model-specific priors (not only general uniform prior)
+    # (is actually quite similar to an alternative version based on the bayes factors)
+    ### OLD
+    # # log model prior (log of model number)
+    # # assuming uniform model prior
+    # logmprior = - np.log(logevids.shape[0])
+    #
+    # # calculate normalising factor p(D)
+    # logpdata = np.log(np.sum(np.exp(logevids))) + logmprior
+    #
+    # # calculate model probabilities
+    # probs = np.exp(logevids + logmprior - logpdata)
+    ### OLD
 
-    # read out evidence list
-    logevids = np.array([est.bay_est_log_evidence for est in estimation_instances])
+    if mprior is None:
+        # set a uniform model prior 1/n (with n the number of models, default)
+        # in log-space, this is -log(n)
+        logmprior = np.full(logevids.shape, -np.log(logevids.shape[0]))
+    else:
+        # use the specific mprior if provided, convert to log-space
+        # check if mprior has same shape as logevids
+        if logevids.shape==mprior.shape:
+            logmprior = np.log(mprior)
+        else:
+            raise ValueError('Shape mismatch between logevids and mprior.')
 
-    # log model prior (log of model number)
-    # assuming uniform model prior
-    logmprior = - np.log(logevids.shape[0])
+    # calculate aggregate of evidences and model prior in log-space (an array)
+    # (this is log(p(D|M_i) * p(M_i)) for all models M_i)
+    logevidmprior = logevids + logmprior
 
-    # calculate normalising factor p(D)
-    logpdata = np.log(np.sum(np.exp(logevids))) + logmprior
+    # get maximal value to use log-sum-exp trick (a number)
+    logmax = np.max(logevidmprior)
 
-    # calculate model probabilities
-    probs = np.exp(logevids + logmprior - logpdata)
+    # calculate normalising factor p(D) in log-space
+    # using log-sum-exp trick (a number)
+    # equivalent to: logpdata = log(sum(exp(logevidmprior)))
+    logpdata = logmax + np.log(np.sum(np.exp(logevidmprior - logmax)))
+
+    # calculate model probabilities (an array)
+    probs = np.exp(logevidmprior - logpdata)
 
     # check if probabilities sum to 1.0 (within default tolerances),
     # otherwise raise warning
@@ -173,12 +218,21 @@ def compute_model_probabilities(estimation_instances):
 
 def compute_model_bayes_factors(estimation_instances):
     """docstring for ."""
-    ### compute the Bayes factors K's with respect to the overall best model
-    ### from estimation_instances following formula K = p(D | M1) / p(D | M2),
-    ### where M1 is the best model, M2 a second model and D the data
+    ### wrapper for compute_model_bayes_factors_from_log_evidences
+    ### on estimation_instances from selection results
 
-    # read out evidence list
+    # read out log evidence list
     logevids = np.array([est.bay_est_log_evidence for est in estimation_instances])
+
+    # compute Bayes factors and return
+    return compute_model_bayes_factors_from_log_evidences(logevids)
+
+
+def compute_model_bayes_factors_from_log_evidences(logevids):
+    """docstring for ."""
+    ### compute the Bayes factors K's with respect to the overall best model
+    ### from log evidences following formula K = p(D | M1) / p(D | M2),
+    ### where M1 is the best model, M2 a second model and D the data
 
     # get best logevid
     logevidbest = np.max(logevids)
