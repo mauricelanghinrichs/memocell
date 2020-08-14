@@ -1,8 +1,9 @@
 
 
-"""This script handles the parameter and evidence estimation of a given
-set of networks/models. Use the top-level function 'select_models' to run
-this script; 'select_models' then calls 'net_estimation' automatically."""
+"""The selection module provides methods to run the statistical inference for a
+set of models on given data (model selection and parameter estimation). Use the
+top-level function `select_models`; `select_models` then calls required helper
+functions (such as `net_estimation`) automatically."""
 
 # TODO: user input validation?
 
@@ -18,25 +19,102 @@ from tqdm.autonotebook import tqdm
 
 import warnings
 
-def select_models(input_dict, parallel={'do': True, 'num_processes': None}):
-    """docstring for ."""
+def select_models(models, data, mean_only=False,
+                            nlive=1000, tolerance=0.01,
+                            bound='multi', sample='unif',
+                            parallel=True, processes=None):
+    """Main function of the selection module for statistical inference of `models`
+    `M` given `data` `D` (model selection and parameter estimation).
+    Main results are model estimates, in terms of evidence values `p(D | M)`,
+    and parameter estimates `p(θ | M, D)` for each model. The resulting output
+    can be further processed to obtain model probabilities `p(M | D)` and model
+    Bayes factors by the `compute_model_probabilities`
+    and `compute_model_bayes_factors` function, respectively (see there).
+
+    Parameters
+    ----------
+    models : list of tuple
+        A list of models to run the statistical inference with. A specific input
+        format is required. Each tuple defines a model for the inference with
+        `(model name, model topology, sampling setup)`, see example below.
+    data : memo_py.Data.data
+        A memo_py data object used in the statistcal inference.
+    mean_only : bool, optional
+        If the inference shall be based on the first moment (means) only,
+        specify `mean_only=True`. If the inference shall be based on information
+        from the first and second moments, specify 'mean_only=False' (default).
+    nlive : int, optional
+        Number of live points used for the nested sampling; default is `1000`.
+        Passed to `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_'s
+        top-level `NestedSampler`; see there for more info.
+    tolerance : float, optional
+        Tolerance to define the stopping criterion for the nested sampling;
+        default is `0.01`.
+        Passed to `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_'s
+        `dlogz` argument in the `run_nested` method;
+        see there for more info.
+    bound : str, optional
+        Method used to approximately bound the prior for the nested sampling;
+        default is `'multi'`.
+        Passed to `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_'s
+        top-level `NestedSampler`; see there for more info.
+    sample : str, optional
+        Method used to sample uniformly within the likelihood constraint for
+        the nested sampling; default is `'unif'`.
+        Passed to `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_'s
+        top-level `NestedSampler`; see there for more info.
+    parallel : bool, optional
+        Run `select_models` in parallel based on Python's `multiprocessing`
+        module with `parallel=True` (default); the number of parallel processes can be
+        specified with the `processes` argument. Use `parallel=False`
+        to run `select_models` sequentially.
+    processes : None or int, optional
+        If `parallel=True`, the number of parallel processes used for multiprocessing
+        can be specified here. If `parallel=True` and `processes=None` (default)
+        the available number of processes will be determined automatically.
+        If `parallel=False`, the `processes` argument will be ignored.
+
+    Returns
+    -------
+    est_res : list of memo_py.estimation.Estimation
+        A list of memo_py estimation objects for the models.
+
+    Examples
+    --------
+    >>> # given some memo_py data object, models are defined as follows
+    >>> # (here a simple model with symmetric division of one cell type)
+    >>> t2 = [{'start': 'X_t', 'end': 'X_t',
+    >>>        'rate_symbol': 'l',
+    >>>        'type': 'S -> S + S',
+    >>>        'reaction_steps': 2}]
+    >>> t5 = [{'start': 'X_t', 'end': 'X_t',
+    >>>        'rate_symbol': 'l',
+    >>>        'type': 'S -> S + S',
+    >>>        'reaction_steps': 5}]
+    >>> s = {'initial_values': {'X_t': 1.0},
+    >>>      'theta_bounds': {'l': (0.0, 1.0)},
+    >>>      'variables': {'X_t': ('X_t', )}}
+    >>> models = [('model2', t2, s), ('model5', t5, s)]
+    >>> # then the inference is started with
+    >>> est_res = me.selection.select_models(models, data)
+    """
     ### this is the top-level function of this script to handle the set of
     ### networks/models for parameter and evidence estimation;
     ### for each network (in a parallelised loop), net_estimation function is called
 
     # load information that is the same for all models
     # mcmc information is combined to a new dict
-    d_data = input_dict['data']
-    d_mean_only = input_dict['mean_only']
+    d_data = data
+    d_mean_only = mean_only
     d_mcmc_setup = {
-        'nlive':    input_dict['nlive'],
-        'tolerance':   input_dict['tolerance'],
-        'bound':        input_dict['bound'],
-        'sample':      input_dict['sample']
+        'nlive':    nlive,
+        'tolerance':   tolerance,
+        'bound':        bound,
+        'sample':      sample
     }
 
     # load information of the set of models
-    d_model_set = input_dict['model_set']
+    d_model_set = models
 
     # # load progress bar for current environment (jupyter or terminal)
     # if input_dict['progress_bar_env']=='jupyter':
@@ -70,9 +148,9 @@ def select_models(input_dict, parallel={'do': True, 'num_processes': None}):
 
     # if __name__ == '__main__': # TODO: is this needed somewhere?
     # parallelised version
-    if parallel['do']:
+    if parallel:
         # read out number of processes (None if mp.cpu_count() should be used)
-        num_processes = parallel['num_processes']
+        num_processes = processes
 
         with Pool(processes=num_processes) as p:
 
@@ -107,7 +185,25 @@ def select_models(input_dict, parallel={'do': True, 'num_processes': None}):
 
 
 def net_estimation(input_var):
-    """docstring for ."""
+    """Helper function to handle the parameter and evidence estimation of a
+    single model as specified by `input_var`.
+
+    `Note`: Please use the top-level `select_models` function for
+    all inference tasks; if you wish to estimate a single model only, you can
+    just apply `select_models` on a one-model list or use `estimate` from the
+    memo_py estimation class.
+
+    Parameters
+    ----------
+    input_var : tuple
+        Internal tuple structure with various information passed
+        over from `select_models` function.
+
+    Returns
+    -------
+    est : memo_py.estimation.Estimation
+        A memo_py estimation object.
+    """
     ### this function handles the parameter and evidence estimation of a
     ### single model/network as specified by input_var
 
@@ -139,7 +235,37 @@ def net_estimation(input_var):
 
 
 def compute_model_probabilities(estimation_instances, mprior=None):
-    """docstring for ."""
+    """Compute the posterior probability distribution `p(M | D)`
+    (probabilities of the models `M` given the data `D`) for a list
+    of estimated models.
+    This function is a wrapper of the
+    `compute_model_probabilities_from_log_evidences`
+    function; see there for more info.
+
+    Parameters
+    ----------
+    estimation_instances : list of memo_py.estimation.Estimation
+        A list of memo_py estimation objects for the models;
+        for example obtained by the `select_models` function.
+    mprior : None or 1d numpy.ndarray, optional
+        Array of prior model probabilities; if `mprior=None` (default) an uniform model
+        prior will be used: `p(M)=1/n` where `n` is the total number of models.
+        If a custom prior is specified,
+        it has to have the same length `n` as `estimation_instances`.
+
+    Returns
+    -------
+    probs : 1d numpy.ndarray
+        Array of posterior model probabilities `p(M | D)`.
+
+    Examples
+    --------
+    >>> # estimation_instances for example by est_res = me.select_models(...)
+    >>> # with estimated log evidences = [4.1, 1.8, 4.4, -1.6]
+    >>> # (see compute_model_probabilities_from_log_evidences for more examples)
+    >>> me.selection.compute_model_probabilities_from_log_evidences(logevids)
+    array([0.40758705, 0.04086421, 0.55018497, 0.00136377])
+    """
     ### wrapper for compute_model_probabilities_from_log_evidences
     ### on estimation_instances from selection results; optional
     ### specification of model priors (otherwise (default) a uniform
@@ -153,7 +279,57 @@ def compute_model_probabilities(estimation_instances, mprior=None):
 
 
 def compute_model_probabilities_from_log_evidences(logevids, mprior=None):
-    """docstring for ."""
+    """Compute the posterior probability distribution `p(M | D)`
+    (probabilities of the models `M` given the data `D`),
+    assuming uniform model prior (`mprior=None`, default) or
+    assuming a specified custom model prior `mprior`.
+    Computation is based on the Bayes theorem
+    :math:`p(M | D) = \\frac{p(D | M) \\cdot p(M)}{p(D)}`
+    where `p(M)` is the model prior and `p(D | M)` are the evidence
+    values obtained from the estimation.
+
+    `Note`: While evidence values are model-instrinsic (do not depend on the
+    considered set of models), posterior model probabilities depend on the context of
+    the overall considered set of models. A 'high' model probability might not mean
+    much, if all models are bad or if the model space is not exhaustive.
+
+    Parameters
+    ----------
+    logevids : 1d numpy.ndarray
+        Array of logarithmic evidence values of the models.
+    mprior : None or 1d numpy.ndarray, optional
+        Array of prior model probabilities; if `mprior=None` (default) an uniform model
+        prior will be used: `p(M)=1/n` where `n` is the total number of models.
+        If a custom prior is specified,
+        it has to have the same length `n` as `logevids`.
+
+    Returns
+    -------
+    probs : 1d numpy.ndarray
+        Array of posterior model probabilities `p(M | D)`.
+
+    Examples
+    --------
+    >>> # calculation of model probabilities; note that they sum to 1
+    >>> logevids = np.array([4.1, 1.8, 4.4, -1.6])
+    >>> probs = me.selection.compute_model_probabilities_from_log_evidences(logevids)
+    >>> probs
+    array([0.40758705, 0.04086421, 0.55018497, 0.00136377])
+    >>> np.sum(probs)
+    1.0
+
+    >>> # calculation of model probabilities with an uniform model prior
+    >>> # this is the default option (thus we get the same result)
+    >>> mprior = np.array([0.25, 0.25, 0.25, 0.25])
+    >>> me.selection.compute_model_probabilities_from_log_evidences(logevids, mprior=mprior)
+    array([0.40758705, 0.04086421, 0.55018497, 0.00136377])
+
+    >>> # calculation of model probabilities with a non-uniform model prior
+    >>> # (here, the first two models are given a bit more prior probability)
+    >>> mprior = np.array([0.3, 0.3, 0.2, 0.2])
+    >>> me.selection.compute_model_probabilities_from_log_evidences(logevids, mprior=mprior)
+    array([0.49940188, 0.05006945, 0.44941468, 0.00111399])
+    """
     ### compute probability distribution p(M | D) (probabilities of the models M
     ### given the data D), assuming uniform model prior (mprior=None) or assuming
     ### a specified model prior; based on Bayes theorem
@@ -221,7 +397,28 @@ def compute_model_probabilities_from_log_evidences(logevids, mprior=None):
 
 
 def compute_model_bayes_factors(estimation_instances):
-    """docstring for ."""
+    """Compute Bayes factors for a list of estimated models. This function is
+    a wrapper of the `compute_model_bayes_factors_from_log_evidences`
+    function; see there for more info.
+
+    Parameters
+    ----------
+    estimation_instances : list of memo_py.estimation.Estimation
+        A list of memo_py estimation objects for the models;
+        for example obtained by the `select_models` function.
+
+    Returns
+    -------
+    bayesf : 1d numpy.ndarray
+        Array of Bayes factors of the estimated models.
+
+    Examples
+    --------
+    >>> # estimation_instances for example by est_res = me.select_models(...)
+    >>> # with estimated log evidences = [4.1, 1.8, 4.4, -1.6]
+    >>> me.selection.compute_model_bayes_factors(est_res)
+    array([  1.34985881,  13.46373804,   1.        , 403.42879349])
+    """
     ### wrapper for compute_model_bayes_factors_from_log_evidences
     ### on estimation_instances from selection results
 
@@ -233,7 +430,34 @@ def compute_model_bayes_factors(estimation_instances):
 
 
 def compute_model_bayes_factors_from_log_evidences(logevids):
-    """docstring for ."""
+    """Compute Bayes factors from an array of logarithmic evidences. A Bayes
+    factor `K` for a model `M` is computed by an evidence ratio as
+    :math:`K = p(D | M_b) / p(D | M)` where `D` is the data and `M`:sub:`b`
+    is the overall best model of the given evidences.
+    Bayes factors can be used to classify models into different levels of support
+    given by the data (e.g., see further info `here <https://en.wikipedia.org/wiki/Bayes_factor>`_).
+
+    `Note`: While evidence values are model-instrinsic (do not depend on the
+    considered set of models), a model Bayes factor depends on the context of
+    the overall considered set of models. A 'good' Bayes factor might not mean
+    much, if all models are bad or if the model space is not exhaustive.
+
+    Parameters
+    ----------
+    logevids : 1d numpy.ndarray
+        Array of logarithmic evidence values of the models.
+
+    Returns
+    -------
+    bayesf : 1d numpy.ndarray
+        Array of Bayes factors of the models.
+
+    Examples
+    --------
+    >>> logevids = np.array([4.1, 1.8, 4.4, -1.6])
+    >>> me.selection.compute_model_bayes_factors_from_log_evidences(logevids)
+    array([  1.34985881,  13.46373804,   1.        , 403.42879349])
+    """
     ### compute the Bayes factors K's with respect to the overall best model
     ### from log evidences following formula K = p(D | M1) / p(D | M2),
     ### where M1 is the best model, M2 a second model and D the data
