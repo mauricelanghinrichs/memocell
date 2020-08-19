@@ -141,28 +141,31 @@ for step_i, step_j in sparse_steps_list:
 print(len(models))
 
 ### load the data
-data = pickle.load(open('count_data_cd44_manual_counting_18_01_14_filtered_sigma022.pickle', 'rb'))
+data = pickle.load(open('count_data_cd44_manual_counting_18_01_14_filtered_thin4.pickle', 'rb'))
 print(data.data_name)
 
 ### input for selection
-d = {
-# model set
-'model_set': models,
-
-# data/model settings
-'data': data,
-'mean_only': False, # True or False
-
-# nested sampling settings
-'nlive':                    1000, # 250 # 1000
-'tolerance':                0.01, # 0.1 (COARSE) # 0.05 # 0.01 (NORMAL)
-'bound':                    'multi',
-'sample':                   'unif'
-}
+# d = {
+# # model set
+# 'model_set': models,
+#
+# # data/model settings
+# 'data': data,
+# 'mean_only': False, # True or False
+#
+# # nested sampling settings
+# 'nlive':                    1000, # 250 # 1000
+# 'tolerance':                0.01, # 0.1 (COARSE) # 0.05 # 0.01 (NORMAL)
+# 'bound':                    'multi',
+# 'sample':                   'unif'
+# }
 
 ### computation, result is a list of Estimation class instances
-res = me.select_models(d)
+# res = me.select_models(d)
+
+res = me.select_models(models, data, mean_only=False,
+                            nlive=1000, tolerance=0.01)
 
 ### save estimation with pickle
-with open('estimation_count_data_cd44_filtered_sigma022_par2.pickle', 'wb') as file_: # in_silico_estimation
+with open('estimation_count_data_cd44_filtered_thin4_par2.pickle', 'wb') as file_: # in_silico_estimation
     pickle.dump(res, file_)
