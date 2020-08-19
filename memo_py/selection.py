@@ -29,7 +29,7 @@ def select_models(models, data, mean_only=False,
     and parameter estimates `p(θ | M, D)` for each model. The resulting output
     can be further processed to obtain model probabilities `p(M | D)` and model
     Bayes factors by the `compute_model_probabilities`
-    and `compute_model_bayes_factors` function, respectively (see there).
+    and `compute_model_bayes_factors` functions, respectively (see there).
 
     Parameters
     ----------
@@ -42,7 +42,7 @@ def select_models(models, data, mean_only=False,
     mean_only : bool, optional
         If the inference shall be based on the first moment (means) only,
         specify `mean_only=True`. If the inference shall be based on information
-        from the first and second moments, specify 'mean_only=False' (default).
+        from the first and second moments, specify `mean_only=False` (default).
     nlive : int, optional
         Number of live points used for the nested sampling; default is `1000`.
         Passed to `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_'s
@@ -51,8 +51,7 @@ def select_models(models, data, mean_only=False,
         Tolerance to define the stopping criterion for the nested sampling;
         default is `0.01`.
         Passed to `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_'s
-        `dlogz` argument in the `run_nested` method;
-        see there for more info.
+        `dlogz` argument in the `run_nested` method; see there for more info.
     bound : str, optional
         Method used to approximately bound the prior for the nested sampling;
         default is `'multi'`.

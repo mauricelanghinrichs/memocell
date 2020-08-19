@@ -200,7 +200,39 @@ class Estimation(object):
 
     @staticmethod
     def get_model_evidence(sampler_result):
-        """docstring for ."""
+        """Extract logarithmic evidence value and its error estimate from the
+        nested sampling result.
+
+        `Note`: After running a memopy estimation there is no need to run this
+        method, one can simply access the logarithm model evidence and its error
+        with `est.bay_est_log_evidence` and `est.bay_est_log_evidence_error` for the
+        estimation instance `est`.
+
+        Parameters
+        ----------
+        sampler_result : dynesty.results.Results
+            Nested sampling result of a memopy estimation. Typically available at
+            `est.bay_nested_sampler_res`.
+
+        Returns
+        -------
+        log_evid_dynesty : float
+            Logarithmic evidence of estimated model. Typically available at
+            `est.bay_est_log_evidence`.
+        log_evid_err_dynesty : float
+            Error of the logarithmic evidence of estimated model. Typically
+            available at `est.bay_est_log_evidence_error`.
+
+        Examples
+        --------
+        >>> # est is a memopy estimation instance
+        >>> est.get_model_evidence(est.bay_nested_sampler_res)
+        (28.139812540432732, 0.11225503808864087)
+        >>> est.bay_est_log_evidence
+        28.139812540432732
+        >>> est.bay_est_log_evidence_error
+        0.11225503808864087
+        """
 
         # value of log evidence (logZ) (last entry of nested sampling results)
         log_evid_dynesty = sampler_result.logz[-1]
