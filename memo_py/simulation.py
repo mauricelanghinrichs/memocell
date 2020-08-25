@@ -1,4 +1,10 @@
 
+"""
+copied here from estimation docs (still to check):
+think about sparse simulation variabesl of a network (does this work already?
+do I have to check for something?)
+"""
+
 from .network import Network
 from .simulation_lib.sim_gillespie import GillespieSim
 from .simulation_lib.sim_moments import MomentsSim
@@ -369,6 +375,10 @@ class Simulation(object):
         if not all(set(val).issubset(net_nodes_without_env) for val in variables.values()):
             raise ValueError('Strings in the tuple as value of the variables dictionary have to be nodes of the network.')
 
+        # check for uniqueness of simulation variables (addition Aug 2020)
+        sim_variables = list(variables.keys())
+        if len(sim_variables) > len(set(sim_variables)):
+            raise ValueError('Simulation variables have to be unique.')
         return variables
 
 
