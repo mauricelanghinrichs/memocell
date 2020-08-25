@@ -57,22 +57,19 @@ class TestEstimationClass(object):
                                      [[ 0.01        ,0.0303608   ,0.06645246]]])
 
         ### run estimation and return object
-        network_setup = {
-            'initial_values': {'X_t': 1, 'Y_t': 0},
-            'theta_bounds': {'d': (0.0, 0.15), 'l': (0.0, 0.15)},
-            'mean_only': False,
-            'variables': {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
-        }
+        variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
+        initial_values = {'X_t': 1, 'Y_t': 0}
+        theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
+        mean_only = False
 
-        mcmc_setup = {
-            'nlive':                    1000, # 250 # 1000
-            'tolerance':                0.01, # 0.1 (COARSE) # 0.05 # 0.01 (NORMAL)
-            'bound':                    'multi',
-            'sample':                   'unif'
-        }
+        nlive = 1000 # 250 # 1000
+        tolerance = 0.01 # 0.1 (COARSE) # 0.05 # 0.01 (NORMAL)
+        bound = 'multi'
+        sample = 'unif'
 
         est = me.Estimation('est_min_2_4', net, data)
-        est.estimate(network_setup, mcmc_setup)
+        est.estimate(variables, initial_values, theta_bounds,
+                            mean_only, nlive, tolerance, bound, sample)
         return est
 
     @pytest.mark.slow
@@ -86,10 +83,10 @@ class TestEstimationClass(object):
 
     @pytest.mark.slow
     def test_theta_credible_interval_of_simple_minimal_model(self, simple_est_setup):
-        sol_bay_est_params_conf = np.array([[[0.02803474, 0.02594989, 0.03014408],
+        sol_bay_est_params_cred = np.array([[[0.02803474, 0.02594989, 0.03014408],
                                               [0.07470537, 0.06919784, 0.07955645]]])
-        np.testing.assert_allclose(sol_bay_est_params_conf,
-                                    np.array([simple_est_setup.bay_est_params_conf]),
+        np.testing.assert_allclose(sol_bay_est_params_cred,
+                                    np.array([simple_est_setup.bay_est_params_cred]),
                                     rtol=0.002, atol=0.002)
 
     @pytest.mark.slow
@@ -98,3 +95,219 @@ class TestEstimationClass(object):
         logZ, logzerr = simple_est_setup.get_model_evidence(sampler_result)
         np.testing.assert_allclose(28.2, logZ, rtol=1.0, atol=1.0)
         np.testing.assert_allclose(0.1, logzerr, rtol=0.1, atol=0.1)
+
+    @pytest.mark.slow
+    def test_get_maximal_log_likelihood_from_sampler_res(self, simple_est_setup):
+        sampler_result = simple_est_setup.bay_nested_sampler_res
+        logl_max = simple_est_setup.get_maximal_log_likelihood(sampler_result)
+        np.testing.assert_allclose(35.5, logl_max, rtol=1.0, atol=1.0)
+
+    @pytest.mark.slow
+    def test_compute_bayesian_information_criterion_from_sampler_res(self, simple_est_setup):
+        bic = simple_est_setup.compute_bayesian_information_criterion(
+                simple_est_setup.data_num_values,
+                simple_est_setup.bay_nested_ndims,
+                simple_est_setup.bay_est_log_likelihood_max)
+        np.testing.assert_allclose(-65.5, bic, rtol=1.0, atol=1.0)
+
+    def test_compute_bayesian_information_criterion(self):
+        net = me.Network('net_test')
+        data = me.Data('data_test')
+        est = me.Estimation('est_test', net, data)
+        bic = est.compute_bayesian_information_criterion(15, 2, 35.49)
+        np.testing.assert_allclose(-65.56389959779558, bic)
+        bic = est.compute_bayesian_information_criterion(15.0, 2, 35.49)
+        np.testing.assert_allclose(-65.56389959779558, bic)
+        bic = est.compute_bayesian_information_criterion(15, 2.0, 35.49)
+        np.testing.assert_allclose(-65.56389959779558, bic)
+        bic = est.compute_bayesian_information_criterion(15.0, 2.0, 35.49)
+        np.testing.assert_allclose(-65.56389959779558, bic)
+
+    @pytest.mark.slow
+    def test_compute_log_evidence_from_bic_from_sampler_res(self, simple_est_setup):
+        log_evid_from_bic = simple_est_setup.compute_log_evidence_from_bic(
+                simple_est_setup.bay_est_bayesian_information_criterion)
+        np.testing.assert_allclose(32.8, log_evid_from_bic, rtol=1.0, atol=1.0)
+
+    def test_compute_log_evidence_from_bic(self):
+        net = me.Network('net_test')
+        data = me.Data('data_test')
+        est = me.Estimation('est_test', net, data)
+        log_evid_from_bic = est.compute_log_evidence_from_bic(-65.5)
+        np.testing.assert_allclose(32.75, log_evid_from_bic)
+
+    @pytest.mark.slow
+    def test_get_posterior_samples_from_sampler_res(self, simple_est_setup):
+        s, sw, w = simple_est_setup.get_posterior_samples(
+                simple_est_setup.bay_nested_sampler_res)
+        # s and sw shape should be (nsamples, nparams)
+        assert(2 == s.shape[1])
+        assert(2 == sw.shape[1])
+
+    def test_get_credible_interval(self):
+        net = me.Network('net_test')
+        data = me.Data('data_test')
+        est = me.Estimation('est_test', net, data)
+        samples = np.array([[0.2, 3.4], [0.4, 3.2], [0.25, 3.65]])
+        params_cred_res = np.array(est.get_credible_interval(samples))
+        params_cred_sol = np.array([[0.25  , 0.2025, 0.3925],
+                                 [3.4   , 3.21  , 3.6375]])
+        np.testing.assert_allclose(params_cred_sol, params_cred_res)
+
+    def test_compute_log_likelihood_norm_mean_only_false(self):
+        net = me.Network('net_test')
+        data = me.Data('data_test')
+        est = me.Estimation('est_test', net, data)
+        mean_data = np.array([[[1., 0.67, 0.37],
+                               [0., 0.45, 1.74]],
+                              [[0.01, 0.0469473, 0.04838822],
+                               [0.01, 0.07188642, 0.1995514]]])
+        var_data = np.array([[[0., 0.22333333, 0.23545455],
+                              [0., 0.51262626, 4.03272727]],
+                             [[0.01, 0.01631605, 0.01293869],
+                              [0.01, 0.08878719, 0.68612036]]])
+        cov_data = np.array([[[ 0., -0.30454545, -0.65030303]],
+                             [[ 0.01, 0.0303608, 0.06645246]]])
+        norm_res = est.compute_log_likelihood_norm(mean_data, var_data, cov_data, False)
+        norm_sol = 37.04057852140377
+        np.testing.assert_allclose(norm_sol, norm_res)
+
+    def test_compute_log_likelihood_norm_mean_only_true(self):
+        net = me.Network('net_test')
+        data = me.Data('data_test')
+        est = me.Estimation('est_test', net, data)
+        mean_data = np.array([[[1., 0.67, 0.37],
+                               [0., 0.45, 1.74]],
+                              [[0.01, 0.0469473, 0.04838822],
+                               [0.01, 0.07188642, 0.1995514]]])
+        var_data = np.array([[[0., 0.22333333, 0.23545455],
+                              [0., 0.51262626, 4.03272727]],
+                             [[0.01, 0.01631605, 0.01293869],
+                              [0.01, 0.08878719, 0.68612036]]])
+        cov_data = np.array([[[ 0., -0.30454545, -0.65030303]],
+                             [[ 0.01, 0.0303608, 0.06645246]]])
+        norm_res = est.compute_log_likelihood_norm(mean_data, var_data, cov_data, True)
+        norm_sol = 14.028288976285737
+        np.testing.assert_allclose(norm_sol, norm_res)
+
+    @pytest.mark.slow
+    def test_compute_log_likelihood_norm_mean_only_false_from_sampler_res(self, simple_est_setup):
+        norm_res = simple_est_setup.bay_log_likelihood_norm
+        norm_sol = 37.04057852140377
+        np.testing.assert_allclose(norm_sol, norm_res)
+
+    @pytest.mark.slow
+    def test_log_likelihood_from_sampler_res(self, simple_est_setup):
+        theta_values = np.array([0.03, 0.07])
+        logl_res = simple_est_setup.log_likelihood(theta_values, simple_est_setup.net_initial_values,
+                   simple_est_setup.data_time_values, simple_est_setup.net_simulation.sim_variables,
+                   simple_est_setup.data_mean_values, simple_est_setup.data_var_values,
+                   simple_est_setup.data_cov_values)
+        logl_sol = 32.823084036435795
+        np.testing.assert_allclose(logl_sol, logl_res)
+
+        theta_values = np.array([0.028, 0.075])
+        logl_res = simple_est_setup.log_likelihood(theta_values, simple_est_setup.net_initial_values,
+                   simple_est_setup.data_time_values, simple_est_setup.net_simulation.sim_variables,
+                   simple_est_setup.data_mean_values, simple_est_setup.data_var_values,
+                   simple_est_setup.data_cov_values)
+        logl_sol = 35.485136238014185
+        np.testing.assert_allclose(logl_sol, logl_res)
+
+    @pytest.mark.slow
+    def test_prior_transform_from_sampler_res(self, simple_est_setup):
+        theta_unit = np.array([0.03/0.15, 0.075/0.15])
+        theta_orig_res = simple_est_setup.prior_transform(theta_unit)
+        theta_orig_sol = np.array([0.03 , 0.075])
+        np.testing.assert_allclose(theta_orig_sol, theta_orig_res)
+
+    def test_prior_transform(self):
+        net = me.Network('net_test')
+        data = me.Data('data_test')
+        est = me.Estimation('est_test', net, data)
+
+        est.net_theta_bounds = np.array([[0.  , 0.15],
+                                         [0.  , 0.15]])
+        theta_unit = np.array([0.03/0.15, 0.075/0.15])
+        theta_orig_res = est.prior_transform(theta_unit)
+        theta_orig_sol = np.array([0.03 , 0.075])
+        np.testing.assert_allclose(theta_orig_sol, theta_orig_res)
+
+        est.net_theta_bounds = np.array([[0.5  , 2.0],
+                                         [0.1  , 4.0]])
+        theta_unit = np.array([0.8, 0.2])
+        theta_orig_res = est.prior_transform(theta_unit)
+        theta_orig_sol = np.array([0.8 * (2.0 - 0.5) + 0.5,
+                                   0.2 * (4.0 - 0.1) + 0.1])
+        np.testing.assert_allclose(theta_orig_sol, theta_orig_res)
+
+    def test_initialise_net_theta_bounds(self):
+        net = me.Network('net_test')
+        data = me.Data('data_test')
+        est = me.Estimation('est_test', net, data)
+        net_theta_bounds_res = est.initialise_net_theta_bounds(
+                                        ['theta_0', 'theta_1', 'theta_2'],
+                                        {'theta_2':'p3', 'theta_0':'p1', 'theta_1':'p2'},
+                                        {'p2': (0.0, 0.1), 'p3': (0.0, 0.2), 'p1': (0.0, 0.3)})
+        net_theta_bounds_sol = np.array([[0. , 0.3],
+                                         [0. , 0.1],
+                                         [0. , 0.2]])
+        np.testing.assert_allclose(net_theta_bounds_sol, net_theta_bounds_res)
+
+    @pytest.mark.slow
+    def test_match_data_to_network_from_sampler_res(self, simple_est_setup):
+
+        # check normal order of simulation variable identifiers
+        assert({'V_0': ('X_t', ('X_t',)), 'V_1': ('Y_t', ('Y_t',))}==
+                    simple_est_setup.net_simulation.sim_variables_identifier)
+        data_order_res_1 = simple_est_setup.match_data_to_network(
+                    simple_est_setup.net_simulation.sim_variables_order,
+                    simple_est_setup.net_simulation.sim_variables_identifier,
+                    simple_est_setup.data.data_mean,
+                    simple_est_setup.data.data_variance,
+                    simple_est_setup.data.data_covariance,
+                    simple_est_setup.data.data_mean_order,
+                    simple_est_setup.data.data_variance_order,
+                    simple_est_setup.data.data_covariance_order)
+        data_order_sol_1 = (
+                    np.array([[[1., 0.67, 0.37],
+                               [0., 0.45, 1.74]],
+                              [[0.01, 0.0469473, 0.04838822],
+                               [0.01, 0.07188642, 0.1995514]]]),
+                    np.array([[[0., 0.22333333, 0.23545455],
+                              [0., 0.51262626, 4.03272727]],
+                             [[0.01, 0.01631605, 0.01293869],
+                              [0.01, 0.08878719, 0.68612036]]]),
+                    np.array([[[ 0., -0.30454545, -0.65030303]],
+                             [[ 0.01, 0.0303608, 0.06645246]]])
+                             )
+        np.testing.assert_allclose(data_order_sol_1[0], data_order_res_1[0])
+        np.testing.assert_allclose(data_order_sol_1[1], data_order_res_1[1])
+        np.testing.assert_allclose(data_order_sol_1[2], data_order_res_1[2])
+
+        # switch around order
+        data_order_res_2 = simple_est_setup.match_data_to_network(
+                    simple_est_setup.net_simulation.sim_variables_order,
+                    {'V_0': ('Y_t', ('Y_t',)), 'V_1': ('X_t', ('X_t',))},
+                    simple_est_setup.data.data_mean,
+                    simple_est_setup.data.data_variance,
+                    simple_est_setup.data.data_covariance,
+                    simple_est_setup.data.data_mean_order,
+                    simple_est_setup.data.data_variance_order,
+                    simple_est_setup.data.data_covariance_order)
+        data_order_sol_2 = (
+                    np.array([[[0.        , 0.45      , 1.74      ],
+                             [1.        , 0.67      , 0.37      ]],
+                            [[0.01      , 0.07188642, 0.1995514 ],
+                             [0.01      , 0.0469473 , 0.04838822]]]),
+                     np.array([[[0.        , 0.51262626, 4.03272727],
+                             [0.        , 0.22333333, 0.23545455]],
+                            [[0.01      , 0.08878719, 0.68612036],
+                             [0.01      , 0.01631605, 0.01293869]]]),
+                     np.array([[[ 0.        , -0.30454545, -0.65030303]],
+                            [[ 0.01      ,  0.0303608 ,  0.06645246]]])
+                            )
+
+        np.testing.assert_allclose(data_order_sol_2[0], data_order_res_2[0])
+        np.testing.assert_allclose(data_order_sol_2[1], data_order_res_2[1])
+        np.testing.assert_allclose(data_order_sol_2[2], data_order_res_2[2])

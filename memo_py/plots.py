@@ -1188,16 +1188,16 @@ def est_chains_plot(estimation, weighted=True,
         plt.show(fig, block=False)
 
 
-def est_bestfit_mean_plot(estimation, settings=None, data=True, conf=True,
+def est_bestfit_mean_plot(estimation, settings=None, data=True, cred=True,
                             x_label='Time', x_lim=None, x_log=False,
                             y_label='Mean', y_lim=None, y_log=False,
                             show=True, save=None):
     """Plot the model mean trajectories based on the estimated parameter posterior
     distribution. `Note:` A summary model trajectory is shown based on the median of the individual
-    1-dimensional marginal parameter posteriors (`conf=False`) or based on the 50th
+    1-dimensional marginal parameter posteriors (`cred=False`) or based on the 50th
     percentile of model trajectory samples from the complete parameter posterior; for multimodal
-    parameter posteriors the `conf=False` option can yield an inaccurate summary
-    (here, it is advised to use `conf=True`).
+    parameter posteriors the `cred=False` option can yield an inaccurate summary
+    (here, it is advised to use `cred=True`).
 
     Parameters
     ----------
@@ -1208,14 +1208,14 @@ def est_bestfit_mean_plot(estimation, settings=None, data=True, conf=True,
     data : bool, optional
         If `data=True` (default), plot the data mean statistics with standard errors
         in the background (grey color).
-    conf : bool, optional
-        If `conf=True` (default), a median trajectory with 95% credible bands of the
+    cred : bool, optional
+        If `cred=True` (default), a median trajectory with 95% credible bands of the
         model means are shown;
         based on 2.5th, 50th and 97.5th percentiles for each time point of model
         trajectories drawn from the estimated parameter posterior distribution.
         `Note:` The computation of credible bands can be expensive for complex
-        models; in this case you might want to start plotting with `conf=False`.
-        If `conf=False`, no band is shown and the summary trajectory is computed
+        models; in this case you might want to start plotting with `cred=False`.
+        If `cred=False`, no band is shown and the summary trajectory is computed
         by taking median parameters of the individual 1-dimensional posterior marginals.
     x_label : str, optional
         Label for x-axis.
@@ -1251,8 +1251,8 @@ def est_bestfit_mean_plot(estimation, settings=None, data=True, conf=True,
     # create plotting information from estimation instance and
     # plot by respective utility plotting function
     if data:
-        if conf:
-            x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes = estimation._dots_w_bars_and_line_w_band_evolv_mean_confidence(settings)
+        if cred:
+            x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes = estimation._dots_w_bars_and_line_w_band_evolv_mean_credible(settings)
 
             _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err,
                                             y_line, y_lower, y_upper, attributes,
@@ -1268,8 +1268,8 @@ def est_bestfit_mean_plot(estimation, settings=None, data=True, conf=True,
                                             show=show, save=save)
 
     else:
-        if conf:
-            x_arr, y_line, y_lower, y_upper, attributes = estimation._line_w_band_evolv_mean_confidence(settings)
+        if cred:
+            x_arr, y_line, y_lower, y_upper, attributes = estimation._line_w_band_evolv_mean_credible(settings)
 
             _line_w_band_evolv(x_arr, y_line, y_lower, y_upper, attributes,
                                             x_label=x_label, x_lim=x_lim, x_log=x_log,
@@ -1284,16 +1284,16 @@ def est_bestfit_mean_plot(estimation, settings=None, data=True, conf=True,
                                             show=show, save=save)
 
 
-def est_bestfit_variance_plot(estimation, settings=None, data=True, conf=True,
+def est_bestfit_variance_plot(estimation, settings=None, data=True, cred=True,
                             x_label='Time', x_lim=None, x_log=False,
                             y_label='Variance', y_lim=None, y_log=False,
                             show=True, save=None):
     """Plot the model variance trajectories based on the estimated parameter posterior
     distribution. `Note:` A summary model trajectory is shown based on the median of the individual
-    1-dimensional marginal parameter posteriors (`conf=False`) or based on the 50th
+    1-dimensional marginal parameter posteriors (`cred=False`) or based on the 50th
     percentile of model trajectory samples from the complete parameter posterior; for multimodal
-    parameter posteriors the `conf=False` option can yield an inaccurate summary
-    (here, it is advised to use `conf=True`).
+    parameter posteriors the `cred=False` option can yield an inaccurate summary
+    (here, it is advised to use `cred=True`).
 
     Parameters
     ----------
@@ -1304,14 +1304,14 @@ def est_bestfit_variance_plot(estimation, settings=None, data=True, conf=True,
     data : bool, optional
         If `data=True` (default), plot the data variance statistics with standard errors
         in the background (grey color).
-    conf : bool, optional
-        If `conf=True` (default), a median trajectory with 95% credible bands of the
+    cred : bool, optional
+        If `cred=True` (default), a median trajectory with 95% credible bands of the
         model variances are shown;
         based on 2.5th, 50th and 97.5th percentiles for each time point of model
         trajectories drawn from the estimated parameter posterior distribution.
         `Note:` The computation of credible bands can be expensive for complex
-        models; in this case you might want to start plotting with `conf=False`.
-        If `conf=False`, no band is shown and the summary trajectory is computed
+        models; in this case you might want to start plotting with `cred=False`.
+        If `cred=False`, no band is shown and the summary trajectory is computed
         by taking median parameters of the individual 1-dimensional posterior marginals.
     x_label : str, optional
         Label for x-axis.
@@ -1348,8 +1348,8 @@ def est_bestfit_variance_plot(estimation, settings=None, data=True, conf=True,
     # create plotting information from estimation instance and
     # plot by respective utility plotting function
     if data:
-        if conf:
-            x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes = estimation._dots_w_bars_and_line_w_band_evolv_variance_confidence(settings)
+        if cred:
+            x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes = estimation._dots_w_bars_and_line_w_band_evolv_variance_credible(settings)
 
             _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err,
                                             y_line, y_lower, y_upper, attributes,
@@ -1365,8 +1365,8 @@ def est_bestfit_variance_plot(estimation, settings=None, data=True, conf=True,
                                             show=show, save=save)
 
     else:
-        if conf:
-            x_arr, y_line, y_lower, y_upper, attributes = estimation._line_w_band_evolv_variance_confidence(settings)
+        if cred:
+            x_arr, y_line, y_lower, y_upper, attributes = estimation._line_w_band_evolv_variance_credible(settings)
 
             _line_w_band_evolv(x_arr, y_line, y_lower, y_upper, attributes,
                                             x_label=x_label, x_lim=x_lim, x_log=x_log,
@@ -1381,16 +1381,16 @@ def est_bestfit_variance_plot(estimation, settings=None, data=True, conf=True,
                                             show=show, save=save)
 
 
-def est_bestfit_covariance_plot(estimation, settings=None, data=True, conf=True,
+def est_bestfit_covariance_plot(estimation, settings=None, data=True, cred=True,
                             x_label='Time', x_lim=None, x_log=False,
                             y_label='Covariance', y_lim=None, y_log=False,
                             show=True, save=None):
     """Plot the model covariance trajectories based on the estimated parameter posterior
     distribution. `Note:` A summary model trajectory is shown based on the median of the individual
-    1-dimensional marginal parameter posteriors (`conf=False`) or based on the 50th
+    1-dimensional marginal parameter posteriors (`cred=False`) or based on the 50th
     percentile of model trajectory samples from the complete parameter posterior; for multimodal
-    parameter posteriors the `conf=False` option can yield an inaccurate summary
-    (here, it is advised to use `conf=True`).
+    parameter posteriors the `cred=False` option can yield an inaccurate summary
+    (here, it is advised to use `cred=True`).
 
     Parameters
     ----------
@@ -1401,14 +1401,14 @@ def est_bestfit_covariance_plot(estimation, settings=None, data=True, conf=True,
     data : bool, optional
         If `data=True` (default), plot the data covariance statistics with standard errors
         in the background (grey color).
-    conf : bool, optional
-        If `conf=True` (default), a median trajectory with 95% credible bands of the
+    cred : bool, optional
+        If `cred=True` (default), a median trajectory with 95% credible bands of the
         model covariances are shown;
         based on 2.5th, 50th and 97.5th percentiles for each time point of model
         trajectories drawn from the estimated parameter posterior distribution.
         `Note:` The computation of credible bands can be expensive for complex
-        models; in this case you might want to start plotting with `conf=False`.
-        If `conf=False`, no band is shown and the summary trajectory is computed
+        models; in this case you might want to start plotting with `cred=False`.
+        If `cred=False`, no band is shown and the summary trajectory is computed
         by taking median parameters of the individual 1-dimensional posterior marginals.
     x_label : str, optional
         Label for x-axis.
@@ -1445,8 +1445,8 @@ def est_bestfit_covariance_plot(estimation, settings=None, data=True, conf=True,
     # create plotting information from estimation instance and
     # plot by respective utility plotting function
     if data:
-        if conf:
-            x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes = estimation._dots_w_bars_and_line_w_band_evolv_covariance_confidence(settings)
+        if cred:
+            x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes = estimation._dots_w_bars_and_line_w_band_evolv_covariance_credible(settings)
 
             _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err,
                                             y_line, y_lower, y_upper, attributes,
@@ -1462,8 +1462,8 @@ def est_bestfit_covariance_plot(estimation, settings=None, data=True, conf=True,
                                             show=show, save=save)
 
     else:
-        if conf:
-            x_arr, y_line, y_lower, y_upper, attributes = estimation._line_w_band_evolv_covariance_confidence(settings)
+        if cred:
+            x_arr, y_line, y_lower, y_upper, attributes = estimation._line_w_band_evolv_covariance_credible(settings)
 
             _line_w_band_evolv(x_arr, y_line, y_lower, y_upper, attributes,
                                             x_label=x_label, x_lim=x_lim, x_log=x_log,

@@ -1,4 +1,9 @@
 
+"""
+The estimation module contains the Estimation class for statistical inference
+of models given data based on nested sampling.
+"""
+
 from .network import Network
 from .data import Data
 from .simulation import Simulation
@@ -16,7 +21,51 @@ import time
 # TODO: user input validation?
 
 class Estimation(object):
-    """docstring for ."""
+    """Class for statistical inference of a model given data.
+
+    Main method is `estimate` which requires model and data input and then
+    computes model and parameter estimates based on nested sampling.
+    For the nested sampling the
+    `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_
+    package is used. For a typical use case,
+    the `estimate` method is the only method to call. `estimate` is a wrapper method
+    for the other class methods, so more documentation for the computations
+    in the background and also how the class attributes are obtained can be found in
+    the respective individual methods.
+
+    Parameters
+    ----------
+    est_name : str
+        A name for the estimation object.
+    network : memo_py.network.Network
+        A memopy network object.
+    data : memo_py.data.Data
+        A memopy data object.
+    est_iter : None or int, optional
+        Number to indicate iteration of a set of estimations; default is `None`.
+
+    Returns
+    -------
+    est : memo_py.estimation.Estimation
+        Initialised memopy estimation object. Typically, continue with the
+        `est.estimate` method to run the actual estimation.
+
+    Examples
+    --------
+    >>> import memo_py as me
+    >>> import numpy as np
+    >>> # initialise some data and a network
+    >>> data = me.Data('my_data')
+    >>> # data.load(...)
+    >>> net = me.Network('my_net')
+    >>> # net.structure(...)
+    >>> # an estimation can then look like this
+    >>> variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
+    >>> initial_values = {'X_t': 1, 'Y_t': 0}
+    >>> theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
+    >>> est = me.Estimation('my_est', net, data)
+    >>> est.estimate(variables, initial_values, theta_bounds)
+    """
 
     def __init__(self, est_name, network, data, est_iter=None):
 
@@ -63,11 +112,11 @@ class Estimation(object):
         self.net_simulation_bestfit = None
         self.net_simulation_bestfit_exists = False
 
-        # instantiate object to store best-fit simulation with confidence band
-        # (conf band best-fit computed by median over simulation posterior samples)
-        self.net_simulation_confidence_band = None
-        self.net_simulation_confidence_band_bestfit = None
-        self.net_simulation_confidence_band_exists = False
+        # instantiate object to store best-fit simulation with credible band
+        # (cred band best-fit computed by median over simulation posterior samples)
+        self.net_simulation_credible_band = None
+        self.net_simulation_credible_band_bestfit = None
+        self.net_simulation_credible_band_exists = False
         ###
 
         ### bayesian (bay) inference related settings
@@ -87,7 +136,7 @@ class Estimation(object):
         self.bay_est_samples = None
         self.bay_est_samples_weighted = None
         self.bay_est_weights = None
-        self.bay_est_params_conf = None
+        self.bay_est_params_cred = None
         self.bay_est_params_median = None
 
         # estimation results for model selection
@@ -121,8 +170,84 @@ class Estimation(object):
         # self.mcmc_sampler = None
         # ###
 
-    def estimate(self, network_setup, mcmc_setup):
-        """docstring for ."""
+    def estimate(self, variables, initial_values, theta_bounds,
+                            mean_only=False, nlive=1000, tolerance=0.01,
+                            bound='multi', sample='unif',):
+        """Main method of the estimation class. This method computes model
+        estimates and `θ` parameter estimates of a specified model `M` and given data
+        `D` based on nested sampling; main results are the model estimate as logarithmic
+        evidence value `p(D | M)` and the parameter posterior distribution
+        `p(θ | M, D)`.
+
+        These and other results of the estimation run can be accessed
+        through various class attributes, automatically computed by the
+        other methods of this class (see more info at the respective methods).
+        For an estimation object `est`, the
+        logarithmic model evidence can be accessed at `est.bay_est_log_evidence`
+        and the estimated parameter posterior at `est.bay_est_samples_weighted`.
+        Specific point estimates of the parameters are at `est.bay_est_params_median`
+        and 95% credible intervals are at `est.bay_est_params_cred`.
+
+        If multiple models shall be compared, please use the `select_models` function
+        of the selection module, which is a wrapper of the `estimate` method for
+        multiple models. The selection module also contains further model
+        comparison measures such as the model posterior distribution `p(M | D)` and
+        Bayes factors.
+
+        Parameters
+        ----------
+        variables : dict
+            Information for simulation variables with
+            `key:value=simulation variable:tuple of network main nodes`
+            dictionary pairs. The simulation variables have to correspond
+            to the data variables. The tuple of network main nodes can be used to sum
+            up multiple network nodes to one simulation variable.
+        initial_values : dict
+            Initial values of network main nodes for the simulations during the
+            estimation as `key:value=network main node:initial value (float or int)`
+            dictionary pairs.
+        theta_bounds : dict
+            Uniform prior bounds of the parameters as
+            `key:value=parameter:tuple of (lower bound, upper bound)` dictionary pairs.
+        mean_only : bool, optional
+            If the inference shall be based on the first moment (means) only,
+            specify `mean_only=True`. If the inference shall be based on information
+            from the first and second moments, specify `mean_only=False` (default).
+        nlive : int, optional
+            Number of live points used for the nested sampling; default is `1000`.
+            Passed to `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_'s
+            top-level `NestedSampler`; see there for more info.
+        tolerance : float, optional
+            Tolerance to define the stopping criterion for the nested sampling;
+            default is `0.01`.
+            Passed to `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_'s
+            `dlogz` argument in the `run_nested` method; see there for more info.
+        bound : str, optional
+            Method used to approximately bound the prior for the nested sampling;
+            default is `'multi'`.
+            Passed to `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_'s
+            top-level `NestedSampler`; see there for more info.
+        sample : str, optional
+            Method used to sample uniformly within the likelihood constraint for
+            the nested sampling; default is `'unif'`.
+            Passed to `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_'s
+            top-level `NestedSampler`; see there for more info.
+
+        Returns
+        -------
+        None
+
+        Examples
+        --------
+        >>> # net is a memopy network object
+        >>> # data is a memopy data object
+        >>> # with this, an estimation can look like this
+        >>> variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
+        >>> initial_values = {'X_t': 1, 'Y_t': 0}
+        >>> theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
+        >>> est = me.Estimation('my_est', net, data)
+        >>> est.estimate(variables, initial_values, theta_bounds)
+        """
 
         # # for progress bar
         # total_sampling_steps = 1
@@ -130,7 +255,9 @@ class Estimation(object):
 
         # initialise estimation
         # (set up network, simulation and sampling properties)
-        self.initialise_estimation(network_setup, mcmc_setup)
+        self.initialise_estimation(variables, initial_values, theta_bounds,
+                                    mean_only, nlive, tolerance, bound, sample)
+        # self.initialise_estimation(network_setup, mcmc_setup)
 
         # execute the sampling for the estimation of parameters and model evidence
         self.run_estimation()
@@ -145,146 +272,25 @@ class Estimation(object):
         # pbar.update(1)
 
 
-    def run_estimation(self):
-        """docstring for ."""
+    def initialise_estimation(self, variables, initial_values, theta_bounds,
+                                mean_only, nlive, tolerance, bound, sample):
+        """Initialise and prepare an estimation.
 
-        # run the dynesty sampler
-        # NOTE: the very first iteration can take a while since preparations
-        # for the moment calculations have to be done
-        self.bay_nested_sampler.run_nested(dlogz=self.bay_nested_tolerance,
-                                            print_progress=False) # dynesty progress bar
-
-        # get sampler result
-        self.bay_nested_sampler_res = self.bay_nested_sampler.results
-
-        # obtain posterior parameter samples from reweighting
-        self.bay_est_samples, self.bay_est_samples_weighted, self.bay_est_weights = self.get_posterior_samples(self.bay_nested_sampler_res)
-
-        # assess confidence bounds for parameters
-        self.bay_est_params_conf = self.get_confidence_bounds(self.bay_est_samples_weighted)
-        self.bay_est_params_median = np.array([self.bay_est_params_conf[i][0] for i in range(len(self.bay_est_params_conf))])
-
-        # obtain log evidence values with associated error
-        self.bay_est_log_evidence, self.bay_est_log_evidence_error = self.get_model_evidence(self.bay_nested_sampler_res)
-
-        # compute alternative measures for model selection
-        self.bay_est_log_likelihood_max = self.get_maximal_log_likelihood(self.bay_nested_sampler_res)
-        self.bay_est_bayesian_information_criterion = self.compute_bayesian_information_criterion(
-                                                                    self.data_num_values,
-                                                                    self.bay_nested_ndims,
-                                                                    self.bay_est_log_likelihood_max)
-        self.bay_est_log_evidence_from_bic = self.compute_log_evidence_from_bic(self.bay_est_bayesian_information_criterion)
-
-
-    @staticmethod
-    def get_posterior_samples(sampler_result):
-        """docstring for ."""
-
-        # TODO: understand this and comment!
-        samples = sampler_result.samples
-        weights = np.exp(sampler_result.logwt - sampler_result.logz[-1])
-        samples_weighted = dyfunc.resample_equal(samples, weights)
-        return samples, samples_weighted, weights
-
-
-    @staticmethod
-    def get_confidence_bounds(samples):
-        """docstring for ."""
-
-        # the 2.5th, 50th and 97.5th percentiles of parameter distributions are extracted
-        # params_conf then contains the tuple (median (50th), lower bound (2.5th), upper bound (97.5th))
-        # to provide a 95%-confidence interval / 95%-credible interval
-        params_conf = tuple(map(lambda v: (v[1], v[0], v[2]), zip(*np.percentile(samples, [2.5, 50, 97.5], axis=0))))
-        return params_conf
-
-
-    @staticmethod
-    def get_model_evidence(sampler_result):
-        """Extract logarithmic evidence value and its error estimate from the
-        nested sampling result.
-
-        `Note`: After running a memopy estimation there is no need to run this
-        method, one can simply access the logarithm model evidence and its error
-        with `est.bay_est_log_evidence` and `est.bay_est_log_evidence_error` for the
-        estimation instance `est`.
-
-        Parameters
-        ----------
-        sampler_result : dynesty.results.Results
-            Nested sampling result of a memopy estimation. Typically available at
-            `est.bay_nested_sampler_res`.
-
-        Returns
-        -------
-        log_evid_dynesty : float
-            Logarithmic evidence of estimated model. Typically available at
-            `est.bay_est_log_evidence`.
-        log_evid_err_dynesty : float
-            Error of the logarithmic evidence of estimated model. Typically
-            available at `est.bay_est_log_evidence_error`.
-
-        Examples
-        --------
-        >>> # est is a memopy estimation instance
-        >>> est.get_model_evidence(est.bay_nested_sampler_res)
-        (28.139812540432732, 0.11225503808864087)
-        >>> est.bay_est_log_evidence
-        28.139812540432732
-        >>> est.bay_est_log_evidence_error
-        0.11225503808864087
+        Helper function for the `estimate` method, arguments are passed over from
+        there (see there for more info).
         """
-
-        # value of log evidence (logZ) (last entry of nested sampling results)
-        log_evid_dynesty = sampler_result.logz[-1]
-
-        # estimate of the statistcal uncertainty on logZ
-        log_evid_err_dynesty = sampler_result.logzerr[-1]
-
-        return log_evid_dynesty, log_evid_err_dynesty
-
-
-    @staticmethod
-    def get_maximal_log_likelihood(sampler_result):
-        """docstring for ."""
-
-        # get the value of the maximal log likelihood as last entry of nested sampling results
-        return sampler_result.logl[-1]
-
-
-    @staticmethod
-    def compute_bayesian_information_criterion(num_data, num_params, log_likelihood_max):
-        """docstring for ."""
-
-        # the BIC (bayesian_information_criterion) is defined as
-        # BIC = ln(n) k - 2 ln(Lmax)
-        # with n being the number of data points, k the number of estimated
-        # parameters, Lmax the maximal likelihood and ln() the natural logarithm
-        return np.log(num_data) * num_params - 2.0 * log_likelihood_max
-
-
-    @staticmethod
-    def compute_log_evidence_from_bic(bic):
-        """docstring for ."""
-
-        # under certain assumptions the log evidence might be approximated from
-        # the BIC (bayesian_information_criterion) via evidence ≈ exp(-BIC / 2)
-        return - 0.5 * bic
-
-
-    def initialise_estimation(self, network_setup, mcmc_setup):
-        """docstring for ."""
         ### initialise network related settings
         # validate theta bounds user input and assign to numpy array object
-        self._validate_theta_bounds_input(self.net.net_rates_identifier, network_setup['theta_bounds'])
-        self.net_theta_bounds = self.initialise_net_theta_bounds(self.net.net_theta_symbolic, self.net.net_rates_identifier, network_setup['theta_bounds'])
+        self._validate_theta_bounds_input(self.net.net_rates_identifier, theta_bounds)
+        self.net_theta_bounds = self.initialise_net_theta_bounds(self.net.net_theta_symbolic, self.net.net_rates_identifier, theta_bounds)
 
         # validate initial values user input and assign to self
         # (further processing is done in the called simulation class methods)
-        self._validate_initial_values_input(self.net.net_nodes_identifier, self.net_simulation_type, network_setup['initial_values'])
-        self.net_initial_values = network_setup['initial_values']
+        self._validate_initial_values_input(self.net.net_nodes_identifier, self.net_simulation_type, initial_values)
+        self.net_initial_values = initial_values
 
         # set the mean only mode (True or False)
-        self.net_simulation_mean_only = network_setup['mean_only']
+        self.net_simulation_mean_only = mean_only
 
         ### initialise the simulation for the network
         # generate an instance of the Simulation class
@@ -294,7 +300,7 @@ class Estimation(object):
         self.net_simulation.moment_mean_only = self.net_simulation_mean_only
 
         # prepare simulation variables explicitly
-        self.net_simulation.prepare_simulation_variables(network_setup['variables'])
+        self.net_simulation.prepare_simulation_variables(variables)
 
         # prepare the moment-based approach explicitly
         self.net_simulation.sim_moments.prepare_moment_simulation(self.net_simulation.sim_variables_order,
@@ -307,6 +313,10 @@ class Estimation(object):
         self.data_time_values_dense = np.linspace(np.min(self.data_time_values),
                                                             np.max(self.data_time_values),
                                                             endpoint=True, num=1000)
+
+        # check mapping between simulation variables and data variables
+        self._validate_simulation_and_data_variables_mapping(self.net_simulation.sim_variables,
+                                                        self.data.data_variables)
 
         (self.data_mean_values,
         self.data_var_values,
@@ -339,10 +349,10 @@ class Estimation(object):
         # self.bay_mcmc_sampling_steps = mcmc_setup['sampling_steps'] # sampling steps per walker
         # self.bay_mcmc_num_temps = mcmc_setup['num_temps'] # number of temperatures, e.g. 5, 10 or 20
         # self.bay_mcmc_num_walkers = mcmc_setup['num_walkers'] # number of walkers, e.g. 100 or 200
-        self.bay_nested_nlive = mcmc_setup['nlive']
-        self.bay_nested_tolerance = mcmc_setup['tolerance']
-        self.bay_nested_bound = mcmc_setup['bound']
-        self.bay_nested_sample = mcmc_setup['sample']
+        self.bay_nested_nlive = nlive
+        self.bay_nested_tolerance = tolerance
+        self.bay_nested_bound = bound
+        self.bay_nested_sample = sample
         self.bay_nested_ndims = len(self.net.net_theta_symbolic) # number of dimension for estimation (= number of rate parameters (theta))
 
         # define the sampler used for the estimation of parameters and model evidence
@@ -353,8 +363,358 @@ class Estimation(object):
                                             self.net_simulation.sim_variables, self.data_mean_values,
                                             self.data_var_values, self.data_cov_values)))
 
-    def prior_transform(self, theta):
-        """docstring for ."""
+
+    def run_estimation(self):
+        """Run the estimation based on nested sampling.
+
+        Helper function for the `estimate` method, which handles the initialisation
+        of the estimation before running it (see there for more info).
+        """
+
+        # run the dynesty sampler
+        # NOTE: the very first iteration can take a while since preparations
+        # for the moment calculations have to be done
+        self.bay_nested_sampler.run_nested(dlogz=self.bay_nested_tolerance,
+                                            print_progress=False) # dynesty progress bar
+
+        # get sampler result
+        self.bay_nested_sampler_res = self.bay_nested_sampler.results
+
+        # obtain posterior parameter samples from reweighting
+        self.bay_est_samples, self.bay_est_samples_weighted, self.bay_est_weights = self.get_posterior_samples(self.bay_nested_sampler_res)
+
+        # assess median and credible bounds for parameters
+        self.bay_est_params_cred = self.get_credible_interval(self.bay_est_samples_weighted)
+        self.bay_est_params_median = np.array([self.bay_est_params_cred[i][0] for i in range(len(self.bay_est_params_cred))])
+
+        # obtain log evidence values with associated error
+        self.bay_est_log_evidence, self.bay_est_log_evidence_error = self.get_model_evidence(self.bay_nested_sampler_res)
+
+        # compute alternative measures for model selection
+        self.bay_est_log_likelihood_max = self.get_maximal_log_likelihood(self.bay_nested_sampler_res)
+        self.bay_est_bayesian_information_criterion = self.compute_bayesian_information_criterion(
+                                                                    self.data_num_values,
+                                                                    self.bay_nested_ndims,
+                                                                    self.bay_est_log_likelihood_max)
+        self.bay_est_log_evidence_from_bic = self.compute_log_evidence_from_bic(self.bay_est_bayesian_information_criterion)
+
+
+    @staticmethod
+    def get_posterior_samples(sampler_result):
+        """Obtain samples for the parameters `θ` according to the estimated posterior
+        `p(θ | M, D)`, where `M` is the corresponding model and `D` is the data. Parameter
+        samples from nested sampling have to be weighted to represent the posterior, so
+        either use the weighted samples directly (`samples_weighted`) or use the original
+        samples and the weights to weight them manually (`samples` and `weights`).
+
+        `Note`: After running a memopy estimation there is no need to run this
+        method, one can simply access the output at `est.bay_est_samples`,
+        `est.bay_est_samples_weighted` and `est.bay_est_weights`
+        for the estimation instance `est`.
+
+        Parameters
+        ----------
+        sampler_result : dynesty.results.Results
+            Nested sampling result of a memopy estimation. Typically available at
+            `est.bay_nested_sampler_res`.
+
+        Returns
+        -------
+        samples : numpy.ndarray
+            Unweighted parameter samples from nested sampling with shape (`number of samples`,
+            `number of parameters`). Typically available at `est.bay_est_samples`.
+        samples_weighted : numpy.ndarray
+            Weighted parameter posterior samples from nested sampling with shape (`number of samples`,
+            `number of parameters`). Typically available at `est.bay_est_samples_weighted`.
+        weights : numpy.ndarray
+            Weights to weight unweighted samples to get posterior samples with shape
+            (`number of samples`,). Typically available at `est.bay_est_weights`.
+
+        Examples
+        --------
+        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> est.get_posterior_samples(est.bay_nested_sampler_res)
+        (array([[0.14791189, 0.14857705],
+            [0.12864247, 0.14920066],
+            [0.13767801, 0.14860021],
+            ...,
+            [0.02801861, 0.07502377],
+            [0.02801369, 0.07502103],
+            [0.02802205, 0.07499796]]),
+        array([[0.02426309, 0.07119228],
+            [0.03200628, 0.06646134],
+            [0.03220339, 0.06802025],
+            ...,
+            [0.02802894, 0.07496195],
+            [0.02800815, 0.07502692],
+            [0.02801369, 0.07502103]]),
+        array([0.00000000e+00, 0.00000000e+00, 0.00000000e+00, ...,
+            9.93638169e-06, 9.93651290e-06, 9.93662331e-06]))
+        """
+
+        # TODO: understand this and comment!
+        samples = sampler_result.samples
+        weights = np.exp(sampler_result.logwt - sampler_result.logz[-1])
+        samples_weighted = dyfunc.resample_equal(samples, weights)
+        return samples, samples_weighted, weights
+
+
+    @staticmethod
+    def get_credible_interval(samples):
+        """Get the median value and a 95% credible interval for each parameter based on
+        an estimated posterior distribution given by `samples`.
+        Median is obtained as 50-th percentile and the interval bounds are obtained by
+        2.5-th and 97.5-th percentiles, respectively.
+
+        `Note`: After running a memopy estimation there is no need to run this
+        method, one can simply access the medians and credible intervals for the parameters
+        with `est.bay_est_params_cred` for the estimation instance `est`.
+
+        Parameters
+        ----------
+        samples : numpy.ndarray
+            Parameter posterior samples with shape (`number of samples`,
+            `number of parameters`). A typical choice are the weighted parameter
+            samples from nested sampling at `est.bay_est_samples_weighted`.
+
+        Returns
+        -------
+        params_cred : tuple of tuple
+            Median values and 95% credible interval for each parameter (with
+            the inner tuple order `median`, `2.5-th perc`, `97.5-th perc`).
+            Typically available at `est.bay_est_params_cred`.
+
+        Examples
+        --------
+        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> samples = est.bay_est_samples_weighted
+        >>> samples.shape
+        (12962, 2)
+        >>> est.get_credible_interval(samples)
+        ((0.0280347396878894, 0.02594988652911552, 0.030144084514338445),
+        (0.07470536719462752, 0.06919784056074933, 0.07955644971380103))
+        >>> est.bay_est_params_cred
+        ((0.0280347396878894, 0.02594988652911552, 0.030144084514338445),
+        (0.07470536719462752, 0.06919784056074933, 0.07955644971380103))
+
+        >>> # minimal example on concrete values
+        >>> samples = np.array([[0.2, 3.4], [0.4, 3.2], [0.25, 3.65]])
+        >>> samples.shape
+        (3, 2)
+        >>> est.get_credible_interval(samples)
+        ((0.25, 0.2025, 0.3925), (3.4, 3.21, 3.6375))
+        """
+
+        # the 2.5th, 50th and 97.5th percentiles of parameter distributions are extracted
+        # params_cred then contains the tuple (median (50th), lower bound (2.5th), upper bound (97.5th))
+        # to provide a 95%-credible interval
+        params_cred = tuple(map(lambda v: (v[1], v[0], v[2]),
+                            zip(*np.percentile(samples, [2.5, 50, 97.5], axis=0))))
+        return params_cred
+
+
+    @staticmethod
+    def get_model_evidence(sampler_result):
+        """Obtain logarithmic evidence value and its error estimate from the
+        nested sampling result.
+
+        `Note`: After running a memopy estimation there is no need to run this
+        method, one can simply access the logarithmic model evidence and its error
+        with `est.bay_est_log_evidence` and `est.bay_est_log_evidence_error` for the
+        estimation instance `est`.
+
+        Parameters
+        ----------
+        sampler_result : dynesty.results.Results
+            Nested sampling result of a memopy estimation. Typically available at
+            `est.bay_nested_sampler_res`.
+
+        Returns
+        -------
+        log_evid_dynesty : float
+            Logarithmic evidence of the estimated model. Typically available at
+            `est.bay_est_log_evidence`.
+        log_evid_err_dynesty : float
+            Error of the logarithmic evidence of the estimated model. Typically
+            available at `est.bay_est_log_evidence_error`.
+
+        Examples
+        --------
+        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> est.get_model_evidence(est.bay_nested_sampler_res)
+        (28.139812540432732, 0.11225503808864087)
+        >>> est.bay_est_log_evidence
+        28.139812540432732
+        >>> est.bay_est_log_evidence_error
+        0.11225503808864087
+        """
+
+        # value of log evidence (logZ) (last entry of nested sampling results)
+        log_evid_dynesty = sampler_result.logz[-1]
+
+        # estimate of the statistical uncertainty on logZ
+        log_evid_err_dynesty = sampler_result.logzerr[-1]
+
+        return log_evid_dynesty, log_evid_err_dynesty
+
+
+    @staticmethod
+    def get_maximal_log_likelihood(sampler_result):
+        """Obtain the maximal logarithmic likelihood value from the nested
+        sampling result.
+
+        `Note`: After running a memopy estimation there is no need to run this
+        method, one can simply access the maximal log-likelihood
+        with `est.bay_est_log_likelihood_max` for the estimation instance `est`.
+
+        Parameters
+        ----------
+        sampler_result : dynesty.results.Results
+            Nested sampling result of a memopy estimation. Typically available at
+            `est.bay_nested_sampler_res`.
+
+        Returns
+        -------
+        logl_max : float
+            Maximal logarithmic likelihood value of the estimated model.
+            Typically available at `est.bay_est_log_likelihood_max`.
+
+        Examples
+        --------
+        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> est.get_maximal_log_likelihood(est.bay_nested_sampler_res)
+        35.48531419345989
+        >>> est.bay_est_log_likelihood_max
+        35.48531419345989
+        """
+
+        # get the value of the maximal log likelihood as last entry of nested sampling results
+        return sampler_result.logl[-1]
+
+
+    @staticmethod
+    def compute_bayesian_information_criterion(num_data, num_params, log_likelihood_max):
+        """Compute the Bayesian information criterion (BIC). Calculation is based
+        on :math:`\\mathrm{BIC} = k \\cdot \\mathrm{ln}(n) - 2 \\, \\mathrm{ln}(L_{max})`
+        where :math:`k` is the number of parameters (`num_params`), :math:`n` is the number of
+        data points (`num_data`) and :math:`\\mathrm{ln}(L_{max})` is the maximal
+        log-likelihood value (`log_likelihood_max`).
+
+        `Note`: After running a memopy estimation there is no need to run this
+        method, one can simply access the BIC with `est.bay_est_bayesian_information_criterion`
+        for the estimation instance `est`.
+
+        Parameters
+        ----------
+        num_data : int or float
+            Number of data points. Typically available at `est.data_num_values`.
+        num_params : int or float
+            Number of estimated parameters. Typically available at `est.bay_nested_ndims`.
+        log_likelihood_max : float
+            Maximal logarithmic likelihood value of the estimated model.
+            Typically available at `est.bay_est_log_likelihood_max`.
+
+
+        Returns
+        -------
+        bic : float
+            Bayesian information criterion of the estimated model.
+            Typically available at `est.bay_est_bayesian_information_criterion`.
+
+        Examples
+        --------
+        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> est.compute_bayesian_information_criterion(
+        >>>         est.data_num_values,
+        >>>         est.bay_nested_ndims,
+        >>>         est.bay_est_log_likelihood_max)
+        -65.55452798471536
+        >>> est.bay_est_bayesian_information_criterion
+        -65.55452798471536
+        >>> est.compute_bayesian_information_criterion(15, 2, -35.49)
+        -65.56389959779558
+        """
+
+        # the BIC (bayesian_information_criterion) is defined as
+        # BIC = ln(n) k - 2 ln(Lmax)
+        # with n being the number of data points, k the number of estimated
+        # parameters, Lmax the maximal likelihood and ln() the natural logarithm
+        return np.log(num_data) * num_params - 2.0 * log_likelihood_max
+
+
+    @staticmethod
+    def compute_log_evidence_from_bic(bic):
+        """Under certain assumptions one can approximate the logarithmic evidence
+        value with :math:`\\mathrm{ln}(p(D | M)) \\approx -\\frac{1}{2} \\mathrm{BIC}` where
+        :math:`M` is the model, :math:`D` is the data and :math:`\\mathrm{BIC}` is
+        the Bayesian information criterion, see
+        `BIC (wiki) <https://en.wikipedia.org/wiki/Bayesian_information_criterion>`_.
+
+        `Note`: This calculation is more a consistency check and can be accessed
+        with `est.bay_est_log_evidence_from_bic` after a memopy estimation for `est`.
+        The more accurate value of the logarithmic evidence from the nested sampling
+        should be preferred for serious tasks (at `est.bay_est_log_evidence`).
+
+        Parameters
+        ----------
+        bic : float
+            Bayesian information criterion of the estimated model.
+            Typically available at `est.bay_est_bayesian_information_criterion`.
+
+
+        Returns
+        -------
+        log_evidence_from_bic : float
+            Logarithmic evidence of the estimated model, approximated from the BIC.
+            Typically available at `est.log_evidence_from_bic`.
+
+        Examples
+        --------
+        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> est.compute_log_evidence_from_bic(est.bay_est_bayesian_information_criterion)
+        32.77726399235768
+        >>> est.bay_est_log_evidence_from_bic
+        32.77726399235768
+        >>> # compare with the more accurate log evid from nested sampling
+        >>> est.bay_est_log_evidence
+        28.139812540432732
+        """
+
+        # under certain assumptions the log evidence might be approximated from
+        # the BIC (bayesian_information_criterion) via evidence ≈ exp(-BIC / 2)
+        return - 0.5 * bic
+
+
+    def prior_transform(self, theta_unit):
+        """Transform parameter values :math:`\\theta` from the unit hypercube form
+        (as used in the nested sampling) to the original prior space.
+
+        For uniform parameter priors (as generally used) this transformation is
+        achieved with the respective lower and upper parameter bounds
+        :math:`[b_l, b_u]` as
+        :math:`\\theta_{\\mathrm{orig}} = \\theta_{\\mathrm{unit}} (b_u - b_l) + b_l`.
+        Parameter bounds can be accessed with `est.net_theta_bounds`.
+
+        Parameters
+        ----------
+        theta_unit : 1d numpy.ndarray
+            Values for parameters :math:`\\theta` in unit hypercube space.
+
+        Returns
+        -------
+        theta_orig : 1d numpy.ndarray
+            Values for parameters :math:`\\theta` in original prior space.
+
+        Examples
+        --------
+        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> est.net_theta_bounds
+        array([[0.  , 0.15],
+               [0.  , 0.15]])
+        >>> theta_unit = np.array([0.2, 0.5])
+        >>> est.prior_transform(theta_unit)
+        array([0.03 , 0.075])
+        """
 
         # we receive theta here in the unit hypercube form
         # and have to transform it back into the true parametrisation
@@ -364,7 +724,7 @@ class Estimation(object):
 
         # if the lower_bound is zero, we would simply have:
         # theta_true = theta_unit * upper_bound
-        return theta * (self.net_theta_bounds[:, 1] - self.net_theta_bounds[:, 0]) + self.net_theta_bounds[:, 0]
+        return theta_unit * (self.net_theta_bounds[:, 1] - self.net_theta_bounds[:, 0]) + self.net_theta_bounds[:, 0]
 
 
     # def log_prior(self, theta):
@@ -386,7 +746,81 @@ class Estimation(object):
     #         return -np.inf
 
     def log_likelihood(self, theta_values, initial_values, time_values, simulation_variables, mean_data, var_data, cov_data):
-        """docstring for ."""
+        """Compute the logarithmic likelihood :math:`\\mathrm{ln}(\\mathcal{L(\\theta)}) =
+        \\mathrm{ln}(p(D | \\theta, M))` for parameter values :math:`\\theta` of a given
+        model :math:`M` and given data :math:`D`. This method is used in the nested
+        sampling.
+
+        The computation is based on the following formula. Under the assumption
+        of :math:`r` independent and normally distributed errors, the likelihood
+        function is given by :math:`\\mathcal{L(\\theta)} = p(D | \\theta, M) =
+        \\prod_{i=1}^{r} f_{\\mu_i, \\sigma_i}(x_i)`, where
+
+        - :math:`D = (x_1,\\,..., x_r)` are the data points,
+
+        - :math:`\\Sigma = (\\sigma_1,\\,..., \\sigma_r)` are the data standard errors,
+
+        - :math:`M_{\\theta} = (\\mu_1,\\,..., \\mu_r)` are the model evaluations and
+
+        - :math:`f_{\\mu, \\sigma}(x) = \\frac{1}{\\sqrt{2\\pi\\sigma^2}}\\,\\mathrm{exp}\\big(-\\frac{1}{2} \\big( \\frac{x-\\mu}{\\sigma} \\big)^2\\big)` is the normal density.
+
+        The log-likelihood is then given by :math:`\\mathrm{ln}(\\mathcal{L(\\theta)})
+        =-\\tfrac{1}{2} \\sum_{i=1}^{r} \\big( \\frac{x_i - \\mu_i}{\\sigma_i}
+        \\big)^2 \\,+\\, \\eta`, where :math:`\\eta` is the model-independent
+        normalisation term :math:`\\eta` computed as :math:`\\eta = -\\tfrac{1}{2}
+        \\sum_{i=1}^{r} \\mathrm{ln}(2 \\pi \\sigma_{i}^{2})`; also see at the
+        `compute_log_likelihood_norm` method.
+
+        Parameters
+        ----------
+        theta_values : 1d numpy.ndarray
+            Values for parameters :math:`\\theta` in the model order (according to `net.net_theta_symbolic`
+            via `net.net_rates_identifier`); passed to `sim.simulate` method.
+        initial_values : dict
+            Initial values for the network main nodes (dict with `key:value=node:initial value`
+            pairs); passed to `sim.simulate` method. Internally they are processed to `moment_initial_values`
+            for the initial values of the hidden node moments.
+        time_values : 1d numpy.ndarray
+            Time values of data and model evaluation points; passed to `sim.simulate` method.
+        simulation_variables : dict
+            Information of the simulation values (dict with `key:value=sim variable:tuple of main nodes`
+            pairs); passed to `sim.simulate` method. Simulation variables have to
+            correspond to data variables; multiple network main nodes can be
+            summed to one simulation variable.
+        mean_data : numpy.ndarray
+            Data mean statistics and standard errors with shape
+            (2, `number of means`, `number of time points`) that have been matched
+            to the model order. `mean_data[0, :, :]` contains the statistics;
+            `mean_data[1, :, :]` contains the standard errors. After estimation
+            initialisation available at `est.data_mean_values`.
+        var_data : numpy.ndarray
+            Data variance statistics and standard
+            errors with shape (2, `number of variances`, `number of time points`)
+            that have been matched to the model order. `var_data[0, :, :]` contains
+            the statistics; `var_data[1, :, :]` contains the standard errors.
+            After estimation initialisation available at `est.data_var_values`.
+        cov_data : numpy.ndarray
+            Data covariance statistics and standard
+            errors with shape (2, `number of covariances`, `number of time points`)
+            that have been matched to the model order. `cov_data[0, :, :]` contains
+            the statistics; `cov_data[1, :, :]` contains the standard errors.
+            After estimation initialisation available at `est.data_cov_values`.
+
+        Returns
+        -------
+        logl : numpy.float64
+            Computed value of the logarithmic likelihood.
+
+        Examples
+        --------
+        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> theta_values = np.array([0.03, 0.07])
+        >>> est.log_likelihood(theta_values, est.net_initial_values,
+        >>>            est.data_time_values, est.net_simulation.sim_variables,
+        >>>            est.data_mean_values, est.data_var_values,
+        >>>            est.data_cov_values)
+        32.823084036435795
+        """
 
         # NOTE: in the bayesian framework employed here, the likelihood is the
         # probability of the data, given a model (structure) and model parameters;
@@ -428,7 +862,76 @@ class Estimation(object):
 
     @staticmethod
     def compute_log_likelihood_norm(mean_data, var_data, cov_data, mean_only):
-        """docstring for ."""
+        """Compute the model-independent normalisation term of the logarithmic
+        likelihood. This value can be computed once and then used for all
+        subsequent evaluations of the log-likelihood.
+
+        With data points :math:`D = (x_1,\\,..., x_r)` and data standard errors
+        :math:`\\Sigma = (\\sigma_1,\\,..., \\sigma_r)` the normalisation term
+        :math:`\\eta` is computed as :math:`\\eta = -\\tfrac{1}{2} \\sum_{i=1}^{r}
+        \\mathrm{ln}(2 \\pi \\sigma_{i}^{2})`; also see more info at
+        the `log_likelihood` method.
+
+        `Note`: This method will be automatically called during estimation
+        initialisation (`est.initialise_estimation`).
+
+        Parameters
+        ----------
+        mean_data : numpy.ndarray
+            Data mean statistics and standard errors with shape
+            (2, `number of means`, `number of time points`) that have been matched
+            to the model order. `mean_data[0, :, :]` contains the statistics;
+            `mean_data[1, :, :]` contains the standard errors. After estimation
+            initialisation available at `est.data_mean_values`.
+        var_data : numpy.ndarray
+            Data variance statistics and standard
+            errors with shape (2, `number of variances`, `number of time points`)
+            that have been matched to the model order. `var_data[0, :, :]` contains
+            the statistics; `var_data[1, :, :]` contains the standard errors.
+            After estimation initialisation available at `est.data_var_values`.
+        cov_data : numpy.ndarray
+            Data covariance statistics and standard
+            errors with shape (2, `number of covariances`, `number of time points`)
+            that have been matched to the model order. `cov_data[0, :, :]` contains
+            the statistics; `cov_data[1, :, :]` contains the standard errors.
+            After estimation initialisation available at `est.data_cov_values`.
+        mean_only : bool
+            Calculate the normalisation for an estimation in `mean_only=False`
+            or `mean_only=True` mode.
+
+        Returns
+        -------
+        norm : numpy.float64
+            Model-independent normalisation term of the logarithmic
+            likelihood. Typically available at `est.bay_log_likelihood_norm`.
+
+        Examples
+        --------
+        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> est.compute_log_likelihood_norm(est.data_mean_values,
+        >>>                         est.data_var_values,
+        >>>                         est.data_cov_values,
+        >>>                         False)
+        37.04057852140377
+        >>> est.bay_log_likelihood_norm
+        37.04057852140377
+
+        >>> # example with concrete values
+        >>> mean_data = np.array([[[1., 0.67, 0.37],
+        >>>                        [0., 0.45, 1.74]],
+        >>>                       [[0.01, 0.0469473, 0.04838822],
+        >>>                        [0.01, 0.07188642, 0.1995514]]])
+        >>> var_data = np.array([[[0., 0.22333333, 0.23545455],
+        >>>                       [0., 0.51262626, 4.03272727]],
+        >>>                      [[0.01, 0.01631605, 0.01293869],
+        >>>                       [0.01, 0.08878719, 0.68612036]]])
+        >>> cov_data = np.array([[[ 0., -0.30454545, -0.65030303]],
+        >>>                      [[ 0.01, 0.0303608, 0.06645246]]])
+        >>> est.compute_log_likelihood_norm(mean_data, var_data, cov_data, False)
+        37.04057852140377
+        >>> est.compute_log_likelihood_norm(mean_data, var_data, cov_data, True)
+        14.028288976285737
+        """
 
         # compute the model-independent term of the log_likelihood
         # this is a fixed value that can be computed once over the data standard errors
@@ -474,7 +977,44 @@ class Estimation(object):
 
     @staticmethod
     def initialise_net_theta_bounds(theta_symbolic, theta_identifier, theta_bounds):
-        """docstring for ."""
+        """Initialise uniform prior bounds of parameters :math:`\\theta`.
+
+        `Note`: This method will be automatically called during estimation
+        initialisation (`est.initialise_estimation`).
+
+        Parameters
+        ----------
+        theta_symbolic : list of str
+            List of `theta` identifiers. Each identifier represents a
+            parameter. Typically available at `est.net.net_theta_symbolic`.
+        theta_identifier : dict
+            Map between parameter and their theta identifiers with
+            `key:value=theta identifier:parameter` pairs.
+            Typically available at `est.net.net_rates_identifier`.
+        theta_bounds : numpy.ndarray
+            Uniform prior bounds for the parameters with
+            `key:value=parameter:tuple of bounds` pairs.
+
+        Returns
+        -------
+        net_theta_bounds : numpy.ndarray
+            Bounds of the uniform parameter prior with shape (`number of parameters`, 2).
+            Typically available at `est.net_theta_bounds`. Lower bounds are at
+            `net_theta_bounds[:, 0]` and upper bounds are at `net_theta_bounds[:, 1]`.
+
+        Examples
+        --------
+        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> est.net.net_theta_symbolic
+        ['theta_0', 'theta_1']
+        >>> est.net.net_rates_identifier
+        {'theta_0': 'd', 'theta_1': 'l'}
+        >>> theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
+        >>> est.initialise_net_theta_bounds(est.net.net_theta_symbolic,
+        >>>                         est.net.net_rates_identifier, theta_bounds)
+        array([[0.  , 0.15],
+               [0.  , 0.15]])
+        """
 
         # define the parameter intervals (by lower and upper bounds) for the uniform prior
         # theta symbolic list also defines the order of the theta's in net_theta_bounds
@@ -493,9 +1033,99 @@ class Estimation(object):
                                                         data_mean_order,
                                                         data_variance_order,
                                                         data_covariance_order):
-        """docstring for ."""
+        """Simulation and data variables have to be one-to-one/bijectively
+        mappable in general. This method then sorts the data in a way that is
+        given by the order of the simulation variables to simplify model/data
+        comparison in the estimation. Sorted/ordered data arrays are typically
+        available at `est.data_mean_values`, `est.data_var_values` and
+        `est.data_cov_values`.
+
+        `Note`: This method will be automatically called during estimation
+        initialisation (`est.initialise_estimation`).
+
+        Parameters
+        ----------
+        sim_variables_order : list of list
+            Simulation variable order in terms of the variable identifiers;
+            first element contains the first moment order (means), the
+            second element the second moments order (variances and covariances).
+        sim_variables_identifier : dict
+            Information of mapping between simulation variables
+            and their identifiers.
+        data_mean : numpy.ndarray
+            Dynamic data mean statistics and standard
+            errors with shape (2, `len(data_mean_order)`, `len(time_values)`).
+            `mean_data[0, :, :]` contains the statistics;
+            `mean_data[1, :, :]` contains the standard errors.
+        data_var : numpy.ndarray
+            Dynamic data variance statistics and standard
+            errors with shape (2, `len(data_variance_order)`, `len(time_values)`).
+            `var_data[0, :, :]` contains the statistics;
+            `var_data[1, :, :]` contains the standard errors.
+        data_cov : numpy.ndarray
+            Dynamic data covariance statistics and standard
+            errors with shape (2, `len(data_covariance_order)`, `len(time_values)`).
+            `cov_data[0, :, :]` contains the statistics;
+            `cov_data[1, :, :]` contains the standard errors.
+        data_mean_order : list of dict
+            Variable order for the data means.
+        data_variance_order : list of dict
+            Variable order for the data variances.
+        data_covariance_order : list of dict
+            Variable order for the data covariances.
+
+        Returns
+        -------
+        data_mean_ordered : numpy.ndarray
+            Dynamic data mean statistics and standard
+            errors matched to the simulation variable order
+            with shape (2, `len(data_mean_order)`, `len(time_values)`).
+        data_var_ordered : numpy.ndarray
+            Dynamic data variance statistics and standard
+            errors matched to the simulation variable order
+            with shape (2, `len(data_variance_order)`, `len(time_values)`).
+        data_cov_ordered : numpy.ndarray
+            Dynamic data covariance statistics and standard
+            errors matched to the simulation variable order
+            with shape (2, `len(data_covariance_order)`, `len(time_values)`).
+
+        Examples
+        --------
+        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> est.net_simulation.sim_variables_order
+        [[('V_0',), ('V_1',)], [('V_0', 'V_0'), ('V_0', 'V_1'), ('V_1', 'V_1')]]
+        >>> est.net_simulation.sim_variables_identifier
+        {'V_0': ('X_t', ('X_t',)), 'V_1': ('Y_t', ('Y_t',))}
+        >>> est.data.data_mean_order
+        [{'variables': 'X_t', 'summary_indices': 0, 'count_indices': (0,)},
+         {'variables': 'Y_t', 'summary_indices': 1, 'count_indices': (1,)}]
+        >>> est.data.data_variance_order
+        [{'variables': ('X_t', 'X_t'), 'summary_indices': 0, 'count_indices': (0, 0)},
+         {'variables': ('Y_t', 'Y_t'), 'summary_indices': 1, 'count_indices': (1, 1)}]
+        >>> est.data.data_covariance_order
+        [{'variables': ('X_t', 'Y_t'), 'summary_indices': 0, 'count_indices': (0, 1)}]
+        >>> est.match_data_to_network(est.net_simulation.sim_variables_order,
+        >>>                           est.net_simulation.sim_variables_identifier,
+        >>>                           est.data.data_mean,
+        >>>                           est.data.data_variance,
+        >>>                           est.data.data_covariance,
+        >>>                           est.data.data_mean_order,
+        >>>                           est.data.data_variance_order,
+        >>>                           est.data.data_covariance_order)
+        (array([[[1.        , 0.67      , 0.37      ],
+                 [0.        , 0.45      , 1.74      ]],
+                [[0.01      , 0.0469473 , 0.04838822],
+                 [0.01      , 0.07188642, 0.1995514 ]]]),
+         array([[[0.        , 0.22333333, 0.23545455],
+                 [0.        , 0.51262626, 4.03272727]],
+                [[0.01      , 0.01631605, 0.01293869],
+                 [0.01      , 0.08878719, 0.68612036]]]),
+         array([[[ 0.        , -0.30454545, -0.65030303]],
+                [[ 0.01      ,  0.0303608 ,  0.06645246]]]))
+        """
 
         # preallocate numpy arrays for the ordered data that is of same shape as the original data
+        # if there is some mean_only mode active, var and cov arrays will stay at zeros
         data_mean_ordered = np.zeros(data_mean.shape)
         data_var_ordered = np.zeros(data_var.shape)
         data_cov_ordered = np.zeros(data_cov.shape)
@@ -532,7 +1162,19 @@ class Estimation(object):
 
 
     def compute_bestfit_simulation(self):
-        """docstring for ."""
+        """Compute a simulation of the estimated model with 'best-fit' :math:`\\theta`
+        parameters. The 50-th percentiles (i.e., medians) of the respective
+        1d marginal posterior distributions are taken as best-fit parameter values.
+
+        The simulation result is available at `est.net_simulation_bestfit` for an
+        estimation instance `est`. This method is used as plotting helper function;
+        see `plots.est_bestfit_mean_plot`, `plots.est_bestfit_variance_plot` and
+        `plots.est_bestfit_covariance_plot` for more info.
+
+        Returns
+        -------
+        None
+        """
 
         # run a simulation with best-fit values (here we used median/50th percentile of
         # one-dimensional parameter densities)
@@ -548,22 +1190,43 @@ class Estimation(object):
         self.net_simulation_bestfit_exists = True
 
 
-    def compute_simulation_confidence_band(self, num_sim_ensemble=5000):
-        """docstring for ."""
+    def compute_simulation_credible_band(self, num_sim_ensemble=5000):
+        """Compute a simulation of the estimated model with 'best-fit' :math:`\\theta`
+        parameters and 95% credible band. Credible band and best-fit simulation are
+        computed as percentiles (2.5-th, 50-th and 97.5-th) from an ensemble of
+        simulations with parameter values sampled from the complete parameter
+        posterior.
 
-        # TODO: has to be improved! store model simuations from mcmc and use here again!
+        The best-fit simulation result is available at
+        `est.net_simulation_credible_band_bestfit` for an estimation instance `est`;
+        the 95% credible band at `est.net_simulation_credible_band`.
+        This method is used as plotting helper function;
+        see `plots.est_bestfit_mean_plot`, `plots.est_bestfit_variance_plot` and
+        `plots.est_bestfit_covariance_plot` for more info.
+
+        Parameters
+        ----------
+        num_sim_ensemble : int, optional
+            Ensemble size (number of simulations) to compute percentiles from.
+
+        Returns
+        -------
+        None
+        """
+
+        # TODO: has to be improved! store model simulations from mcmc and use here again!
         # NOTE: we would need the data blobs functionality which is currently
         # only available for the EnsembleSampler but unfortunately not for the PTSampler
 
         if self.net_simulation.sim_moments.moment_system=='reset':
             self.net_simulation.sim_moments.set_moment_eqs_from_template_after_reset()
 
-        # take at least 5000 simulations to calculate confidence bands
+        # take at least 5000 simulations to calculate credible bands
         num_sim_ensemble = max(num_sim_ensemble, 5000)
 
         # raise warning if posterior samples are less than drawn samples for sim_ensemble
         if self.bay_est_samples_weighted.shape[0]<=num_sim_ensemble:
-            warnings.warn(f'There are less than {num_sim_ensemble} parameter posterior samples to compute model confidence bands from. Consider increasing depth of MCMC sampling.')
+            warnings.warn(f'There are less than {num_sim_ensemble} parameter posterior samples to compute model credible bands from. Consider increasing depth of MCMC sampling.')
 
 
         # recompute the model simulations for a random selection of posterior sample
@@ -580,7 +1243,7 @@ class Estimation(object):
                                                                 for theta in theta_ensemble]
 
         # then we compute the statistic of the sampled trajectories (means, variances, covariances)
-        # and the corresponding 2.5th and 97.5th percentiles for 95%-confidence band (both for all time points)
+        # and the corresponding 2.5th and 97.5th percentiles for 95%-credible band (both for all time points)
         mean_samples = np.array([sim[0] for sim in sim_ensemble])
         mean_percentiles = np.percentile(mean_samples, (2.5, 50.0, 97.5), axis=0)
         mean_lower_bound = mean_percentiles[0, :, :]
@@ -599,22 +1262,22 @@ class Estimation(object):
         cov_bestfit_band = cov_percentiles[1, :, :]
         cov_upper_bound = cov_percentiles[2, :, :]
 
-        # store the information for the confidence band
+        # store the information for the credible band
         # with structure:
         # list index 0 for mean vs. var vs. cov
         # list index 1 for lower vs. upper
         # then numpy array with shape=(number of means, vars or covs; #time_values)
-        self.net_simulation_confidence_band = [
+        self.net_simulation_credible_band = [
         [mean_lower_bound, mean_upper_bound],
         [var_lower_bound, var_upper_bound],
         [cov_lower_bound, cov_upper_bound]
         ]
 
-        self.net_simulation_confidence_band_bestfit = (mean_bestfit_band,
+        self.net_simulation_credible_band_bestfit = (mean_bestfit_band,
                                                         var_bestfit_band,
                                                         cov_bestfit_band)
 
-        self.net_simulation_confidence_band_exists = True
+        self.net_simulation_credible_band_exists = True
 
 
     ### plotting helper functions
@@ -626,7 +1289,7 @@ class Estimation(object):
         attributes = dict()
 
         for i, theta_id in enumerate(self.net.net_theta_symbolic):
-            (median, perc_2p5, perc_97p5) = self.bay_est_params_conf[i]
+            (median, perc_2p5, perc_97p5) = self.bay_est_params_cred[i]
             y_arr_err[i, :] = np.array([median, median - perc_2p5, perc_97p5 - median])
 
             param_setting = settings[self.net.net_rates_identifier[theta_id]]
@@ -723,16 +1386,16 @@ class Estimation(object):
         return x_arr_dots, x_arr_line, y_dots_err, y_line, attributes
 
 
-    def _line_w_band_evolv_mean_confidence(self, settings, num_sim_ensemble=5000):
+    def _line_w_band_evolv_mean_credible(self, settings, num_sim_ensemble=5000):
         """Private plotting helper method."""
 
-        # compute the best-fit simulation and confidence bands in case they do not exist already
-        if not self.net_simulation_confidence_band_exists:
-            self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
+        # compute the best-fit simulation and credible bands in case they do not exist already
+        if not self.net_simulation_credible_band_exists:
+            self.compute_simulation_credible_band(num_sim_ensemble=num_sim_ensemble)
 
-        # in the case of confidence bands, best-fit is taken from the simulation samples
-        mean_m, __, __  = self.net_simulation_confidence_band_bestfit
-        mean_band = self.net_simulation_confidence_band[0]
+        # in the case of credible bands, best-fit is taken from the simulation samples
+        mean_m, __, __  = self.net_simulation_credible_band_bestfit
+        mean_band = self.net_simulation_credible_band[0]
 
         sim_variables_order_mean = self.net_simulation.sim_variables_order[0]
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
@@ -754,16 +1417,16 @@ class Estimation(object):
         return x_arr, y_line, y_lower, y_upper, attributes
 
 
-    def _dots_w_bars_and_line_w_band_evolv_mean_confidence(self, settings, num_sim_ensemble=5000):
+    def _dots_w_bars_and_line_w_band_evolv_mean_credible(self, settings, num_sim_ensemble=5000):
         """Private plotting helper method."""
 
-        # compute the best-fit simulation and confidence bands in case they do not exist already
-        if not self.net_simulation_confidence_band_exists:
-            self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
+        # compute the best-fit simulation and credible bands in case they do not exist already
+        if not self.net_simulation_credible_band_exists:
+            self.compute_simulation_credible_band(num_sim_ensemble=num_sim_ensemble)
 
-        # in the case of confidence bands, best-fit is taken from the simulation samples
-        mean_m, __, __  = self.net_simulation_confidence_band_bestfit
-        mean_band = self.net_simulation_confidence_band[0]
+        # in the case of credible bands, best-fit is taken from the simulation samples
+        mean_m, __, __  = self.net_simulation_credible_band_bestfit
+        mean_band = self.net_simulation_credible_band[0]
 
         sim_variables_order_mean = self.net_simulation.sim_variables_order[0]
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
@@ -843,16 +1506,16 @@ class Estimation(object):
         return x_arr_dots, x_arr_line, y_dots_err, y_line, attributes
 
 
-    def _line_w_band_evolv_variance_confidence(self, settings, num_sim_ensemble=5000):
+    def _line_w_band_evolv_variance_credible(self, settings, num_sim_ensemble=5000):
         """Private plotting helper method."""
 
-        # compute the best-fit simulation and confidence bands in case they do not exist already
-        if not self.net_simulation_confidence_band_exists:
-            self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
+        # compute the best-fit simulation and credible bands in case they do not exist already
+        if not self.net_simulation_credible_band_exists:
+            self.compute_simulation_credible_band(num_sim_ensemble=num_sim_ensemble)
 
-        # in the case of confidence bands, best-fit is taken from the simulation samples
-        __, var_m, __  = self.net_simulation_confidence_band_bestfit
-        var_band = self.net_simulation_confidence_band[1]
+        # in the case of credible bands, best-fit is taken from the simulation samples
+        __, var_m, __  = self.net_simulation_credible_band_bestfit
+        var_band = self.net_simulation_credible_band[1]
 
         sim_variables_order_var = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.net_simulation.sim_variables_order[1] if variable1_id==variable2_id]
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
@@ -874,16 +1537,16 @@ class Estimation(object):
         return x_arr, y_line, y_lower, y_upper, attributes
 
 
-    def _dots_w_bars_and_line_w_band_evolv_variance_confidence(self, settings, num_sim_ensemble=5000):
+    def _dots_w_bars_and_line_w_band_evolv_variance_credible(self, settings, num_sim_ensemble=5000):
         """Private plotting helper method."""
 
-        # compute the best-fit simulation and confidence bands in case they do not exist already
-        if not self.net_simulation_confidence_band_exists:
-            self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
+        # compute the best-fit simulation and credible bands in case they do not exist already
+        if not self.net_simulation_credible_band_exists:
+            self.compute_simulation_credible_band(num_sim_ensemble=num_sim_ensemble)
 
-        # in the case of confidence bands, best-fit is taken from the simulation samples
-        __, var_m, __  = self.net_simulation_confidence_band_bestfit
-        var_band = self.net_simulation_confidence_band[1]
+        # in the case of credible bands, best-fit is taken from the simulation samples
+        __, var_m, __  = self.net_simulation_credible_band_bestfit
+        var_band = self.net_simulation_credible_band[1]
 
         sim_variables_order_var = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.net_simulation.sim_variables_order[1] if variable1_id==variable2_id]
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
@@ -971,16 +1634,16 @@ class Estimation(object):
         return x_arr_dots, x_arr_line, y_dots_err, y_line, attributes
 
 
-    def _line_w_band_evolv_covariance_confidence(self, settings, num_sim_ensemble=5000):
+    def _line_w_band_evolv_covariance_credible(self, settings, num_sim_ensemble=5000):
         """Private plotting helper method."""
 
-        # compute the best-fit simulation and confidence bands in case they do not exist already
-        if not self.net_simulation_confidence_band_exists:
-            self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
+        # compute the best-fit simulation and credible bands in case they do not exist already
+        if not self.net_simulation_credible_band_exists:
+            self.compute_simulation_credible_band(num_sim_ensemble=num_sim_ensemble)
 
-        # in the case of confidence bands, best-fit is taken from the simulation samples
-        __, __, cov_m  = self.net_simulation_confidence_band_bestfit
-        cov_band = self.net_simulation_confidence_band[2]
+        # in the case of credible bands, best-fit is taken from the simulation samples
+        __, __, cov_m  = self.net_simulation_credible_band_bestfit
+        cov_band = self.net_simulation_credible_band[2]
 
         sim_variables_order_cov = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.net_simulation.sim_variables_order[1] if variable1_id!=variable2_id]
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
@@ -1006,16 +1669,16 @@ class Estimation(object):
         return x_arr, y_line, y_lower, y_upper, attributes
 
 
-    def _dots_w_bars_and_line_w_band_evolv_covariance_confidence(self, settings, num_sim_ensemble=5000):
+    def _dots_w_bars_and_line_w_band_evolv_covariance_credible(self, settings, num_sim_ensemble=5000):
         """Private plotting helper method."""
 
-        # compute the best-fit simulation and confidence bands in case they do not exist already
-        if not self.net_simulation_confidence_band_exists:
-            self.compute_simulation_confidence_band(num_sim_ensemble=num_sim_ensemble)
+        # compute the best-fit simulation and credible bands in case they do not exist already
+        if not self.net_simulation_credible_band_exists:
+            self.compute_simulation_credible_band(num_sim_ensemble=num_sim_ensemble)
 
-        # in the case of confidence bands, best-fit is taken from the simulation samples
-        __, __, cov_m  = self.net_simulation_confidence_band_bestfit
-        cov_band = self.net_simulation_confidence_band[2]
+        # in the case of credible bands, best-fit is taken from the simulation samples
+        __, __, cov_m  = self.net_simulation_credible_band_bestfit
+        cov_band = self.net_simulation_credible_band[2]
 
         sim_variables_order_cov = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.net_simulation.sim_variables_order[1] if variable1_id!=variable2_id]
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
@@ -1045,6 +1708,30 @@ class Estimation(object):
 
         return x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes
     ###
+
+    @staticmethod
+    def _validate_simulation_and_data_variables_mapping(sim_variables,
+                                                        data_variables):
+        """Private validation method."""
+        # NOTE: by previous checks in simulation and data classes sim_variables
+        # and data_variables both should have unique elements only
+
+        # we dont really care about variables of the model (main nodes),
+        # but simulation and data variables have to match (otherwise one
+        # should just define a different data object, if not all data variables
+        # can be described; if we have more sim variables then actually available
+        # data, one should define different models) -> so we need a bijective
+        # mapping between the two
+
+        # the model in terms of underlying modelled variables (main nodes) can of
+        # course have more detailed variables; so a sim variable can be a sum of
+        # multiple main nodes or some main nodes might not be grapped by sim
+        # variables at all (TODO: this should be all possible, check there)
+
+        # check for one-to-one (bijective mapping)
+        # can use sets due to uniqueness
+        if not set(sim_variables)==set(data_variables):
+            raise ValueError('Simulation and data variables have to be one-to-one/bijectively mappable.')
 
     @staticmethod
     def _validate_network_input(network):
