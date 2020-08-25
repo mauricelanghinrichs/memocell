@@ -19,7 +19,8 @@ from tqdm.autonotebook import tqdm
 
 import warnings
 
-def select_models(models, data, mean_only=False,
+def select_models(networks, variables, initial_values, theta_bounds,
+                            data, mean_only=False,
                             nlive=1000, tolerance=0.01,
                             bound='multi', sample='unif',
                             parallel=True, processes=None):
@@ -33,12 +34,28 @@ def select_models(models, data, mean_only=False,
 
     Parameters
     ----------
-    models : list of tuple
-        A list of models to run the statistical inference with. A specific input
-        format is required. Each tuple defines a model for the inference with
-        `(model name, model topology, sampling setup)`, see example below.
+    networks : list of memo_py.Network.network
+        A list of memopy network objects to run the statistical inference with.
+        Each network is associated with further information given by `variables`,
+        `initial_values` and `theta_bounds` to specify a complete model
+        (all lists must have the same length).
+    variables : list of dict
+        List of simulation variables for each network as dictionary. Each
+        network dictionary requires
+        `key:value=simulation variable:tuple of network main nodes` pairs.
+        The simulation variables have to correspond
+        to the data variables. The tuple of network main nodes can be used to sum
+        up multiple network nodes to one simulation variable.
+    initial_values : list of dict
+        List of initial values for each network's main nodes as dictionary. Each
+        network dictionary requires
+        `key:value=network main node:initial value (float or int)` pairs.
+    theta_bounds : list of dict
+        List of uniform prior bounds of the parameters for each network as
+        dictionary. Each network dictionary requires
+        `key:value=parameter:tuple of (lower bound, upper bound)` pairs.
     data : memo_py.Data.data
-        A memo_py data object used in the statistcal inference.
+        A memo_py data object used in the statistical inference.
     mean_only : bool, optional
         If the inference shall be based on the first moment (means) only,
         specify `mean_only=True`. If the inference shall be based on information
@@ -82,38 +99,27 @@ def select_models(models, data, mean_only=False,
     --------
     >>> # given some memo_py data object, models are defined as follows
     >>> # (here a simple model with symmetric division of one cell type)
-    >>> t2 = [{'start': 'X_t', 'end': 'X_t',
-    >>>        'rate_symbol': 'l',
-    >>>        'type': 'S -> S + S',
-    >>>        'reaction_steps': 2}]
-    >>> t5 = [{'start': 'X_t', 'end': 'X_t',
-    >>>        'rate_symbol': 'l',
-    >>>        'type': 'S -> S + S',
-    >>>        'reaction_steps': 5}]
-    >>> s = {'initial_values': {'X_t': 1.0},
-    >>>      'theta_bounds': {'l': (0.0, 1.0)},
-    >>>      'variables': {'X_t': ('X_t', )}}
-    >>> models = [('model2', t2, s), ('model5', t5, s)]
+    >>> net1 = me.Network('net_l2')
+    >>> net1.structure([{'start': 'X_t', 'end': 'X_t',
+    >>>                  'rate_symbol': 'l',
+    >>>                  'type': 'S -> S + S',
+    >>>                  'reaction_steps': 2}])
+    >>> net2 = me.Network('net_l5')
+    >>> net2.structure([{'start': 'X_t', 'end': 'X_t',
+    >>>                  'rate_symbol': 'l',
+    >>>                  'type': 'S -> S + S',
+    >>>                  'reaction_steps': 5}])
+    >>> nets = [net1, net2]
+    >>> variables = [{'X_t': ('X_t', )}]*2
+    >>> initial_values = [{'X_t': 1.0}]*2
+    >>> theta_bounds = [{'l': (0.0, 0.5)}]*2
     >>> # then the inference is started with
-    >>> est_res = me.selection.select_models(models, data)
+    >>> est_res = me.selection.select_models(nets, variables,
+    >>>                                      initial_values, theta_bounds, data)
     """
     ### this is the top-level function of this script to handle the set of
     ### networks/models for parameter and evidence estimation;
     ### for each network (in a parallelised loop), net_estimation function is called
-
-    # load information that is the same for all models
-    # mcmc information is combined to a new dict
-    d_data = data
-    d_mean_only = mean_only
-    d_mcmc_setup = {
-        'nlive':    nlive,
-        'tolerance':   tolerance,
-        'bound':        bound,
-        'sample':      sample
-    }
-
-    # load information of the set of models
-    d_model_set = models
 
     # # load progress bar for current environment (jupyter or terminal)
     # if input_dict['progress_bar_env']=='jupyter':
@@ -121,29 +127,30 @@ def select_models(models, data, mean_only=False,
     # elif input_dict['progress_bar_env']=='terminal':
     #     tqdm_version = tqdm.std.tqdm
 
+    # validation check on user inputs
+    _validate_selection_input(networks, variables, initial_values,
+                                theta_bounds, data, mean_only)
 
     # create input variable 'input_var' (in net_estimation fct) that is stored in
     # 'pool_inputs' for the parallelised loop over the networks
     pool_inputs = list()
-    for i, model in enumerate(d_model_set):
-        # load model information
-        m_name = model[0]
-        m_topology = model[1]
-        m_setup = model[2]
+    for est_iter, net in enumerate(networks):
 
-        # add 'mean_only' information to m_setup
-        m_setup['mean_only'] = d_mean_only
+        net_variables = variables[est_iter]
+        net_initial_values = initial_values[est_iter]
+        net_theta_bounds = theta_bounds[est_iter]
 
-        # pass a model iteration count
-        m_iter = i
-
-        pool_inputs.append((m_name,
-                            m_topology,
-                            m_setup,
-                            m_iter,
-                            d_data,
-                            d_mcmc_setup))
-
+        pool_inputs.append((net,
+                            net_variables,
+                            net_initial_values,
+                            net_theta_bounds,
+                            data, # data that is tried to fit by the model
+                            est_iter, # integer i denoting the i-th model in the set of models
+                            mean_only,
+                            nlive,
+                            tolerance,
+                            bound,
+                            sample))
 
     # if __name__ == '__main__': # TODO: is this needed somewhere?
     # parallelised version
@@ -207,21 +214,23 @@ def net_estimation(input_var):
     ### single model/network as specified by input_var
 
     # read out input_var
-    (m_name, # name of the network (as string)
-    m_topology, # topology/structure of the network
-    m_setup, # initial_values for nodes, theta_bounds for parameters, mean_only boolean
-    m_iter, # integer i denoting the i-th model in the set of models
-    d_data, # data that is tried to fit by the model
-    d_mcmc_setup) = input_var # settings for Bayesian inference framework (Markov Chain Monte Carlo)
-
-    # specify the model as an instance of the Network class
-    net = Network(m_name)
-    net.structure(m_topology)
+    (net,
+    net_variables,
+    net_initial_values,
+    net_theta_bounds,
+    data, # data that is tried to fit by the model
+    est_iter, # integer i denoting the i-th model in the set of models
+    mean_only,
+    nlive,
+    tolerance,
+    bound,
+    sample) = input_var # settings for Bayesian inference framework (Markov Chain Monte Carlo)
 
     # conduct the estimation via the Estimation class
-    est_name = 'est_' + m_name
-    est = Estimation(est_name, net, d_data, est_iter=m_iter)
-    est.estimate(m_setup, d_mcmc_setup)
+    est_name = 'est_' + net.net_name
+    est = Estimation(est_name, net, data, est_iter=est_iter)
+    est.estimate(net_variables, net_initial_values, net_theta_bounds,
+                                    mean_only, nlive, tolerance, bound, sample)
 
     # reset the eval() function 'moment_system' to prevent pickling error
     # 'reset' is just a placeholder string to indicate the reset
@@ -546,3 +555,73 @@ def _dots_wo_bars_evidence_from_bic(estimation_instances, settings):
 
     return y_arr_err, x_ticks, attributes
 ###
+
+### validation functions
+def _validate_selection_input(networks, variables, initial_values,
+                            theta_bounds, data, mean_only):
+    """Private validation method."""
+    # TODO: probably more checks possible to integrate here..
+
+    # check for data instance
+    if isinstance(data, Data):
+        pass
+    else:
+        raise TypeError('Instance of Data class expected.')
+
+    # check mean_only
+    if isinstance(mean_only, bool):
+        pass
+    else:
+        raise TypeError('Bool as mean only option expected.')
+
+    # check networks
+    if isinstance(networks, list):
+        pass
+    else:
+        raise TypeError('List of networks expected.')
+
+    if all(isinstance(el, Network) for el in networks):
+        pass
+    else:
+        raise TypeError('Instance of Network class expected.')
+
+    # check variables
+    if isinstance(variables, list):
+        pass
+    else:
+        raise TypeError('List of variables expected.')
+
+    if all(isinstance(el, dict) for el in variables):
+        pass
+    else:
+        raise TypeError('Dict as variables expected.')
+
+    # check initial_values
+    if isinstance(initial_values, list):
+        pass
+    else:
+        raise TypeError('List of initial values expected.')
+
+    if all(isinstance(el, dict) for el in initial_values):
+        pass
+    else:
+        raise TypeError('Dict as initial values expected.')
+
+    # check theta_bounds
+    if isinstance(theta_bounds, list):
+        pass
+    else:
+        raise TypeError('List of theta bounds expected.')
+
+    if all(isinstance(el, dict) for el in theta_bounds):
+        pass
+    else:
+        raise TypeError('Dict as theta bounds expected.')
+
+    # length of network inputs must match
+    num_nets = len(networks)
+    if (num_nets==len(variables) and num_nets==len(initial_values)
+            and num_nets==len(theta_bounds)):
+        pass
+    else:
+        raise ValueError('Mismatch of network number and further input.')

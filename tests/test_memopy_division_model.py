@@ -7,14 +7,10 @@ class TestSelectionDivisionModel(object):
     @pytest.mark.slow
     def test_division_model_sequential(self):
         ### create data from 5-steps model
-        t = [
-            {'start': 'X_t', 'end': 'X_t',
-             'rate_symbol': 'l',
-             'type': 'S -> S + S', 'reaction_steps': 5}
-            ]
-
         net = me.Network('net_div_g5')
-        net.structure(t)
+        net.structure([{'start': 'X_t', 'end': 'X_t',
+                        'rate_symbol': 'l',
+                        'type': 'S -> S + S', 'reaction_steps': 5}])
 
         num_iter = 100
         initial_values = {'X_t': 1}
@@ -40,31 +36,34 @@ class TestSelectionDivisionModel(object):
                                        [[0.01       , 0.32208202]]])
 
         ### define models for selection
-        t2 = [{'start': 'X_t', 'end': 'X_t',
-             'rate_symbol': 'l',
-             'type': 'S -> S + S',
-             'reaction_steps': 2}]
+        net2 = me.Network('net_div_g2')
+        net2.structure([{'start': 'X_t', 'end': 'X_t',
+                         'rate_symbol': 'l',
+                         'type': 'S -> S + S',
+                         'reaction_steps': 2}])
 
-        t5 = [{'start': 'X_t', 'end': 'X_t',
-             'rate_symbol': 'l',
-             'type': 'S -> S + S',
-             'reaction_steps': 5}]
+        net5 = me.Network('net_div_g5')
+        net5.structure([{'start': 'X_t', 'end': 'X_t',
+                         'rate_symbol': 'l',
+                         'type': 'S -> S + S',
+                         'reaction_steps': 5}])
 
-        t15 = [{'start': 'X_t', 'end': 'X_t',
-             'rate_symbol': 'l',
-             'type': 'S -> S + S',
-             'reaction_steps': 15}]
+        net15 = me.Network('net_div_g15')
+        net15.structure([{'start': 'X_t', 'end': 'X_t',
+                          'rate_symbol': 'l',
+                          'type': 'S -> S + S',
+                          'reaction_steps': 15}])
 
         # important note: theta_bounds are reduced here to
         # prevent odeint warning at high steps
-        s = {'initial_values': {'X_t': 1.0},
-             'theta_bounds': {'l': (0.0, 0.5)},
-             'variables': {'X_t': ('X_t', )}}
-
-        models = [('m2', t2, s), ('m5', t5, s), ('m15', t15, s)]
+        networks = [net2, net5, net15]
+        variables = [{'X_t': ('X_t', )}]*3
+        initial_values = [{'X_t': 1.0}]*3
+        theta_bounds = [{'l': (0.0, 0.5)}]*3
 
         ### run selection (sequentially)
-        est_res = me.selection.select_models(models, data, parallel=False)
+        est_res = me.selection.select_models(networks, variables, initial_values,
+                                            theta_bounds, data, parallel=False)
 
         ### assert log evidence values
         evid_res = np.array([est.bay_est_log_evidence for est in est_res])
@@ -92,7 +91,7 @@ class TestSelectionDivisionModel(object):
         np.testing.assert_allclose(logl_max_sol, logl_max_res, rtol=1.0, atol=1.0)
 
         ### assert estimated parameter value (95% credible interval)
-        theta_cred_res = np.array([est.bay_est_params_conf for est in est_res])
+        theta_cred_res = np.array([est.bay_est_params_cred for est in est_res])
         theta_cred_sol = [[[0.15403995, 0.14659241, 0.16079126]],
                              [[0.21181266, 0.20239213, 0.22030757]],
                              [[0.23227569, 0.21840278, 0.24577387]]]
@@ -134,31 +133,34 @@ class TestSelectionDivisionModel(object):
                                        [[0.01       , 0.32208202]]])
 
         ### define models for selection
-        t2 = [{'start': 'X_t', 'end': 'X_t',
-             'rate_symbol': 'l',
-             'type': 'S -> S + S',
-             'reaction_steps': 2}]
+        net2 = me.Network('net_div_g2')
+        net2.structure([{'start': 'X_t', 'end': 'X_t',
+                         'rate_symbol': 'l',
+                         'type': 'S -> S + S',
+                         'reaction_steps': 2}])
 
-        t5 = [{'start': 'X_t', 'end': 'X_t',
-             'rate_symbol': 'l',
-             'type': 'S -> S + S',
-             'reaction_steps': 5}]
+        net5 = me.Network('net_div_g5')
+        net5.structure([{'start': 'X_t', 'end': 'X_t',
+                         'rate_symbol': 'l',
+                         'type': 'S -> S + S',
+                         'reaction_steps': 5}])
 
-        t15 = [{'start': 'X_t', 'end': 'X_t',
-             'rate_symbol': 'l',
-             'type': 'S -> S + S',
-             'reaction_steps': 15}]
+        net15 = me.Network('net_div_g15')
+        net15.structure([{'start': 'X_t', 'end': 'X_t',
+                          'rate_symbol': 'l',
+                          'type': 'S -> S + S',
+                          'reaction_steps': 15}])
 
         # important note: theta_bounds are reduced here to
         # prevent odeint warning at high steps
-        s = {'initial_values': {'X_t': 1.0},
-             'theta_bounds': {'l': (0.0, 0.5)},
-             'variables': {'X_t': ('X_t', )}}
-
-        models = [('m2', t2, s), ('m5', t5, s), ('m15', t15, s)]
+        networks = [net2, net5, net15]
+        variables = [{'X_t': ('X_t', )}]*3
+        initial_values = [{'X_t': 1.0}]*3
+        theta_bounds = [{'l': (0.0, 0.5)}]*3
 
         ### run selection (in parallel)
-        est_res = me.selection.select_models(models, data, parallel=True)
+        est_res = me.selection.select_models(networks, variables, initial_values,
+                                            theta_bounds, data, parallel=True)
 
         ### assert log evidence values
         evid_res = np.array([est.bay_est_log_evidence for est in est_res])
@@ -186,7 +188,7 @@ class TestSelectionDivisionModel(object):
         np.testing.assert_allclose(logl_max_sol, logl_max_res, rtol=1.0, atol=1.0)
 
         ### assert estimated parameter value (95% credible interval)
-        theta_cred_res = np.array([est.bay_est_params_conf for est in est_res])
+        theta_cred_res = np.array([est.bay_est_params_cred for est in est_res])
         theta_cred_sol = [[[0.15403995, 0.14659241, 0.16079126]],
                              [[0.21181266, 0.20239213, 0.22030757]],
                              [[0.23227569, 0.21840278, 0.24577387]]]
