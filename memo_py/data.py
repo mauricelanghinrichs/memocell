@@ -9,13 +9,35 @@ import scipy.stats as stats
 import scipy.optimize as optimize
 
 class Data(object):
-    """Class to handle and load data. Main method is `load` which will create a ready-to-use
+    """Class to handle and load data.
+
+    Main method is `load` which will create a ready-to-use
     data instance with dynamic summary statistics
     that can subsequently be used for the statistical inference; for the
     typical use case this is the only method to call. `load` is a wrapper method
     for most of the other class methods, so more documentation can be found in the
     respective individual methods. Further functionalities of this class
     include stochastic event analysis and Gamma/Erlang fitting to waiting time distributions.
+
+    Parameters
+    ----------
+    data_name : str
+        A name for the data object.
+
+    Returns
+    -------
+    data : memo_py.data.Data
+        Initialised memopy data object. Typically, continue with the `data.load`
+        method to add the actual data information.
+
+    Examples
+    --------
+    >>> # initialise data
+    >>> import memo_py as me
+    >>> import numpy as np
+    >>> data = me.Data('my_data')
+    >>> # use load() to fill it
+    >>> # data.load(...)
     """
 
     def __init__(self, data_name):
@@ -196,12 +218,16 @@ class Data(object):
 
         # dependent on data_type, load data as summary statistics or count data
         if self.data_type=='summary':
+            self._validate_shape_summary(self.data_mean_order, self.data_variance_order,
+                                        self.data_covariance_order, self.data_time_values,
+                                        mean_data, var_data, cov_data)
             self.data_mean = mean_data
             self.data_variance = var_data
             self.data_covariance = cov_data
 
         # in case of count data, bootstrapping is used to compute the summary statistics
         elif self.data_type=='counts':
+            self._validate_shape_counts(self.data_variables, self.data_time_values, count_data)
             self.data_counts = count_data
             self.data_bootstrap_samples = bootstrap_samples
 
@@ -1358,6 +1384,38 @@ class Data(object):
     ###
 
     @staticmethod
+    def _validate_shape_summary(mean_order, var_order, cov_order, time_values, mean_data, var_data, cov_data):
+        """Private validation method."""
+        # data and standard error dimensions required
+        if 2==mean_data.shape[0] and 2==var_data.shape[0] and 2==cov_data.shape[0]:
+            pass
+        else:
+            raise ValueError('Unfit dimensions of summary data.')
+
+        if len(time_values)==mean_data.shape[2] and len(time_values)==var_data.shape[2] and len(time_values)==cov_data.shape[2]:
+            pass
+        else:
+            raise ValueError('Dimension mismatch between time_values and summary data.')
+
+        if len(mean_order)==mean_data.shape[1] and len(var_order)==var_data.shape[1] and len(cov_order)==cov_data.shape[1]:
+            pass
+        else:
+            raise ValueError('Dimension mismatch between data variables and summary data.')
+
+    @staticmethod
+    def _validate_shape_counts(variables, time_values, count_data):
+        """Private validation method."""
+        if len(variables)==count_data.shape[1]:
+            pass
+        else:
+            raise ValueError('Dimension mismatch between data variables and count_data.')
+
+        if len(time_values)==count_data.shape[2]:
+            pass
+        else:
+            raise ValueError('Dimension mismatch between time_values and count_data.')
+
+    @staticmethod
     def _validate_data_input(variables, time_values, count_data, data_type,
                     mean_data, var_data, cov_data,
                     bootstrap_samples, basic_sigma):
@@ -1372,6 +1430,10 @@ class Data(object):
                 raise TypeError('List with string items expected for variables.')
         else:
             raise TypeError('List expected for variables.')
+
+        # check uniqueness of variables
+        if len(variables) > len(set(variables)):
+            raise ValueError('Data variables have to be unique.')
 
         # check data input type
         if isinstance(data_type, str):
