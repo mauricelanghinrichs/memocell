@@ -13,17 +13,15 @@ class TestEstimationClass(object):
     def simple_est_setup(self):
         # see jupyter notebook ex_docs_tests for more info and plots
         ### define network
-        t = [
+        net = me.Network('net_min_2_4')
+        net.structure([
             {'start': 'X_t', 'end': 'Y_t',
              'rate_symbol': 'd',
              'type': 'S -> E', 'reaction_steps': 2},
             {'start': 'Y_t', 'end': 'Y_t',
              'rate_symbol': 'l',
              'type': 'S -> S + S', 'reaction_steps': 4}
-            ]
-
-        net = me.Network('net_min_2_4')
-        net.structure(t)
+            ])
 
         ### create data with known values
         num_iter = 100

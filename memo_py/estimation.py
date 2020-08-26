@@ -359,9 +359,9 @@ class Estimation(object):
         self.bay_nested_sampler = NestedSampler(self.log_likelihood, self.prior_transform,
                                                 self.bay_nested_ndims, bound=self.bay_nested_bound,
                                                 sample=self.bay_nested_sample, nlive=self.bay_nested_nlive,
-                                logl_args=((self.net_initial_values, self.data_time_values,
-                                            self.net_simulation.sim_variables, self.data_mean_values,
-                                            self.data_var_values, self.data_cov_values)))
+                                    logl_args=((self.net_initial_values, self.data_time_values,
+                                                self.net_simulation.sim_variables, self.data_mean_values,
+                                                self.data_var_values, self.data_cov_values)))
 
 
     def run_estimation(self):
