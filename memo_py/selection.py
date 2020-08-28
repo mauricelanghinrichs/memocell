@@ -20,7 +20,7 @@ from tqdm.autonotebook import tqdm
 import warnings
 
 def select_models(networks, variables, initial_values, theta_bounds,
-                            data, mean_only=False,
+                            data, sim_mean_only=False, fit_mean_only=False,
                             nlive=1000, tolerance=0.01,
                             bound='multi', sample='unif',
                             parallel=True, processes=None):
@@ -56,10 +56,20 @@ def select_models(networks, variables, initial_values, theta_bounds,
         `key:value=parameter:tuple of (lower bound, upper bound)` pairs.
     data : memo_py.Data.data
         A memo_py data object used in the statistical inference.
-    mean_only : bool, optional
+    sim_mean_only : bool, optional
+        If the model simulations shall be computed for the first moment (means)
+        only, specify `sim_mean_only=True`. If the model simulations shall be
+        computed for the first and second moments,
+        specify `sim_mean_only=False` (default). If `sim_mean_only=True`,
+        `fit_mean_only` is overwritten with `True` in any case (when
+        higher order moments are not computed, they cannot be fitted).
+    fit_mean_only : bool, optional
         If the inference shall be based on the first moment (means) only,
-        specify `mean_only=True`. If the inference shall be based on information
-        from the first and second moments, specify `mean_only=False` (default).
+        specify `fit_mean_only=True`. If the inference shall be
+        based on information from the first and second moments,
+        specify `fit_mean_only=False` (default). If `sim_mean_only=True`,
+        `fit_mean_only` cannot be `False` and will be overwritten with `True`
+        (when higher order moments are not computed, they cannot be fitted).
     nlive : int, optional
         Number of live points used for the nested sampling; default is `1000`.
         Passed to `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_'s
@@ -129,7 +139,7 @@ def select_models(networks, variables, initial_values, theta_bounds,
 
     # validation check on user inputs
     _validate_selection_input(networks, variables, initial_values,
-                                theta_bounds, data, mean_only)
+                                theta_bounds, data, sim_mean_only, fit_mean_only)
 
     # create input variable 'input_var' (in net_estimation fct) that is stored in
     # 'pool_inputs' for the parallelised loop over the networks
@@ -146,7 +156,7 @@ def select_models(networks, variables, initial_values, theta_bounds,
                             net_theta_bounds,
                             data, # data that is tried to fit by the model
                             est_iter, # integer i denoting the i-th model in the set of models
-                            mean_only,
+                            sim_mean_only, fit_mean_only,
                             nlive,
                             tolerance,
                             bound,
@@ -220,7 +230,7 @@ def net_estimation(input_var):
     net_theta_bounds,
     data, # data that is tried to fit by the model
     est_iter, # integer i denoting the i-th model in the set of models
-    mean_only,
+    sim_mean_only, fit_mean_only,
     nlive,
     tolerance,
     bound,
@@ -230,7 +240,8 @@ def net_estimation(input_var):
     est_name = 'est_' + net.net_name
     est = Estimation(est_name, net, data, est_iter=est_iter)
     est.estimate(net_variables, net_initial_values, net_theta_bounds,
-                                    mean_only, nlive, tolerance, bound, sample)
+                                    sim_mean_only, fit_mean_only,
+                                    nlive, tolerance, bound, sample)
 
     # reset the eval() function 'moment_system' to prevent pickling error
     # 'reset' is just a placeholder string to indicate the reset
@@ -558,7 +569,7 @@ def _dots_wo_bars_evidence_from_bic(estimation_instances, settings):
 
 ### validation functions
 def _validate_selection_input(networks, variables, initial_values,
-                            theta_bounds, data, mean_only):
+                            theta_bounds, data, sim_mean_only, fit_mean_only):
     """Private validation method."""
     # TODO: probably more checks possible to integrate here..
 
@@ -568,8 +579,13 @@ def _validate_selection_input(networks, variables, initial_values,
     else:
         raise TypeError('Instance of Data class expected.')
 
-    # check mean_only
-    if isinstance(mean_only, bool):
+    # check mean_only bools
+    if isinstance(sim_mean_only, bool):
+        pass
+    else:
+        raise TypeError('Bool as mean only option expected.')
+
+    if isinstance(fit_mean_only, bool):
         pass
     else:
         raise TypeError('Bool as mean only option expected.')

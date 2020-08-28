@@ -34,34 +34,32 @@ class GillespieSim(object):
         # executed once before a simulation
         self.gillespie_preparation_exists = False
 
-
     def prepare_gillespie_simulation(self, variables_order, variables_identifier):
         """docstring for ."""
 
-        # TODO: implement variables_order, variables_identifier feature
+        # trigger the preparation if it does not exist already
+        if not self.gillespie_preparation_exists:
+            # preparations to be able to run gillespie simulations
+            # 1) an evaluable numpy array to calculate propensities (sim_gill_propensities_eval)
+            # 2) an executable function to upate node states (sim_gill_reaction_update_exec)
+            # 3) number of possible reactions (sim_gill_reaction_number)
+            (self.sim_gill_propensities_eval,
+                self.sim_gill_reaction_update_exec,
+                self.sim_gill_reaction_number) = self.define_gill_fct(
+                                self.net_hidden_node_order_without_env, self.net_hidden_edges,
+                                self.create_propensities_update_str, self.create_node_state_update_str)
 
-        # preparations to be able to run gillespie simulations
-        # 1) an evaluable numpy array to calculate propensities (sim_gill_propensities_eval)
-        # 2) an executable function to upate node states (sim_gill_reaction_update_exec)
-        # 3) number of possible reactions (sim_gill_reaction_number)
-        (self.sim_gill_propensities_eval,
-            self.sim_gill_reaction_update_exec,
-            self.sim_gill_reaction_number) = self.define_gill_fct(
-                            self.net_hidden_node_order_without_env, self.net_hidden_edges,
-                            self.create_propensities_update_str, self.create_node_state_update_str)
+            self.summation_indices_nodes = self.create_node_summation_indices(self.net_main_node_order_without_env,
+                                                        self.net_hidden_node_order_without_env)
 
-        self.summation_indices_nodes = self.create_node_summation_indices(self.net_main_node_order_without_env,
-                                                    self.net_hidden_node_order_without_env)
+            self.summation_indices_variables = self.create_variables_summation_indices(
+                                                        variables_order,
+                                                        variables_identifier,
+                                                        self.net_main_node_order_without_env,
+                                                        self.net.net_nodes_identifier)
 
-        self.summation_indices_variables = self.create_variables_summation_indices(
-                                                    variables_order,
-                                                    variables_identifier,
-                                                    self.net_main_node_order_without_env,
-                                                    self.net.net_nodes_identifier)
-
-        # once this function has run preparations are done
-        self.gillespie_preparation_exists = True
-
+            # once this function has run preparations are done
+            self.gillespie_preparation_exists = True
 
     def gillespie_simulation(self, initial_values_dict, theta_values_order, time_values):
         """docstring for ."""
@@ -81,7 +79,7 @@ class GillespieSim(object):
             ###
 
             # run the actual gillespie algorithm (first reaction method)
-            sim_gill_sol = self.gill_first_reaction_method_sim_alg(time_values, initial_values, theta_numeric_exec,
+            sim_gill_sol = self.run_gillespie_first_reaction_method(time_values, initial_values, theta_numeric_exec,
                                                     self.sim_gill_propensities_eval, self.sim_gill_reaction_number,
                                                     self.sim_gill_reaction_update_exec)
 
@@ -101,7 +99,7 @@ class GillespieSim(object):
 
     # TODO: implement direct method or other algorithms that might be more efficient
     @staticmethod
-    def gill_first_reaction_method_sim_alg(time_arr_expl, initial_values, reac_rates_exec, prop_arr_eval, num_reacs, reac_event_fct):
+    def run_gillespie_first_reaction_method(time_arr_expl, initial_values, reac_rates_exec, prop_arr_eval, num_reacs, reac_event_fct):
         """docstring for ."""
 
         # initialise solution arrays
@@ -255,7 +253,6 @@ class GillespieSim(object):
         exec(reac_event_fct_str)
         return prop_arr_str, eval('reac_event_fct'), reac_ind_count + 1
 
-
     @staticmethod
     def create_propensities_update_str(reaction_rate_symbolic, start_node_ind):
         """docstring for ."""
@@ -330,7 +327,6 @@ class GillespieSim(object):
             add_to_reac_event_fct_str += f'\t\tnodes_state[{end_node_ind}] += 1\n' # E2
             return add_to_reac_event_fct_str
 
-
     @staticmethod
     def exact_interpolation(simulation, time_array_explicit):
         """docstring for ."""
@@ -384,7 +380,6 @@ class GillespieSim(object):
             sim_sol_expl_time_main_nodes[main_node_ind, :] = np.sum(sim_sol_expl_time[1][sum_tuple_main[main_node_ind], :], axis=0)
 
         return [sim_sol_expl_time[0], sim_sol_expl_time_main_nodes]
-
 
     @staticmethod
     def create_variables_summation_indices(variables_order,

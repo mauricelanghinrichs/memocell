@@ -15,9 +15,6 @@ import numpy as np
 from tqdm import tqdm
 import warnings
 
-# TODO: delete after run time analysis
-import time
-
 # TODO: user input validation?
 
 class Estimation(object):
@@ -92,7 +89,7 @@ class Estimation(object):
         # instantiate object for rate parameter bounds (theta bounds)
         self.net_theta_bounds = None
 
-        # instantiate object for initial values of network states
+        # instantiate object for initial values of network states (main nodes)
         self.net_initial_values = None
 
         # set simulation type of the network to 'moments'
@@ -101,11 +98,10 @@ class Estimation(object):
         # instantiate object for an instance of the simulation class for the network
         self.net_simulation = None
 
-        # instantiate object for first moment only or first and second moments computation
-        self.net_simulation_mean_only = None
-
-        # initialise bool to pass estimate_mode=True to simulation methods
-        self.net_simulation_estimate_mode = True
+        # instantiate objects for simulation and fit mean only modes
+        # (first moment only or first and second moments computation)
+        self.net_simulation_sim_mean_only = None
+        self.net_simulation_fit_mean_only = None
 
         # instantiate object to store best-fit simulation
         # (best-fit computed by median parameter values of their 1d marginals)
@@ -171,7 +167,8 @@ class Estimation(object):
         # ###
 
     def estimate(self, variables, initial_values, theta_bounds,
-                            mean_only=False, nlive=1000, tolerance=0.01,
+                            sim_mean_only=False, fit_mean_only=False,
+                            nlive=1000, tolerance=0.01,
                             bound='multi', sample='unif',):
         """Main method of the estimation class. This method computes model
         estimates and `θ` parameter estimates of a specified model `M` and given data
@@ -209,10 +206,20 @@ class Estimation(object):
         theta_bounds : dict
             Uniform prior bounds of the parameters as
             `key:value=parameter:tuple of (lower bound, upper bound)` dictionary pairs.
-        mean_only : bool, optional
+        sim_mean_only : bool, optional
+            If the model simulations shall be computed for the first moment (means)
+            only, specify `sim_mean_only=True`. If the model simulations shall be
+            computed for the first and second moments,
+            specify `sim_mean_only=False` (default). If `sim_mean_only=True`,
+            `fit_mean_only` is overwritten with `True` in any case (when
+            higher order moments are not computed, they cannot be fitted).
+        fit_mean_only : bool, optional
             If the inference shall be based on the first moment (means) only,
-            specify `mean_only=True`. If the inference shall be based on information
-            from the first and second moments, specify `mean_only=False` (default).
+            specify `fit_mean_only=True`. If the inference shall be
+            based on information from the first and second moments,
+            specify `fit_mean_only=False` (default). If `sim_mean_only=True`,
+            `fit_mean_only` cannot be `False` and will be overwritten with `True`
+            (when higher order moments are not computed, they cannot be fitted).
         nlive : int, optional
             Number of live points used for the nested sampling; default is `1000`.
             Passed to `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_'s
@@ -256,7 +263,8 @@ class Estimation(object):
         # initialise estimation
         # (set up network, simulation and sampling properties)
         self.initialise_estimation(variables, initial_values, theta_bounds,
-                                    mean_only, nlive, tolerance, bound, sample)
+                                    sim_mean_only, fit_mean_only,
+                                    nlive, tolerance, bound, sample)
         # self.initialise_estimation(network_setup, mcmc_setup)
 
         # execute the sampling for the estimation of parameters and model evidence
@@ -273,7 +281,8 @@ class Estimation(object):
 
 
     def initialise_estimation(self, variables, initial_values, theta_bounds,
-                                mean_only, nlive, tolerance, bound, sample):
+                                sim_mean_only, fit_mean_only,
+                                nlive, tolerance, bound, sample):
         """Initialise and prepare an estimation.
 
         Helper function for the `estimate` method, arguments are passed over from
@@ -289,24 +298,26 @@ class Estimation(object):
         self._validate_initial_values_input(self.net.net_nodes_identifier, self.net_simulation_type, initial_values)
         self.net_initial_values = initial_values
 
-        # set the mean only mode (True or False)
-        self.net_simulation_mean_only = mean_only
+        # set the sim (/moments) and fit mean only modes (True or False)
+        # we cannot fit higher moments if they are not computed, thus whenever
+        # sim_mean_only==True we overwrite fit_mean_only=True in any case
+        self.net_simulation_sim_mean_only = sim_mean_only
+        self.net_simulation_fit_mean_only = True if sim_mean_only else fit_mean_only
 
         ### initialise the simulation for the network
         # generate an instance of the Simulation class
         self.net_simulation = Simulation(self.net)
 
-        # pass the mean_only mode to the simulation instance explicitly
-        self.net_simulation.moment_mean_only = self.net_simulation_mean_only
+        # prepare the simulation in 'moments' type
+        self.net_simulation.prepare_simulation(self.net_simulation_type, variables,
+                                    self.net_initial_values, sim_mean_only)
 
-        # prepare simulation variables explicitly
-        self.net_simulation.prepare_simulation_variables(variables)
-
-        # prepare the moment-based approach explicitly
-        self.net_simulation.sim_moments.prepare_moment_simulation(self.net_simulation.sim_variables_order,
-                                                                self.net_simulation.sim_variables_identifier,
-                                                                mean_only=self.net_simulation_mean_only,
-                                                                estimate_mode=self.net_simulation_estimate_mode)
+        # the initial values for the moments have to be computed explicitly
+        self.net_simulation.sim_moments.moment_initial_values = self.net_simulation.sim_moments.process_initial_values_order(
+                                        self.net_simulation.sim_moments.moment_order_hidden,
+                                        self.net_initial_values,
+                                        self.net.net_nodes_identifier,
+                                        type='centric_mean_only')
 
         ### initialise data
         self.data_time_values = self.data.data_time_values
@@ -329,8 +340,10 @@ class Estimation(object):
                                                         self.data.data_variance_order,
                                                         self.data.data_covariance_order)
 
-        # depending on mean only mode, get the number of summary data points
-        if self.net_simulation_mean_only:
+        # depending on fit mean only mode, get the number of summary data points
+        # for data, the fit_mean_only mode is relevant as it determines
+        # the actual data the models have contact with
+        if self.net_simulation_fit_mean_only:
             self.data_num_values = self.data.data_num_values_mean_only
         else:
             self.data_num_values = self.data.data_num_values
@@ -340,10 +353,12 @@ class Estimation(object):
         # self.bay_log_prior_supp = self.compute_bayes_log_prior_value_on_support(self.net_theta_bounds)
 
         # compute the model-independent term of the log_likelihood
-        self.bay_log_likelihood_norm = self.compute_log_likelihood_norm(self.data_mean_values,
+        # (similary here, net_simulation_fit_mean_only is used)
+        self.bay_log_likelihood_norm = self.compute_log_likelihood_norm(
+                                    self.data_mean_values,
                                     self.data_var_values,
                                     self.data_cov_values,
-                                    self.net_simulation_mean_only)
+                                    self.net_simulation_fit_mean_only)
 
         # self.bay_mcmc_burn_in_steps = mcmc_setup['burn_in_steps'] # sampling steps per walker
         # self.bay_mcmc_sampling_steps = mcmc_setup['sampling_steps'] # sampling steps per walker
@@ -359,8 +374,8 @@ class Estimation(object):
         self.bay_nested_sampler = NestedSampler(self.log_likelihood, self.prior_transform,
                                                 self.bay_nested_ndims, bound=self.bay_nested_bound,
                                                 sample=self.bay_nested_sample, nlive=self.bay_nested_nlive,
-                                    logl_args=((self.net_initial_values, self.data_time_values,
-                                                self.net_simulation.sim_variables, self.data_mean_values,
+                                    logl_args=((self.net_simulation.sim_moments.moment_initial_values,
+                                                self.data_time_values, self.data_mean_values,
                                                 self.data_var_values, self.data_cov_values)))
 
 
@@ -745,7 +760,8 @@ class Estimation(object):
     #         # print('log_prior (ms)', (et - st)*1000)
     #         return -np.inf
 
-    def log_likelihood(self, theta_values, initial_values, time_values, simulation_variables, mean_data, var_data, cov_data):
+    def log_likelihood(self, theta_values, moment_initial_values, time_values,
+                                                mean_data, var_data, cov_data):
         """Compute the logarithmic likelihood :math:`\\mathrm{ln}(\\mathcal{L(\\theta)}) =
         \\mathrm{ln}(p(D | \\theta, M))` for parameter values :math:`\\theta` of a given
         model :math:`M` and given data :math:`D`. This method is used in the nested
@@ -775,18 +791,16 @@ class Estimation(object):
         ----------
         theta_values : 1d numpy.ndarray
             Values for parameters :math:`\\theta` in the model order (according to `net.net_theta_symbolic`
-            via `net.net_rates_identifier`); passed to `sim.simulate` method.
-        initial_values : dict
-            Initial values for the network main nodes (dict with `key:value=node:initial value`
-            pairs); passed to `sim.simulate` method. Internally they are processed to `moment_initial_values`
-            for the initial values of the hidden node moments.
+            via `net.net_rates_identifier`); passed to a moment simulation method.
+        moment_initial_values : dict
+            Initial values for all moments of the hidden network layer;
+            passed to a moment simulation method. Typically available at
+            `est.net_simulation.sim_moments.moment_initial_values`; order of the
+            moments corresponds to
+            `est.net_simulation.sim_moments.moment_order_hidden`.
         time_values : 1d numpy.ndarray
-            Time values of data and model evaluation points; passed to `sim.simulate` method.
-        simulation_variables : dict
-            Information of the simulation values (dict with `key:value=sim variable:tuple of main nodes`
-            pairs); passed to `sim.simulate` method. Simulation variables have to
-            correspond to data variables; multiple network main nodes can be
-            summed to one simulation variable.
+            Time values of data and model evaluation points;
+            passed to a moment simulation method.
         mean_data : numpy.ndarray
             Data mean statistics and standard errors with shape
             (2, `number of means`, `number of time points`) that have been matched
@@ -829,22 +843,14 @@ class Estimation(object):
         # on the squared differences between data and model weighted by
         # measurement uncertainties (see chi's below)
 
-        # st = time.time()
-
         # mean, variance (if specified), covariance (if specified) of the model
         # are generated by the simulation class by a moment-based approach
-        mean_m, var_m, cov_m  = self.net_simulation.simulate(self.net_simulation_type, initial_values,
-                                                                        theta_values, time_values,
-                                                                        simulation_variables,
-                                                                        moment_mean_only=self.net_simulation_mean_only,
-                                                                        estimate_mode=self.net_simulation_estimate_mode)
-        # et = time.time()
-        # print('simulate (ms)', (et - st)*1000)
-
-        # st = time.time()
+        mean_m, var_m, cov_m  = self.net_simulation.sim_moments.run_moment_ode_system(
+                                            moment_initial_values,
+                                            time_values, theta_values)
 
         # compute the value of the log_likelihood
-        if self.net_simulation_mean_only:
+        if self.net_simulation_fit_mean_only:
             # when only mean values are fitted (first moments only)
             chi_mean = np.sum( ((mean_data[0, :, :] - mean_m)/(mean_data[1, :, :]))**2 )
             chi_var = 0.0
@@ -855,13 +861,11 @@ class Estimation(object):
             chi_var = np.sum( ((var_data[0, :, :] - var_m)/(var_data[1, :, :]))**2 )
             chi_cov = np.sum( ((cov_data[0, :, :] - cov_m)/(cov_data[1, :, :]))**2 )
 
-        # et = time.time()
-        # print('chi (ms)', (et - st)*1000)
         return -0.5 * (chi_mean + chi_var + chi_cov) + self.bay_log_likelihood_norm
 
 
     @staticmethod
-    def compute_log_likelihood_norm(mean_data, var_data, cov_data, mean_only):
+    def compute_log_likelihood_norm(mean_data, var_data, cov_data, fit_mean_only):
         """Compute the model-independent normalisation term of the logarithmic
         likelihood. This value can be computed once and then used for all
         subsequent evaluations of the log-likelihood.
@@ -895,9 +899,9 @@ class Estimation(object):
             that have been matched to the model order. `cov_data[0, :, :]` contains
             the statistics; `cov_data[1, :, :]` contains the standard errors.
             After estimation initialisation available at `est.data_cov_values`.
-        mean_only : bool
-            Calculate the normalisation for an estimation in `mean_only=False`
-            or `mean_only=True` mode.
+        fit_mean_only : bool
+            Calculate the normalisation for an estimation in `fit_mean_only=False`
+            or `fit_mean_only=True` mode.
 
         Returns
         -------
@@ -935,7 +939,7 @@ class Estimation(object):
 
         # compute the model-independent term of the log_likelihood
         # this is a fixed value that can be computed once over the data standard errors
-        if mean_only:
+        if fit_mean_only:
             norm_mean = np.sum( np.log(2 * np.pi * (mean_data[1, :, :]**2)) )
             norm_var = 0.0
             norm_cov = 0.0
@@ -1126,6 +1130,14 @@ class Estimation(object):
 
         # preallocate numpy arrays for the ordered data that is of same shape as the original data
         # if there is some mean_only mode active, var and cov arrays will stay at zeros
+        # cases (sim_mean_only determines the variables order):
+        # 1) if sim_mean_only=True, fit_mean_only is forced to be True, so we dont
+        #       catch var and cov data and also dont fit it
+        # 2) if sim_mean_only=False, fit_mean_only can be False too (default case);
+        #       var and cov data is catched and also fitted
+        # 3) if sim_mean_only=False, fit_mean_only can be True; we want to see full
+        #       model summary stats but only fit to the mean data; in this case we
+        #       catch the data but it is then later ignored in the fit (TODO: check)
         data_mean_ordered = np.zeros(data_mean.shape)
         data_var_ordered = np.zeros(data_var.shape)
         data_cov_ordered = np.zeros(data_cov.shape)
@@ -1134,11 +1146,6 @@ class Estimation(object):
         model_mean = [sim_variables_identifier[variable][0] for variable, in sim_variables_order[0]]
         model_var = [(sim_variables_identifier[variable1][0], sim_variables_identifier[variable2][0]) for variable1, variable2 in sim_variables_order[1] if variable1==variable2]
         model_cov = [(sim_variables_identifier[variable1][0], sim_variables_identifier[variable2][0]) for variable1, variable2 in sim_variables_order[1] if variable1!=variable2]
-        # print(sim_variables_order)
-        # print(sim_variables_identifier)
-        # print(model_mean)
-        # print(model_var)
-        # print(model_cov)
 
         # loop over the mean order of the model to sort data accordingly
         for i, model_inf in enumerate(model_mean):
@@ -1181,12 +1188,10 @@ class Estimation(object):
         if self.net_simulation.sim_moments.moment_system=='reset':
             self.net_simulation.sim_moments.set_moment_eqs_from_template_after_reset()
 
-        self.net_simulation_bestfit = self.net_simulation.simulate(self.net_simulation_type, self.net_initial_values,
-                                                                        self.bay_est_params_median, self.data_time_values_dense,
-                                                                        self.net_simulation.sim_variables,
-                                                                        moment_mean_only=self.net_simulation_mean_only,
-                                                                        estimate_mode=self.net_simulation_estimate_mode)
-
+        self.net_simulation_bestfit = self.net_simulation.sim_moments.run_moment_ode_system(
+                                            self.net_simulation.sim_moments.moment_initial_values,
+                                            self.data_time_values_dense,
+                                            self.bay_est_params_median)
         self.net_simulation_bestfit_exists = True
 
 
@@ -1235,12 +1240,13 @@ class Estimation(object):
         inds_random_selection = np.random.choice(inds, size=(num_sim_ensemble), replace=True)
         theta_ensemble = self.bay_est_samples_weighted[inds_random_selection, :]
 
-        sim_ensemble = [self.net_simulation.simulate(self.net_simulation_type, self.net_initial_values,
-                                                                theta, self.data_time_values_dense,
-                                                                self.net_simulation.sim_variables,
-                                                                moment_mean_only=self.net_simulation_mean_only,
-                                                                estimate_mode=self.net_simulation_estimate_mode)
-                                                                for theta in theta_ensemble]
+
+
+        sim_ensemble = [self.net_simulation.sim_moments.run_moment_ode_system(
+                                            self.net_simulation.sim_moments.moment_initial_values,
+                                            self.data_time_values_dense,
+                                            theta)
+                                            for theta in theta_ensemble]
 
         # then we compute the statistic of the sampled trajectories (means, variances, covariances)
         # and the corresponding 2.5th and 97.5th percentiles for 95%-credible band (both for all time points)

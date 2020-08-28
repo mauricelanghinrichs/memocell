@@ -29,13 +29,12 @@ class Simulation(object):
         self.sim_variables_identifier = None
         self.sim_variables_order = None
 
-
         # instantiate object to store results of latest moment and gillespie simulation
         self.sim_moments_res = None
         self.sim_gillespie_res = None
 
         # instantiate object to indicate mean only mode in case of moment simulations
-        self.moment_mean_only = None
+        self.sim_mean_only = None
 
 
 # TODO: need input
@@ -51,108 +50,127 @@ class Simulation(object):
 # - sym_params (in the right order with values)
 # - init_cond (in the right order with values)
 
-    def simulate(self, simulation_type, initial_values, theta_values, time_values, simulation_variables, estimate_mode=False, **kwargs):
+    def simulate(self, simulation_type, simulation_variables, initial_values,
+                        theta_values, time_values, sim_mean_only=False):
+        """docstring for .
+
+        sim_mean_only=False
+        is only relevant for moments, will be set to true for gilespie to have
+        only simple variables list
+        """
+
+        # prepare simulation with some validation and setting symbolic
+        # information for sim_mean_only and simulation_variables
+        # and trigger preparations in downstream moment or gillespie objects
+        self.prepare_simulation(simulation_type, simulation_variables,
+                                    initial_values, sim_mean_only)
+
+        # validate and set time_values (at self.sim_time_values)
+        self.prepare_time_values(time_values)
+
+        # validate and read out theta parameters from dict to ordered array
+        theta_values_order = self.prepare_theta_values(theta_values)
+
+        # ask for simulation_type and run respective class methods (Moments or Gillespie)
+        if simulation_type=='moments':
+            # run, store and return a simulation
+            self.sim_moments_res = self.sim_moments.moment_simulation(initial_values,
+                                            theta_values_order, self.sim_time_values)
+            return self.sim_moments_res
+        elif simulation_type=='gillespie':
+            # NOTE: maybe add kwargs for automatic multiple simulations, N = ...
+            # run, store and return a simulation
+            self.sim_gillespie_res = self.sim_gillespie.gillespie_simulation(initial_values,
+                                            theta_values_order, self.sim_time_values)
+            return self.sim_gillespie_res
+
+    def prepare_simulation(self, simulation_type, simulation_variables,
+                                initial_values, sim_mean_only):
         """docstring for ."""
+        ### user input is checked and theta values (dict) are ordered
+        # check user input for the simulation_type
+        self._validate_simulation_type_input(simulation_type)
 
-        # if simulations are done on its own (estimate_mode=False)
-        # user input has to be checked and theta values have to be ordered
-        if not estimate_mode:
-            # check user input for the simulation_type
-            self._validate_simulation_type_input(simulation_type)
+        # check user input for the initial values
+        self._validate_initial_values_input(self.net.net_nodes_identifier, simulation_type, initial_values)
 
-            # check user input for the initial values
-            self._validate_initial_values_input(self.net.net_nodes_identifier, simulation_type, initial_values)
+        ### some symbolic preparations
+        # read out mean only mode (default is False meaning that first
+        # and second moments are used then)
+        self.sim_mean_only = self.process_sim_mean_only(simulation_type, sim_mean_only)
 
-            # check user input for the rate parameters (theta)
-            self._validate_theta_values_input(self.net.net_rates_identifier, theta_values)
+        # prepare simulation variables (this method acts only upon change
+        # of previous simulation variables (or first time) and will in this
+        # case also reset moment and gillespie preparations to force re-run)
+        self.prepare_simulation_variables(simulation_variables)
 
-            # check user input for the time values
-            self._validate_time_values_input(time_values)
-            self.sim_time_values = time_values
+        ### depending on simulation type, trigger also preparations in the
+        ### downstream MomentsSim or GillespieSim objects
+        if simulation_type=='moments':
+            # the first time a Moments simulation is run
+            # (or in case of a reset), preparations are done
+            self.sim_moments.prepare_moment_simulation(self.sim_variables_order,
+                                                    self.sim_variables_identifier,
+                                                    self.sim_mean_only)
+        elif simulation_type=='gillespie':
+            # the first time a Gillespie simulation is run
+            # (or in case of a reset), preparations are done
+            self.sim_gillespie.prepare_gillespie_simulation(self.sim_variables_order,
+                                                            self.sim_variables_identifier)
 
-            # read out initial_values and theta_values (dictionaries) according to node or theta order
-            # initial_values_order = [initial_values[self.net.net_nodes_identifier[node_id]]
-            #                         for node_id,  in self.net.net_main_node_order[0] if node_id!='Z_env']
-            theta_values_order = np.array([theta_values[self.net.net_rates_identifier[rate_id]]
-                                    for rate_id in self.net.net_theta_symbolic])
+    def prepare_time_values(self, time_values):
+        """docstring for ."""
+        # check user input for the time values
+        self._validate_time_values_input(time_values)
+        self.sim_time_values = time_values
 
-            # read out kwargs to see if first moments / mean only shall be computed
-            # else the first and second moments will be generated
-            if simulation_type=='moments':
-                try:
-                    self.moment_mean_only = kwargs['moment_mean_only'] if isinstance(kwargs['moment_mean_only'], bool) else False
-                except:
-                    self.moment_mean_only = False
-            # set to True in case of gillespie simulations
-            else:
-                self.moment_mean_only = True
+    def prepare_theta_values(self, theta_values_dict):
+        """docstring for ."""
+        # check user input for the rate parameters (theta)
+        self._validate_theta_values_input(self.net.net_rates_identifier, theta_values_dict)
 
-        # in the estimate_mode (call of simulation class from estimation class),
-        # some steps can be skipped as speed up
-        else:
-            # pass time_values without validation
-            self.sim_time_values = time_values
+        # read out theta_values (dictionaries) according to theta order
+        return self.process_theta_values(theta_values_dict,
+                                self.net.net_rates_identifier, self.net.net_theta_symbolic)
 
-            # theta_values are already ordered in this case
-            theta_values_order = theta_values
+    @staticmethod
+    def process_theta_values(theta_values_dict, net_rates_identifier, net_theta_symbolic):
+        """docstring for ."""
+        # read out theta_values_dict (dictionary) to an ordered array of
+        # parameter value according to order in net_theta_symbolic
+        return np.array([theta_values_dict[net_rates_identifier[rate_id]]
+                                for rate_id in net_theta_symbolic])
 
+    @staticmethod
+    def process_sim_mean_only(simulation_type, mean_only):
+        """docstring for ."""
+        # is only relevant for moment simulation;
+        # for gillespie only variables_order[0] is used thus
+        # sim_mean_only has no effect but just for aesthetics we set
+        # variables_order to only have normal variables (=
+        # first moments) in this case
+        return True if simulation_type=='gillespie' else mean_only
+
+    def prepare_simulation_variables(self, simulation_variables):
+        """docstring for ."""
         # upon change of simulation output variables, or when provided for the first time,
         # set up object for the order and identification of the simulation variables
         if self.sim_variables!=simulation_variables:
 
-            # this method sets self.sim_variables, self.sim_variables_identifier
-            # and self.sim_variables_order
-            self.prepare_simulation_variables(simulation_variables)
+            # validate the user input information
+            self.sim_variables = self._validate_simulation_variables_input(simulation_variables, self.net.net_nodes_identifier)
+
+            # create unique identifiers for the simulation variables ('V_<integer>')
+            self.sim_variables_identifier = self.create_variables_identifiers(self.sim_variables)
+
+            # create an order of variable identifiers for a sequence (list index=0)
+            # and sequence of unique pairs (list index=1)
+            self.sim_variables_order = self.create_variables_order(self.sim_variables_identifier, self.sim_mean_only)
 
             # reset preparations for moments or gillespie simulation to force a re-run
             # upon change of simulation variables
             self.sim_moments.moments_preparation_exists = False
             self.sim_gillespie.gillespie_preparation_exists = False
-
-        # ask for simulation_type and run respective class methods (Moments or Gillespie)
-        if simulation_type=='moments':
-
-            # the first time a Moments simulation is run, preparations have to be done
-            if not self.sim_moments.moments_preparation_exists:
-
-                # actual preparatory computations
-                self.sim_moments.prepare_moment_simulation(self.sim_variables_order,
-                                                                self.sim_variables_identifier,
-                                                                mean_only=self.moment_mean_only,
-                                                                estimate_mode=estimate_mode)
-
-            # run, store and return a simulation
-            self.sim_moments_res = self.sim_moments.moment_simulation(initial_values, theta_values_order, self.sim_time_values)
-            return self.sim_moments_res
-
-        elif simulation_type=='gillespie':
-
-            # the first time a Gillespie simulation is run, preparations have to be done
-            # TODO: implement new variables feature
-            if not self.sim_gillespie.gillespie_preparation_exists:
-                self.sim_gillespie.prepare_gillespie_simulation(self.sim_variables_order,
-                                                                self.sim_variables_identifier)
-
-            # NOTE: maybe add kwargs for automatic multiple simulations, N = ...
-
-            # run, store and return a simulation
-            self.sim_gillespie_res = self.sim_gillespie.gillespie_simulation(initial_values, theta_values_order, self.sim_time_values)
-            return self.sim_gillespie_res
-
-
-    def prepare_simulation_variables(self, simulation_variables):
-        """docstring for ."""
-
-        # validate the user input information
-        self.sim_variables = self._validate_simulation_variables_input(simulation_variables, self.net.net_nodes_identifier)
-
-        # create unique identifiers for the simulation variables ('V_<integer>')
-        self.sim_variables_identifier = self.create_variables_identifiers(self.sim_variables)
-
-        # create an order of variable identifiers for a sequence (list index=0)
-        # and sequence of unique pairs (list index=1)
-        self.sim_variables_order = self.create_variables_order(self.sim_variables_identifier, self.moment_mean_only)
-
 
     @staticmethod
     def create_variables_identifiers(variables):
@@ -167,7 +185,6 @@ class Simulation(object):
 
         # return a dictionary with user provided variable tuples as values for variable identifiers as keys
         return dict(zip(ident_variables_list, variables_sorted))
-
 
     @staticmethod
     def create_variables_order(variables_identifier, mean_only):

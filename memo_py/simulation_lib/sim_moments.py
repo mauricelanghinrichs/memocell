@@ -28,11 +28,7 @@ class MomentsSim(object):
 
         # boolean to indicate if (first) or (first and second) order moments should be derived
         # specified through upper level class Simulation
-        self.moment_mean_only = None
-
-        # boolean to indicate whether simulation is called from estimation class or not
-        # specified through upper level class Simulation
-        self.moment_estimation_mode = None
+        self.sim_mean_only = None
 
         # initialise boolean to handle the preparation step that has to be
         # executed once before a simulation
@@ -48,7 +44,6 @@ class MomentsSim(object):
 
         # instantiate object for initial values for the moments
         self.moment_initial_values = None
-        self.moment_initial_values_exist = False
 
         # instantiate objects for string-replaceable symbolic parameters (theta notation)
         self.theta_replaceable = list()
@@ -81,56 +76,56 @@ class MomentsSim(object):
         self.moment_num_vars = None
         self.moment_num_covs = None
 
-
-    def prepare_moment_simulation(self, variables_order, variables_identifier, mean_only=False, estimate_mode=False):
+    def prepare_moment_simulation(self, variables_order, variables_identifier, mean_only):
         """docstring for ."""
 
-        # set information for mean_only and estimation modes
-        self.moment_mean_only = mean_only
-        self.moment_estimation_mode = estimate_mode
+        # trigger the preparation if it does not exist already
+        if not self.moments_preparation_exists:
+            # set information for mean_only
+            self.sim_mean_only = mean_only
 
-        # derive an order of the moments
-        self.moment_order_main = self.derive_moment_order_main(self.net.net_main_node_order, self.moment_mean_only)
-        self.moment_order_hidden = self.derive_moment_order_hidden(self.net.net_hidden_node_order, self.moment_mean_only)
+            # derive an order of the moments
+            self.moment_order_main = self.derive_moment_order_main(self.net.net_main_node_order, self.sim_mean_only)
+            self.moment_order_hidden = self.derive_moment_order_hidden(self.net.net_hidden_node_order, self.sim_mean_only)
 
-        # create a list of auxiliary variables for the moment approach
-        # set of variables identical to the nodes in moment_order_hidden
-        # e.g., 'Z_0__module_1__0' provides 'z_0__module_1__0_q' auxiliary variable
-        # 'q' at the end is short for 'quit' and indicates the end of the string
-        # (this is help for string replacement)
-        self.moment_aux_vars = ['z' + node[1:] + '_q' for node, in self.moment_order_hidden[0]]
-        # create a dictionary that links each node (key) to its auxiliary variable (value)
-        self.moment_aux_vars_dict = dict(zip([node for node, in self.moment_order_hidden[0]], self.moment_aux_vars))
+            # create a list of auxiliary variables for the moment approach
+            # set of variables identical to the nodes in moment_order_hidden
+            # e.g., 'Z_0__module_1__0' provides 'z_0__module_1__0_q' auxiliary variable
+            # 'q' at the end is short for 'quit' and indicates the end of the string
+            # (this is help for string replacement)
+            self.moment_aux_vars = ['z' + node[1:] + '_q' for node, in self.moment_order_hidden[0]]
+            # create a dictionary that links each node (key) to its auxiliary variable (value)
+            self.moment_aux_vars_dict = dict(zip([node for node, in self.moment_order_hidden[0]], self.moment_aux_vars))
 
-        # create a list and dictionary of theta identifiers with '_q' indicating end
-        self.theta_replaceable = [theta + '_q' for theta in self.net.net_theta_symbolic]
-        self.theta_replaceable_dict = dict(zip(self.net.net_theta_symbolic, self.theta_replaceable))
+            # create a list and dictionary of theta identifiers with '_q' indicating end
+            self.theta_replaceable = [theta + '_q' for theta in self.net.net_theta_symbolic]
+            self.theta_replaceable_dict = dict(zip(self.net.net_theta_symbolic, self.theta_replaceable))
 
-        # derive the partial differential equation of the probability generating function
-        self.moment_pde = self.derive_moment_pde(self.net_hidden_edges, self.moment_aux_vars, self.moment_aux_vars_dict, self.theta_replaceable_dict)
+            # derive the partial differential equation of the probability generating function
+            self.moment_pde = self.derive_moment_pde(self.net_hidden_edges, self.moment_aux_vars, self.moment_aux_vars_dict, self.theta_replaceable_dict)
 
-        # derive differential equations for the moments (E(X), E(X (X-1)), E(X Y))
-        self.moment_eqs = self.derive_moment_eqs(self.moment_pde, self.moment_order_hidden, self.moment_aux_vars, self.moment_aux_vars_dict, self.theta_replaceable)
+            # derive differential equations for the moments (E(X), E(X (X-1)), E(X Y))
+            self.moment_eqs = self.derive_moment_eqs(self.moment_pde, self.moment_order_hidden, self.moment_aux_vars, self.moment_aux_vars_dict, self.theta_replaceable)
 
-        # for moments in the main network, collect the nodes of the hidden network for summation
-        (self.moment_num_means, self.moment_mean_ind, self.moment_num_vars,
-        self.moment_var_ind_intra, self.moment_var_ind_inter, self.moment_num_covs,
-        self.moment_cov_ind) = self.get_indices_for_solution_readout(self.moment_order_main, self.moment_order_hidden)
+            # for moments in the main network, collect the nodes of the hidden network for summation
+            (self.moment_num_means, self.moment_mean_ind, self.moment_num_vars,
+            self.moment_var_ind_intra, self.moment_var_ind_inter, self.moment_num_covs,
+            self.moment_cov_ind) = self.get_indices_for_solution_readout(self.moment_order_main, self.moment_order_hidden)
 
-        # setup an executable string for the simuation of the moment equations
-        self.moment_system = self.setup_executable_moment_eqs_template(self.moment_eqs)
+            # setup an executable string for the simuation of the moment equations
+            self.moment_system = self.setup_executable_moment_eqs_template(self.moment_eqs)
 
-        # TODO: variables feature
-        (self.variables_num_means, self.variables_mean_ind,
-        self.variables_num_vars, self.variables_var_ind,
-        self.variables_num_covs, self.variables_cov_ind) = self.get_indices_for_moment_readout(
-                                                                        variables_order,
-                                                                        variables_identifier,
-                                                                        self.moment_order_main,
-                                                                        self.net.net_nodes_identifier)
+            # TODO: variables feature
+            (self.variables_num_means, self.variables_mean_ind,
+            self.variables_num_vars, self.variables_var_ind,
+            self.variables_num_covs, self.variables_cov_ind) = self.get_indices_for_moment_readout(
+                                                                            variables_order,
+                                                                            variables_identifier,
+                                                                            self.moment_order_main,
+                                                                            self.net.net_nodes_identifier)
 
-        # once this function has run preparations are done
-        self.moments_preparation_exists = True
+            # once this function has run preparations are done
+            self.moments_preparation_exists = True
 
     def moment_simulation(self, initial_values_dict, theta_values_order, time_values):
         """docstring for ."""
@@ -141,32 +136,150 @@ class MomentsSim(object):
         # check if preparation was executed
         if self.moments_preparation_exists:
 
-            # if not in estimation_mode, process user given initial values to hidden nodes
-            if not self.moment_estimation_mode:
-                self.moment_initial_values = self.process_initial_values_order(self.moment_order_hidden,
-                                                                    initial_values_dict,
-                                                                    self.net.net_nodes_identifier,
-                                                                    type='centric_mean_only')
-                self.moment_initial_values_exist = True
+            # process user given initial values to hidden nodes
+            # NOTE: this happens every time, if moment_initial_values don't change
+            # for many moment_simulation calls one should prepare them separately
+            # and then use run_moment_ode_system directly
+            self.moment_initial_values = self.process_initial_values_order(
+                                                    self.moment_order_hidden,
+                                                    initial_values_dict,
+                                                    self.net.net_nodes_identifier,
+                                                    type='centric_mean_only')
 
-            # if in estimation_mode, process user given initial values to hidden nodes only the first time
-            else:
-                if self.moment_initial_values_exist:
-                    pass
-                else:
-                    # process user given initial values to hidden nodes
-                    self.moment_initial_values = self.process_initial_values_order(self.moment_order_hidden,
-                                                                        initial_values_dict,
-                                                                        self.net.net_nodes_identifier,
-                                                                        type='centric_mean_only')
-                    self.moment_initial_values_exist = True
 
-            # setting the numerical values of the rates (as theta identifiers and in symbolic theta order)
+            # setting the numerical values of the rates
+            # (as theta identifiers and in symbolic theta order)
             self.theta_numeric = theta_values_order
             ###
 
             # simulate the network, given initial_values, time points and parameters (theta)
-            return self.forward_pass(self.moment_initial_values, time_values, theta_values_order)
+            return self.run_moment_ode_system(self.moment_initial_values, time_values, theta_values_order)
+
+    def run_moment_ode_system(self, moment_initial_values, time_values, theta_values):
+        """docstring for ."""
+        # run_moment_ode_system triggers one integration of the ODE system
+        # yielding a solution of the different moments over time
+        # the solution depends on the initial condition (moment_initial_values)
+        # and the parameters (theta_values) of the ode system
+        # afterwards the means (more precisely the expectation), variances and
+        # covariances are computed by using the appropriate moment solutions
+        # NOTE: in some cases we use explicitly that np.sum([]) = 0 (on any empty array),
+        # e.g. when there are no inter variances
+
+        # number of time points
+        num_time_points = len(time_values)
+
+        # here python's scipy ode integrator is used
+        sol = odeint(self.moment_system, moment_initial_values, time_values, args=(theta_values, ))
+
+        ### sum up hidden layer to main layer nodes
+        # NOTE: the rules for summation follow preceding theoretical derivations
+        # NOTE: idea: the self.mean_ind[i, 0] stuff now has to give tuples
+        # and then np.sum() over the higher dimensional array
+        mean = np.zeros((self.moment_num_means, num_time_points))
+        for i in range(self.moment_num_means):
+            mean[i, :] = np.sum(sol[:, self.moment_mean_ind[i, 0]], axis=1)
+
+        var_intra = np.zeros((self.moment_num_vars, num_time_points))
+        var_inter = np.zeros((self.moment_num_vars, num_time_points))
+        for i in range(self.moment_num_vars):
+            var_intra[i, :] = np.sum(sol[:, self.moment_var_ind_intra[i, 0]]
+                                    + sol[:, self.moment_var_ind_intra[i, 1]]
+                                    - sol[:, self.moment_var_ind_intra[i, 1]]**2, axis=1)
+            var_inter[i, :] = 2.0 * np.sum(sol[:, self.moment_var_ind_inter[i, 0]]
+                                    - sol[:, self.moment_var_ind_inter[i, 1]] * sol[:, self.moment_var_ind_inter[i, 2]], axis=1)
+        var = var_intra + var_inter
+
+        cov = np.zeros((self.moment_num_covs, num_time_points))
+        for i in range(self.moment_num_covs):
+            cov[i, :] = np.sum(sol[:, self.moment_cov_ind[i, 0]]
+                            - sol[:, self.moment_cov_ind[i, 1]] * sol[:, self.moment_cov_ind[i, 2]], axis=1)
+        ###
+
+        ### sum up or reorder solution to obtain the simulation variables output
+        # TODO: here
+        variables_mean = np.zeros((self.variables_num_means, num_time_points))
+        variables_var = np.zeros((self.variables_num_vars, num_time_points))
+        variables_cov = np.zeros((self.variables_num_covs, num_time_points))
+
+        for i in range(self.variables_num_means):
+            variables_mean[i, :] = np.sum(mean[self.variables_mean_ind[i, 0], :], axis=0)
+
+        for i in range(self.variables_num_vars):
+            variables_var[i, :] = (np.sum(var[self.variables_var_ind[i, 0], :], axis=0) +
+                                    np.sum(cov[self.variables_var_ind[i, 1], :], axis=0))
+
+        for i in range(self.variables_num_covs):
+            variables_cov[i, :] = (np.sum(var[self.variables_cov_ind[i, 0], :], axis=0) +
+                                    np.sum(cov[self.variables_cov_ind[i, 1], :], axis=0))
+        ###
+        return variables_mean, variables_var, variables_cov
+
+    @staticmethod
+    def process_initial_values_order(moment_order_hidden, initial_values_dict, net_nodes_identifier, type=None):
+        """docstring for ."""
+
+        # NOTE: there are many more types that could be imagined and implemented
+        if type == 'centric_mean_only':
+            # compute initial value for the hidden layer based on assumptions:
+            # - user-given initial values set mean levels to start with on the main layer
+            # - no variance of mean nodes, no covariance between main nodes
+            # - mean levels in the hidden layer are focused solely on centric nodes
+            # - no variance or covariance for hidden nodes
+
+            # this processing type gives rise to the following initial values for hidden nodes
+            # let x0 and y0 denote the respective mean levels on the main layer
+            # E( X_centric ) = x0,
+            # E( X_centric * (X_centric - 1) ) = x0 * x0 - x0,
+            # E( X_centric * Y_centric ) = x0 * y0
+            # and all remaining moments = 0
+
+            # loop over moment_order for hidden net and find initial values as above
+            init = list()
+
+            # first moments
+            for node, in moment_order_hidden[0]:
+                # e.g., 'Z_0__module_1__0' or 'Z_0__centric'
+                node_split = node.split('__')
+
+                # get centric nodes and read out initial values (x0, y0, ...)
+                # case: E( X_centric ) = x0
+                if node_split[1] == 'centric':
+                    node_id = node_split[0]
+                    init_val = float(initial_values_dict[net_nodes_identifier[node_id]])
+
+                else:
+                    init_val = 0.0
+
+                init.append(init_val)
+
+            # second moments
+            for node1, node2 in moment_order_hidden[1]:
+                node1_split = node1.split('__')
+                node2_split = node2.split('__')
+
+                if node1_split[1] == 'centric' and node2_split[1] == 'centric':
+                    node1_id = node1_split[0]
+                    node2_id = node2_split[0]
+
+                    # case: E( X_centric * (X_centric - 1) ) = x0 * x0 - x0
+                    if node1_id == node2_id:
+                        init_val1 = float(initial_values_dict[net_nodes_identifier[node1_id]])
+                        init_val = init_val1 * init_val1 - init_val1
+
+                    # case: E( X_centric * Y_centric ) = x0 * y0
+                    else:
+                        init_val1 = float(initial_values_dict[net_nodes_identifier[node1_id]])
+                        init_val2 = float(initial_values_dict[net_nodes_identifier[node2_id]])
+                        init_val = init_val1 * init_val2
+                else:
+                    init_val = 0.0
+
+                init.append(init_val)
+
+            return np.array(init)
+        else:
+            raise ValueError('Type \'centric_mean_only\' expected for processing initial values.')
 
     @staticmethod
     def derive_moment_order_main(node_order, mean_only):
@@ -617,73 +730,6 @@ class MomentsSim(object):
         variables_num_vars, variables_var_ind,
         variables_num_covs, variables_cov_ind)
 
-
-    @staticmethod
-    def process_initial_values_order(moment_order_hidden, initial_values_dict, net_nodes_identifier, type=None):
-        """docstring for ."""
-
-        # NOTE: there are many more types that could be imagined and implemented
-        if type == 'centric_mean_only':
-            # compute initial value for the hidden layer based on assumptions:
-            # - user-given initial values set mean levels to start with on the main layer
-            # - no variance of mean nodes, no covariance between main nodes
-            # - mean levels in the hidden layer are focused solely on centric nodes
-            # - no variance or covariance for hidden nodes
-
-            # this processing type gives rise to the following initial values for hidden nodes
-            # let x0 and y0 denote the respective mean levels on the main layer
-            # E( X_centric ) = x0,
-            # E( X_centric * (X_centric - 1) ) = x0 * x0 - x0,
-            # E( X_centric * Y_centric ) = x0 * y0
-            # and all remaining moments = 0
-
-            # loop over moment_order for hidden net and find initial values as above
-            init = list()
-
-            # first moments
-            for node, in moment_order_hidden[0]:
-                # e.g., 'Z_0__module_1__0' or 'Z_0__centric'
-                node_split = node.split('__')
-
-                # get centric nodes and read out initial values (x0, y0, ...)
-                # case: E( X_centric ) = x0
-                if node_split[1] == 'centric':
-                    node_id = node_split[0]
-                    init_val = float(initial_values_dict[net_nodes_identifier[node_id]])
-
-                else:
-                    init_val = 0.0
-
-                init.append(init_val)
-
-            # second moments
-            for node1, node2 in moment_order_hidden[1]:
-                node1_split = node1.split('__')
-                node2_split = node2.split('__')
-
-                if node1_split[1] == 'centric' and node2_split[1] == 'centric':
-                    node1_id = node1_split[0]
-                    node2_id = node2_split[0]
-
-                    # case: E( X_centric * (X_centric - 1) ) = x0 * x0 - x0
-                    if node1_id == node2_id:
-                        init_val1 = float(initial_values_dict[net_nodes_identifier[node1_id]])
-                        init_val = init_val1 * init_val1 - init_val1
-
-                    # case: E( X_centric * Y_centric ) = x0 * y0
-                    else:
-                        init_val1 = float(initial_values_dict[net_nodes_identifier[node1_id]])
-                        init_val2 = float(initial_values_dict[net_nodes_identifier[node2_id]])
-                        init_val = init_val1 * init_val2
-                else:
-                    init_val = 0.0
-
-                init.append(init_val)
-
-            return np.array(init)
-        else:
-            raise ValueError('Type \'centric_mean_only\' expected for processing initial values.')
-
     def setup_executable_moment_eqs_template(self, moment_eqs, use_jit=True):
         """docstring for ."""
 
@@ -727,7 +773,6 @@ class MomentsSim(object):
         exec(str_for_exec)
         return eval('_moment_eqs_template')
 
-
     def set_moment_eqs_from_template_after_reset(self):
         """docstring for ."""
 
@@ -739,68 +784,6 @@ class MomentsSim(object):
             self.moment_system = eval('_moment_eqs_template')
         else:
             print('Moment system was not in \'reset\' mode.')
-
-    # the forward_pass triggers one integration of the ode system yielding a solution of the different moments over time
-    # the solution depends on the initial condition (init) and the parameters (theta) of the ode system
-    # afterwards the means (more precisely the expectation), variances and covariances are computed by using the appropriate moment solutions
-    # NOTE: in some cases we use explicitly that np.sum([]) = 0 (on any empty array), e.g. when there are no inter variances
-    def forward_pass(self, init, time_arr, theta):
-        """docstring for ."""
-
-        # number of time points
-        num_time_points = len(time_arr)
-
-        # st = time.time()
-
-        # here python's scipy ode integrator is used
-        sol = odeint(self.moment_system, init, time_arr, args=(theta, ))
-
-        # et = time.time()
-        # print('\tode_int (ms)', (et - st)*1000)
-
-        # st = time.time()
-
-        ### sum up hidden layer to main layer nodes
-        # NOTE: the rules for summation follow preceding theoretical derivations
-        # NOTE: idea: the self.mean_ind[i, 0] stuff now has to give tuples and then np.sum() over the higher dimensional array
-        mean = np.zeros((self.moment_num_means, num_time_points))
-        for i in range(self.moment_num_means):
-            mean[i, :] = np.sum(sol[:, self.moment_mean_ind[i, 0]], axis=1)
-
-        var_intra = np.zeros((self.moment_num_vars, num_time_points))
-        var_inter = np.zeros((self.moment_num_vars, num_time_points))
-        for i in range(self.moment_num_vars):
-            var_intra[i, :] = np.sum(sol[:, self.moment_var_ind_intra[i, 0]] + sol[:, self.moment_var_ind_intra[i, 1]] - sol[:, self.moment_var_ind_intra[i, 1]]**2, axis=1)
-            var_inter[i, :] = 2.0 * np.sum(sol[:, self.moment_var_ind_inter[i, 0]] - sol[:, self.moment_var_ind_inter[i, 1]] * sol[:, self.moment_var_ind_inter[i, 2]], axis=1)
-        var = var_intra + var_inter
-
-        cov = np.zeros((self.moment_num_covs, num_time_points))
-        for i in range(self.moment_num_covs):
-            cov[i, :] = np.sum(sol[:, self.moment_cov_ind[i, 0]] - sol[:, self.moment_cov_ind[i, 1]] * sol[:, self.moment_cov_ind[i, 2]], axis=1)
-        ###
-
-        ### sum up or reorder solution to obtain the simulation variables output
-        # TODO: here
-        variables_mean = np.zeros((self.variables_num_means, num_time_points))
-        variables_var = np.zeros((self.variables_num_vars, num_time_points))
-        variables_cov = np.zeros((self.variables_num_covs, num_time_points))
-
-        for i in range(self.variables_num_means):
-            variables_mean[i, :] = np.sum(mean[self.variables_mean_ind[i, 0], :], axis=0)
-
-        for i in range(self.variables_num_vars):
-            variables_var[i, :] = (np.sum(var[self.variables_var_ind[i, 0], :], axis=0) +
-                                    np.sum(cov[self.variables_var_ind[i, 1], :], axis=0))
-
-        for i in range(self.variables_num_covs):
-            variables_cov[i, :] = (np.sum(var[self.variables_cov_ind[i, 0], :], axis=0) +
-                                    np.sum(cov[self.variables_cov_ind[i, 1], :], axis=0))
-        ###
-
-        # et = time.time()
-        # print('\tfw pass rest (ms)', (et - st)*1000)
-
-        return variables_mean, variables_var, variables_cov
 
     ### helper functions for the derive_pde method
     @staticmethod
