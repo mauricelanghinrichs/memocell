@@ -9,6 +9,7 @@ import memo_py as me
 import numpy as np
 
 class TestEstimationClass(object):
+    ### test on 1st and 2nd moments first, fit_mean_only later
     @pytest.fixture()
     def simple_est_setup(self):
         # see jupyter notebook ex_docs_tests for more info and plots
@@ -34,7 +35,7 @@ class TestEstimationClass(object):
         res_list = list()
 
         for __ in range(num_iter):
-            res_list.append(sim.simulate('gillespie', initial_values, theta_values, time_values, variables)[1])
+            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
 
         sims = np.array(res_list)
 
@@ -58,7 +59,8 @@ class TestEstimationClass(object):
         variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
         initial_values = {'X_t': 1, 'Y_t': 0}
         theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
-        mean_only = False
+        sim_mean_only = False
+        fit_mean_only = False
 
         nlive = 1000 # 250 # 1000
         tolerance = 0.01 # 0.1 (COARSE) # 0.05 # 0.01 (NORMAL)
@@ -67,7 +69,8 @@ class TestEstimationClass(object):
 
         est = me.Estimation('est_min_2_4', net, data)
         est.estimate(variables, initial_values, theta_bounds,
-                            mean_only, nlive, tolerance, bound, sample)
+                            sim_mean_only, fit_mean_only,
+                            nlive, tolerance, bound, sample)
         return est
 
     @pytest.mark.slow
@@ -197,18 +200,18 @@ class TestEstimationClass(object):
     @pytest.mark.slow
     def test_log_likelihood_from_sampler_res(self, simple_est_setup):
         theta_values = np.array([0.03, 0.07])
-        logl_res = simple_est_setup.log_likelihood(theta_values, simple_est_setup.net_initial_values,
-                   simple_est_setup.data_time_values, simple_est_setup.net_simulation.sim_variables,
-                   simple_est_setup.data_mean_values, simple_est_setup.data_var_values,
-                   simple_est_setup.data_cov_values)
+        logl_res = simple_est_setup.log_likelihood(theta_values,
+                   simple_est_setup.net_simulation.sim_moments.moment_initial_values,
+                   simple_est_setup.data_time_values, simple_est_setup.data_mean_values,
+                   simple_est_setup.data_var_values, simple_est_setup.data_cov_values)
         logl_sol = 32.823084036435795
         np.testing.assert_allclose(logl_sol, logl_res)
 
         theta_values = np.array([0.028, 0.075])
-        logl_res = simple_est_setup.log_likelihood(theta_values, simple_est_setup.net_initial_values,
-                   simple_est_setup.data_time_values, simple_est_setup.net_simulation.sim_variables,
-                   simple_est_setup.data_mean_values, simple_est_setup.data_var_values,
-                   simple_est_setup.data_cov_values)
+        logl_res = simple_est_setup.log_likelihood(theta_values,
+                   simple_est_setup.net_simulation.sim_moments.moment_initial_values,
+                   simple_est_setup.data_time_values, simple_est_setup.data_mean_values,
+                   simple_est_setup.data_var_values, simple_est_setup.data_cov_values)
         logl_sol = 35.485136238014185
         np.testing.assert_allclose(logl_sol, logl_res)
 
@@ -309,3 +312,119 @@ class TestEstimationClass(object):
         np.testing.assert_allclose(data_order_sol_2[0], data_order_res_2[0])
         np.testing.assert_allclose(data_order_sol_2[1], data_order_res_2[1])
         np.testing.assert_allclose(data_order_sol_2[2], data_order_res_2[2])
+
+    @pytest.fixture()
+    def simple_est_setup_mean_only(self):
+        # see jupyter notebook ex_docs_tests for more info and plots
+        ### define network
+        net = me.Network('net_min_2_4')
+        net.structure([
+            {'start': 'X_t', 'end': 'Y_t',
+             'rate_symbol': 'd',
+             'type': 'S -> E', 'reaction_steps': 2},
+            {'start': 'Y_t', 'end': 'Y_t',
+             'rate_symbol': 'l',
+             'type': 'S -> S + S', 'reaction_steps': 4}
+            ])
+
+        ### create data with known values
+        num_iter = 100
+        initial_values = {'X_t': 1, 'Y_t': 0}
+        theta_values = {'d': 0.03, 'l': 0.07}
+        time_values = np.array([0.0, 20.0, 40.0])
+        variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
+
+        sim = me.Simulation(net)
+        res_list = list()
+
+        for __ in range(num_iter):
+            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
+
+        sims = np.array(res_list)
+
+        data = me.Data('data_test_est_min_2_4')
+        data.load(['X_t', 'Y_t'], time_values, sims,
+                  bootstrap_samples=10000, basic_sigma=1/num_iter)
+
+        # overwrite with fixed values (from a num_iter = 100 simulation)
+        data.data_mean = np.array([[[1.         ,0.67       ,0.37      ],
+                                  [0.         ,0.45       ,1.74      ]],
+                                 [[0.01       ,0.0469473  ,0.04838822],
+                                  [0.01       ,0.07188642 ,0.1995514 ]]])
+        data.data_variance = np.array([[[0.         ,0.22333333 ,0.23545455],
+                                      [0.         ,0.51262626 ,4.03272727]],
+                                     [[0.01       ,0.01631605 ,0.01293869],
+                                      [0.01       ,0.08878719 ,0.68612036]]])
+        data.data_covariance = np.array([[[ 0.         ,-0.30454545 ,-0.65030303]],
+                                     [[ 0.01        ,0.0303608   ,0.06645246]]])
+
+        ### run estimation and return object
+        variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
+        initial_values = {'X_t': 1, 'Y_t': 0}
+        theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
+        sim_mean_only = True
+        fit_mean_only = True
+
+        nlive = 1000 # 250 # 1000
+        tolerance = 0.01 # 0.1 (COARSE) # 0.05 # 0.01 (NORMAL)
+        bound = 'multi'
+        sample = 'unif'
+
+        est = me.Estimation('est_min_2_4', net, data)
+        est.estimate(variables, initial_values, theta_bounds,
+                            sim_mean_only, fit_mean_only,
+                            nlive, tolerance, bound, sample)
+        return est
+
+    @pytest.mark.slow
+    def test_log_evid_of_simple_minimal_model_mean_only(self, simple_est_setup_mean_only):
+        log_evid_summary = np.array([7.7605709408748975, 7.78125756882485, 7.918132885953295,
+                                    7.8897310484135135, 8.007149819432435, 7.908905626137309,
+                                    7.813419052227798, 7.893391782255274, 7.8661928300681865,
+                                    7.7371076942168235])
+        log_evid_sol = np.mean(log_evid_summary)
+        log_evid_tol = np.std(log_evid_summary)*6
+        np.testing.assert_allclose(log_evid_sol,
+                                    simple_est_setup_mean_only.bay_est_log_evidence,
+                                    rtol=log_evid_tol, atol=log_evid_tol)
+    @pytest.mark.slow
+    def test_max_log_likelihood_of_simple_minimal_model_mean_only(self, simple_est_setup_mean_only):
+        logl_max_summary = np.array([13.608863858268542, 13.608877226458901, 13.608847553454728,
+                                    13.608877529200766, 13.60886643722303, 13.608873842971521,
+                                    13.608861237001252, 13.608871370412565, 13.608861291328083,
+                                    13.608867280974184])
+        logl_max_sol = np.mean(logl_max_summary)
+        logl_max_tol = np.std(logl_max_summary)*6
+        np.testing.assert_allclose(logl_max_sol,
+                                    simple_est_setup_mean_only.bay_est_log_likelihood_max,
+                                    rtol=logl_max_tol, atol=logl_max_tol)
+
+    @pytest.mark.slow
+    def test_theta_credible_interval_of_simple_minimal_model_mean_only(self, simple_est_setup_mean_only):
+        params_cred_summary = np.array([
+                                        [[[0.02837977816466184, 0.02475317184603701, 0.032252371853851],
+                                              [0.07347594766652865, 0.056945734692037, 0.08750586475951816]]],
+                                        [[[0.028306399126361383, 0.024806844409570726, 0.03231374332054859],
+                                              [0.07320951510718421, 0.05693863384948446, 0.08717210242134305]]],
+                                        [[[0.02827899953673494, 0.024841594040143064, 0.032267882689003914],
+                                              [0.0730942610197843, 0.05625009927327231, 0.08742397351019225]]],
+                                        [[[0.02838163006364825, 0.024865759994829033, 0.03212986797543949],
+                                              [0.07331954689754412, 0.05729540812526361, 0.0870374377933814]]],
+                                        [[[0.028341976327621917, 0.024789528169831564, 0.032102435029126096],
+                                              [0.07308260556778846, 0.05703471572401049, 0.08762153845829682]]],
+                                        [[[0.02828908188331957, 0.024786375546703175, 0.032176919891949554],
+                                              [0.07319853179674726, 0.05698164846042654, 0.08755942244446942]]],
+                                        [[[0.028365004575820335, 0.024737675660559674, 0.03239593960086084],
+                                              [0.07302648932606505, 0.05727973219749373, 0.08780361683668651]]],
+                                        [[[0.028276876599934067, 0.024764474498227603, 0.03219409470556767],
+                                              [0.07339656793664723, 0.056642380205776596, 0.08745371415790436]]],
+                                        [[[0.02834698614659556, 0.024844365293418918, 0.032263830905032855],
+                                              [0.07313390392614322, 0.057244039923494534, 0.08798062276751904]]],
+                                        [[[0.02830009724678409, 0.024665930762921694, 0.032320966472588676],
+                                              [0.0734295735250799, 0.05659526164492768, 0.08776299471142669]]]
+                                        ])
+        params_cred_sol = np.mean(params_cred_summary, axis=0)
+        params_cred_tol = np.max(np.std(params_cred_summary, axis=0)*6)
+        np.testing.assert_allclose(params_cred_sol,
+                                    np.array([simple_est_setup_mean_only.bay_est_params_cred]),
+                                    rtol=params_cred_tol, atol=params_cred_tol)
