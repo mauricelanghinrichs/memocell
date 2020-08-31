@@ -53,6 +53,10 @@ class Data(object):
         self.data_time_values = None
         self.data_num_time_values = None
 
+        # instantiate object to indicate whether this data is limited
+        # to mean summary statistics
+        self.data_mean_exists_only = None
+
         #  instantiate objects for the order of variables in mean, variance and covariance data
         self.data_mean_order = None
         self.data_variance_order = None
@@ -99,7 +103,7 @@ class Data(object):
 
 
     def load(self, variables, time_values, count_data, data_type='counts',
-                    mean_data=np.array([]), var_data=np.array([]), cov_data=np.array([]),
+                    mean_data=None, var_data=None, cov_data=None,
                     bootstrap_samples=10000, basic_sigma=0.0):
         """Main method of the data class. Method will load data either from dynamic
         count data (`data_type='counts'`, default) or from already summarised data as
@@ -107,8 +111,9 @@ class Data(object):
         selected data type, different inputs are used: 1) `variables`, `time_values`
         and `basic_sigma` in both cases 2) `data_type='counts'` additionally uses
         `count_data` and `bootstrap_samples` 3) `data_type='summary'` additionally uses
-        `mean_data`, `var_data` and `cov_data`. `load` defines many data attributes,
-        the resulting summary statistics particularly are accessible via `data.data_mean`,
+        `mean_data`, `var_data` and `cov_data` (to load `mean_data` only is also supported).
+        `load` defines many data attributes, the resulting summary statistics
+        particularly are accessible via `data.data_mean`,
         `data.data_variance` and `data.data_covariance`. For more information on how
         the order of the summary statistics corresponds to `variables`, see
         method `data.create_data_variable_order`.
@@ -122,7 +127,7 @@ class Data(object):
             Time values corresponding to time dimension of `count_data` (in case of
             `data_type='counts'`, default) or of `mean_data`, `var_data` and `cov_data` (in case of
             `data_type='summary'`).
-        count_data : numpy.ndarray
+        count_data : numpy.ndarray or None
             Required input for `data_type='counts'` (default); data object will be
             computed based on `count_data` to get summary statistics `data_mean`,
             `data_variance` and `data_covariance` including standard errors
@@ -131,24 +136,24 @@ class Data(object):
             number of repeats `n`, the number of variables `m`, the number of time points `t`.
             Order of the variables should match with `variables`.
         data_type : str, optional
-            String to define the mode how to create the data object; either `'counts'`
-            or `'summary'`.
-        mean_data : numpy.ndarray, optional
+            String to define the mode how to create the data object;
+            either `'counts'` (default) or `'summary'`.
+        mean_data : numpy.ndarray or None, optional
             Required input for `data_type='summary'`; `mean_data` will be directly
             loaded into `data.data_mean`.
             `mean_data` contains the dynamic mean statistics and standard
             errors with shape (2, `len(data_mean_order)`, `len(time_values)`).
             `mean_data[0, :, :]` contains the statistics;
             `mean_data[1, :, :]` contains the standard errors.
-        var_data : numpy.ndarray, optional
-            Required input for `data_type='summary'`; `var_data` will be directly
+        var_data : numpy.ndarray or None, optional
+            Optional input for `data_type='summary'`; `var_data` will be directly
             loaded into `data.data_variance`.
             `var_data` contains the dynamic variance statistics and standard
             errors with shape (2, `len(data_variance_order)`, `len(time_values)`).
             `var_data[0, :, :]` contains the statistics;
             `var_data[1, :, :]` contains the standard errors.
-        cov_data : numpy.ndarray, optional
-            Required input for `data_type='summary'`; `cov_data` will be directly
+        cov_data : numpy.ndarray or None, optional
+            Optional input for `data_type='summary'`; `cov_data` will be directly
             loaded into `data.data_covariance`.
             `cov_data` contains the dynamic covariance statistics and standard
             errors with shape (2, `len(data_covariance_order)`, `len(time_values)`).
@@ -211,23 +216,37 @@ class Data(object):
         self.data_num_variables = len(self.data_variables)
         self.data_num_time_values = self.data_time_values.shape[0]
 
+        # find out whether data has mean summary stats only
+        # (no count data and also no explicit var and cov data, only mean)
+        self.data_mean_exists_only = self.process_mean_exist_only(
+                                                data_type, var_data, cov_data)
+
         # create indexing order for the data based on the data_variables list
         (self.data_mean_order,
         self.data_variance_order,
-        self.data_covariance_order) = self.create_data_variable_order(self.data_variables)
+        self.data_covariance_order) = self.create_data_variable_order(self.data_variables,
+                                                                    self.data_mean_exists_only)
+
+        # convert none-type data info to an empty number array with one 0 length axis
+        count_data, mean_data, var_data, cov_data = self.convert_none_data_to_empty_array(
+                                        count_data, mean_data, var_data, cov_data,
+                                        self.data_num_variables, self.data_num_time_values)
 
         # dependent on data_type, load data as summary statistics or count data
         if self.data_type=='summary':
             self._validate_shape_summary(self.data_mean_order, self.data_variance_order,
-                                        self.data_covariance_order, self.data_time_values,
+                                        self.data_covariance_order, self.data_num_time_values,
                                         mean_data, var_data, cov_data)
             self.data_mean = mean_data
             self.data_variance = var_data
             self.data_covariance = cov_data
 
+            # also initialise empty count data array
+            self.data_counts = count_data
+
         # in case of count data, bootstrapping is used to compute the summary statistics
         elif self.data_type=='counts':
-            self._validate_shape_counts(self.data_variables, self.data_time_values, count_data)
+            self._validate_shape_counts(self.data_num_variables, self.data_num_time_values, count_data)
             self.data_counts = count_data
             self.data_bootstrap_samples = bootstrap_samples
 
@@ -254,7 +273,127 @@ class Data(object):
 
 
     @staticmethod
-    def create_data_variable_order(data_variables):
+    def process_mean_exist_only(data_type, var_data, cov_data):
+        """Initialise the `data_mean_exists_only` data attribute. The
+        `data_mean_exists_only` attribute indicates whether a data object contains
+        potentially higher summary moments (variance and covariance) or the first
+        moments only (means).
+
+        Parameters
+        ----------
+        data_type : str
+            Type of the data object; either `'counts'` or `'summary'`.
+        var_data : numpy.ndarray or None
+            Dynamic variance statistics used in `data_type='summary'` mode.
+        cov_data : numpy.ndarray or None
+            Dynamic covariance statistics used in `data_type='summary'` mode.
+
+        Returns
+        -------
+        data_mean_exists_only : bool
+            Bool to indicate whether data contains mean information only or also
+            higher moments (variance and covariance). Typically available at
+            `data.data_mean_exists_only` for a data object `data`.
+
+        Examples
+        --------
+        >>> me.Data.process_mean_exist_only('counts', None, None)
+        False
+        >>> me.Data.process_mean_exist_only('summary', None, None)
+        True
+        >>> # with some data arrays for variance and covariance (!=None)
+        >>> me.Data.process_mean_exist_only('summary', var_data, cov_data)
+        False
+        """
+
+        if data_type=='counts':
+            data_mean_exists_only = False
+        elif data_type=='summary':
+            # for data_mean_exists_only=True we expect var and cov to be None/empty
+            if var_data is None:
+                var_bool = True
+            elif var_data.size==0:
+                var_bool = True
+            else:
+                var_bool = False
+
+            if cov_data is None:
+                cov_bool = True
+            elif cov_data.size==0:
+                cov_bool = True
+            else:
+                cov_bool = False
+
+            data_mean_exists_only = True if (var_bool and cov_bool) else False
+        return data_mean_exists_only
+
+
+    @staticmethod
+    def convert_none_data_to_empty_array(count_data, mean_data, var_data, cov_data,
+                                    num_variables, num_time_values):
+        """Convert `None`-type data input into empty numpy arrays.
+
+        Returned data arrays have a zero-sized data repeats or variable order
+        dimension but are otherwise shaped as needed for further internal
+        computations.
+
+        Parameters
+        ----------
+        count_data : numpy.ndarray or None
+            Dynamic count data used in `data_type='counts'` mode. If `None`,
+            an empty array will be constructed with shape `(0, number of variables,
+            number of time points)`;
+            if numpy array already, it will be left unchanged.
+        mean_data : numpy.ndarray or None
+            Dynamic mean statistics used in `data_type='summary'` mode. If `None`,
+            an empty array will be constructed with shape `(2, 0, number of time points)`;
+            if numpy array already, it will be left unchanged.
+        var_data : numpy.ndarray or None
+            Dynamic variance statistics used in `data_type='summary'` mode. If `None`,
+            an empty array will be constructed with shape `(2, 0, number of time points)`;
+            if numpy array already, it will be left unchanged.
+        cov_data : numpy.ndarray or None
+            Dynamic covariance statistics used in `data_type='summary'` mode. If `None`,
+            an empty array will be constructed with shape `(2, 0, number of time points)`;
+            if numpy array already, it will be left unchanged.
+        num_variables : int
+            Number of data variables.
+        num_time_values : int
+            Number of time points.
+
+        Returns
+        -------
+        count_data : numpy.ndarray
+            Dynamic count data used in `data_type='counts'` mode, possibly an
+            empty array.
+        mean_data : numpy.ndarray
+            Dynamic mean statistics used in `data_type='summary'` mode,
+            possibly an empty array.
+        var_data : numpy.ndarray
+            Dynamic variance statistics used in `data_type='summary'` mode,
+            possibly an empty array.
+        cov_data : numpy.ndarray
+            Dynamic covariance statistics used in `data_type='summary'` mode,
+            possibly an empty array.
+        """
+
+        if count_data is None:
+            count_data = np.empty((0, num_variables, num_time_values))
+
+        if mean_data is None:
+            mean_data = np.empty((2, 0, num_time_values))
+
+        if var_data is None:
+            var_data = np.empty((2, 0, num_time_values))
+
+        if cov_data is None:
+            cov_data = np.empty((2, 0, num_time_values))
+
+        return count_data, mean_data, var_data, cov_data
+
+
+    @staticmethod
+    def create_data_variable_order(data_variables, data_mean_exists_only):
         """Creates objects to define the order of data variables for mean,
         variance and covariance. Mean and variance order follows the order of the
         input; covariances are ordered with a priority for what comes first in the
@@ -264,6 +403,11 @@ class Data(object):
         ----------
         data_variables : list of str
             A list of strings for the data variables.
+        data_mean_exists_only : bool
+            Bool to indicate whether data contains mean information only or also
+            higher moments (variance and covariance). If `False`, variable
+            order will be computed for mean, variance and covariance; if `True`,
+            variance and covariance order will be empty.
 
         Returns
         -------
@@ -276,7 +420,8 @@ class Data(object):
 
         Examples
         --------
-        >>> me.Data.create_data_variable_order(['A', 'B', 'C'])
+        >>> mean_only = False
+        >>> me.Data.create_data_variable_order(['A', 'B', 'C'], mean_only)
         ([{'variables': 'A', 'summary_indices': 0, 'count_indices': (0,)},
           {'variables': 'B', 'summary_indices': 1, 'count_indices': (1,)},
           {'variables': 'C', 'summary_indices': 2, 'count_indices': (2,)}],
@@ -291,18 +436,23 @@ class Data(object):
         # order of mean and variance indices just matches the data_variables order
         data_mean_order = [{'variables': var,  'summary_indices': i, 'count_indices': (i, )}
                                         for i, var in enumerate(data_variables)]
-        data_variance_order = [{'variables': (var, var),  'summary_indices': i, 'count_indices': (i, i)}
+
+        if data_mean_exists_only:
+            data_variance_order = list()
+        else:
+            data_variance_order = [{'variables': (var, var),  'summary_indices': i, 'count_indices': (i, i)}
                                         for i, var in enumerate(data_variables)]
 
         # data_covariance_order is ordered with a priority of the smaller index
         # (i.e., what comes first in data_variables)
         data_covariance_order = list()
-        count = 0
-        for i, var1 in enumerate(data_variables):
-            for j, var2 in enumerate(data_variables):
-                if i<j:
-                    data_covariance_order.append({'variables': (var1, var2),  'summary_indices': count, 'count_indices': (i, j)})
-                    count += 1
+        if not data_mean_exists_only:
+            count = 0
+            for i, var1 in enumerate(data_variables):
+                for j, var2 in enumerate(data_variables):
+                    if i<j:
+                        data_covariance_order.append({'variables': (var1, var2),  'summary_indices': count, 'count_indices': (i, j)})
+                        count += 1
 
         return data_mean_order, data_variance_order, data_covariance_order
 
@@ -1384,7 +1534,8 @@ class Data(object):
     ###
 
     @staticmethod
-    def _validate_shape_summary(mean_order, var_order, cov_order, time_values, mean_data, var_data, cov_data):
+    def _validate_shape_summary(mean_order, var_order, cov_order, num_time_values,
+                                    mean_data, var_data, cov_data):
         """Private validation method."""
         # data and standard error dimensions required
         if 2==mean_data.shape[0] and 2==var_data.shape[0] and 2==cov_data.shape[0]:
@@ -1392,25 +1543,30 @@ class Data(object):
         else:
             raise ValueError('Unfit dimensions of summary data.')
 
-        if len(time_values)==mean_data.shape[2] and len(time_values)==var_data.shape[2] and len(time_values)==cov_data.shape[2]:
+        if (num_time_values==mean_data.shape[2] and num_time_values==var_data.shape[2]
+                        and num_time_values==cov_data.shape[2]):
             pass
         else:
             raise ValueError('Dimension mismatch between time_values and summary data.')
 
-        if len(mean_order)==mean_data.shape[1] and len(var_order)==var_data.shape[1] and len(cov_order)==cov_data.shape[1]:
+        # even in summary stats mode we allow zero variable order dimension for
+        # var and cov data (in the case one wants to pass mean summary stats only)
+        if (len(mean_order)==mean_data.shape[1] and
+                    (len(var_order)==var_data.shape[1] or 0==var_data.shape[1]) and
+                    (len(cov_order)==cov_data.shape[1] or 0==cov_data.shape[1])):
             pass
         else:
             raise ValueError('Dimension mismatch between data variables and summary data.')
 
     @staticmethod
-    def _validate_shape_counts(variables, time_values, count_data):
+    def _validate_shape_counts(num_variables, num_time_values, count_data):
         """Private validation method."""
-        if len(variables)==count_data.shape[1]:
+        if num_variables==count_data.shape[1]:
             pass
         else:
             raise ValueError('Dimension mismatch between data variables and count_data.')
 
-        if len(time_values)==count_data.shape[2]:
+        if num_time_values==count_data.shape[2]:
             pass
         else:
             raise ValueError('Dimension mismatch between time_values and count_data.')
@@ -1451,28 +1607,28 @@ class Data(object):
             raise TypeError('Numpy array expected for time_values.')
 
         # check data input mean_data
-        if isinstance(mean_data, np.ndarray):
+        if isinstance(mean_data, np.ndarray) or isinstance(mean_data, type(None)):
             pass
         else:
-            raise TypeError('Numpy array expected for mean_data.')
+            raise TypeError('Numpy array or None expected for mean_data.')
 
         # check data input var_data
-        if isinstance(var_data, np.ndarray):
+        if isinstance(var_data, np.ndarray) or isinstance(var_data, type(None)):
             pass
         else:
-            raise TypeError('Numpy array expected for var_data.')
+            raise TypeError('Numpy array or None expected for var_data.')
 
         # check data input cov_data
-        if isinstance(cov_data, np.ndarray):
+        if isinstance(cov_data, np.ndarray) or isinstance(cov_data, type(None)):
             pass
         else:
-            raise TypeError('Numpy array expected for cov_data.')
+            raise TypeError('Numpy array or None expected for cov_data.')
 
         # check data input count_data
-        if isinstance(count_data, np.ndarray):
+        if isinstance(count_data, np.ndarray) or isinstance(count_data, type(None)):
             pass
         else:
-            raise TypeError('Numpy array expected for count_data.')
+            raise TypeError('Numpy array or None expected for count_data.')
 
         # check data input bootstrap_samples
         if isinstance(bootstrap_samples, int):
@@ -1486,6 +1642,20 @@ class Data(object):
         else:
             raise TypeError('Float value expected for basic_sigma.')
 
+        # check if some data is there, possible options
+        # - count data
+        # - mean var and cov data
+        # - mean data only
+        if data_type=='counts':
+            if isinstance(count_data, np.ndarray):
+                pass
+            else:
+                raise ValueError('In counts data type, count_data is expected as numpy array.')
+        elif data_type=='summary':
+            if isinstance(mean_data, np.ndarray):
+                pass
+            else:
+                raise ValueError('In summary data type, at least mean_data is expected as numpy array.')
 
 
     # ##### TODO: old / adapt

@@ -416,7 +416,8 @@ def data_variance_plot(data, settings=None,
                     x_label='Time', x_lim=None, x_log=False,
                     y_label='Variance', y_lim=None, y_log=False,
                     show=True, save=None):
-    """Plot the variance statistics with standard errors of a data object.
+    """Plot the variance statistics with standard errors of a data object (if
+    variance data are available).
 
     Parameters
     ----------
@@ -469,7 +470,8 @@ def data_covariance_plot(data, settings=None,
                     x_label='Time', x_lim=None, x_log=False,
                     y_label='Covariance', y_lim=None, y_log=False,
                     show=True, save=None):
-    """Plot the covariance statistics with standard errors of a data object.
+    """Plot the covariance statistics with standard errors of a data object (if 
+    covariance data are available).
 
     Parameters
     ----------
@@ -1303,7 +1305,7 @@ def est_bestfit_variance_plot(estimation, settings=None, data=True, cred=True,
         Optional label and color settings for the variance traces.
     data : bool, optional
         If `data=True` (default), plot the data variance statistics with standard errors
-        in the background (grey color).
+        in the background (grey color), if these data are available.
     cred : bool, optional
         If `cred=True` (default), a median trajectory with 95% credible bands of the
         model variances are shown;
@@ -1400,7 +1402,7 @@ def est_bestfit_covariance_plot(estimation, settings=None, data=True, cred=True,
         Optional label and color settings for the covariance traces.
     data : bool, optional
         If `data=True` (default), plot the data covariance statistics with standard errors
-        in the background (grey color).
+        in the background (grey color), if these data are available.
     cred : bool, optional
         If `cred=True` (default), a median trajectory with 95% credible bands of the
         model covariances are shown;
@@ -1883,9 +1885,10 @@ def _dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line,
         # paper version
         plt.plot(x_arr_line, y_line[var_ind, :], label=var_name,
                         color=var_color, linewidth=2.5, zorder=3000)
-        plt.errorbar(x_arr_dots, y_dots_err[var_ind, :, 0], yerr=y_dots_err[var_ind, :, 1],
-                    fmt='o', capsize=4.0, elinewidth=2.5, #label='data' if var_ind==0 else '',
-                    markeredgewidth=2.5, markersize=4.5, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
+        if y_dots_err.shape[0]>0:
+            plt.errorbar(x_arr_dots, y_dots_err[var_ind, :, 0], yerr=y_dots_err[var_ind, :, 1],
+                        fmt='o', capsize=4.0, elinewidth=2.5, #label='data' if var_ind==0 else '',
+                        markeredgewidth=2.5, markersize=4.5, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
 
     # final axis setting
     ax.set_xlim(x_lim)
@@ -1991,9 +1994,10 @@ def _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err, y_lin
                         color=var_color, alpha=0.5, linewidth=0.0, zorder=1000)
         plt.plot(x_arr_line, y_line[var_ind, :], label=var_name,
                         color=var_color, linewidth=2.5 if normal_mode else 1.0, zorder=3000)
-        plt.errorbar(x_arr_dots, y_dots_err[var_ind, :, 0], yerr=y_dots_err[var_ind, :, 1],
-                    fmt='o', capsize=4.0 if normal_mode else 1.0, elinewidth=2.5 if normal_mode else 0.5, #label='data' if var_ind==0 else '',
-                    markeredgewidth=2.5 if normal_mode else 0.5, markersize=4.5 if normal_mode else 1.0, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
+        if y_dots_err.shape[0]>0:
+            plt.errorbar(x_arr_dots, y_dots_err[var_ind, :, 0], yerr=y_dots_err[var_ind, :, 1],
+                        fmt='o', capsize=4.0 if normal_mode else 1.0, elinewidth=2.5 if normal_mode else 0.5, #label='data' if var_ind==0 else '',
+                        markeredgewidth=2.5 if normal_mode else 0.5, markersize=4.5 if normal_mode else 1.0, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
 
     # final axis setting
     ax.set_xlim(x_lim)

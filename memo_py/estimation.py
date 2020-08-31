@@ -1138,6 +1138,12 @@ class Estimation(object):
         # 3) if sim_mean_only=False, fit_mean_only can be True; we want to see full
         #       model summary stats but only fit to the mean data; in this case we
         #       catch the data but it is then later ignored in the fit (TODO: check)
+
+        # NOTE: if the data has only mean summary stats, data_var_ordered
+        # and data_cov_ordered will have 0 size in the variable dimension, and
+        # the for loops below will just run through without doing anything
+        # (as data_variance_order and data_covariance_order are empty)
+
         data_mean_ordered = np.zeros(data_mean.shape)
         data_var_ordered = np.zeros(data_var.shape)
         data_cov_ordered = np.zeros(data_cov.shape)
@@ -1503,8 +1509,10 @@ class Estimation(object):
         for i, (variable1_id, variable2_id) in enumerate(sim_variables_order_var):
             y_line[i, :] = var_m[i]
 
-            y_dots_err[i, :, 0] = self.data_var_values[0, i, :] # var statistic
-            y_dots_err[i, :, 1] = self.data_var_values[1, i, :] # standard error
+            # skip data, if there is no chance to get higher moments
+            if not self.data.data_mean_exists_only:
+                y_dots_err[i, :, 0] = self.data_var_values[0, i, :] # var statistic
+                y_dots_err[i, :, 1] = self.data_var_values[1, i, :] # standard error
 
             variable_settings = settings[(sim_variables_identifier[variable1_id][0], sim_variables_identifier[variable2_id][0])]
             attributes[i] = (variable_settings['label'], variable_settings['color'])
@@ -1570,8 +1578,10 @@ class Estimation(object):
             y_lower[i, :] = var_band[0][i, :]
             y_upper[i, :] = var_band[1][i, :]
 
-            y_dots_err[i, :, 0] = self.data_var_values[0, i, :] # var statistic
-            y_dots_err[i, :, 1] = self.data_var_values[1, i, :] # standard error
+            # skip data, if there is no chance to get higher moments
+            if not self.data.data_mean_exists_only:
+                y_dots_err[i, :, 0] = self.data_var_values[0, i, :] # var statistic
+                y_dots_err[i, :, 1] = self.data_var_values[1, i, :] # standard error
 
             variable_settings = settings[(sim_variables_identifier[variable1_id][0], sim_variables_identifier[variable2_id][0])]
             attributes[i] = (variable_settings['label'], variable_settings['color'])
@@ -1627,8 +1637,10 @@ class Estimation(object):
         for i, (variable1_id, variable2_id) in enumerate(sim_variables_order_cov):
             y_line[i, :] = cov_m[i]
 
-            y_dots_err[i, :, 0] = self.data_cov_values[0, i, :] # cov statistic
-            y_dots_err[i, :, 1] = self.data_cov_values[1, i, :] # standard error
+            # skip data, if there is no chance to get higher moments
+            if not self.data.data_mean_exists_only:
+                y_dots_err[i, :, 0] = self.data_cov_values[0, i, :] # cov statistic
+                y_dots_err[i, :, 1] = self.data_cov_values[1, i, :] # standard error
 
             try:
                 variable_settings = settings[(sim_variables_identifier[variable1_id][0], sim_variables_identifier[variable2_id][0])]
@@ -1702,8 +1714,10 @@ class Estimation(object):
             y_lower[i, :] = cov_band[0][i, :]
             y_upper[i, :] = cov_band[1][i, :]
 
-            y_dots_err[i, :, 0] = self.data_cov_values[0, i, :] # cov statistic
-            y_dots_err[i, :, 1] = self.data_cov_values[1, i, :] # standard error
+            # skip data, if there is no chance to get higher moments
+            if not self.data.data_mean_exists_only:
+                y_dots_err[i, :, 0] = self.data_cov_values[0, i, :] # cov statistic
+                y_dots_err[i, :, 1] = self.data_cov_values[1, i, :] # standard error
 
             try:
                 variable_settings = settings[(sim_variables_identifier[variable1_id][0], sim_variables_identifier[variable2_id][0])]

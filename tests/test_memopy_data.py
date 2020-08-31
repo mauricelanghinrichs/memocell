@@ -9,34 +9,126 @@ import numpy as np
 
 class TestDataClass(object):
     ### tests for create_data_variable_order()
-    def test_create_data_variable_order_1(self):
-        assert(me.Data.create_data_variable_order(['A', 'B', 'C']) == ([{'variables': 'A', 'summary_indices': 0, 'count_indices': (0,)},
-                                                                      {'variables': 'B', 'summary_indices': 1, 'count_indices': (1,)},
-                                                                      {'variables': 'C', 'summary_indices': 2, 'count_indices': (2,)}],
-                                                                     [{'variables': ('A', 'A'), 'summary_indices': 0, 'count_indices': (0, 0)},
-                                                                      {'variables': ('B', 'B'), 'summary_indices': 1, 'count_indices': (1, 1)},
-                                                                      {'variables': ('C', 'C'), 'summary_indices': 2, 'count_indices': (2, 2)}],
-                                                                     [{'variables': ('A', 'B'), 'summary_indices': 0, 'count_indices': (0, 1)},
-                                                                      {'variables': ('A', 'C'), 'summary_indices': 1, 'count_indices': (0, 2)},
-                                                                      {'variables': ('B', 'C'), 'summary_indices': 2, 'count_indices': (1, 2)}]))
+    def test_create_data_variable_order_mean_only_false(self):
+        mean_only = False
+        assert(me.Data.create_data_variable_order(['A', 'B', 'C'], mean_only) == (
+                            [{'variables': 'A', 'summary_indices': 0, 'count_indices': (0,)},
+                          {'variables': 'B', 'summary_indices': 1, 'count_indices': (1,)},
+                          {'variables': 'C', 'summary_indices': 2, 'count_indices': (2,)}],
+                         [{'variables': ('A', 'A'), 'summary_indices': 0, 'count_indices': (0, 0)},
+                          {'variables': ('B', 'B'), 'summary_indices': 1, 'count_indices': (1, 1)},
+                          {'variables': ('C', 'C'), 'summary_indices': 2, 'count_indices': (2, 2)}],
+                         [{'variables': ('A', 'B'), 'summary_indices': 0, 'count_indices': (0, 1)},
+                          {'variables': ('A', 'C'), 'summary_indices': 1, 'count_indices': (0, 2)},
+                          {'variables': ('B', 'C'), 'summary_indices': 2, 'count_indices': (1, 2)}]))
+
+    def test_create_data_variable_order_mean_only_true(self):
+        mean_only = True
+        assert(me.Data.create_data_variable_order(['A', 'B', 'C'], mean_only) == (
+                            [{'variables': 'A', 'summary_indices': 0, 'count_indices': (0,)},
+                          {'variables': 'B', 'summary_indices': 1, 'count_indices': (1,)},
+                          {'variables': 'C', 'summary_indices': 2, 'count_indices': (2,)}],
+                         [],
+                         []))
 
     def test_create_data_variable_order_no_alphabetical_order(self):
-        assert(me.Data.create_data_variable_order(['C', 'B', 'A']) == ([{'variables': 'C', 'summary_indices': 0, 'count_indices': (0,)},
-                                                                      {'variables': 'B', 'summary_indices': 1, 'count_indices': (1,)},
-                                                                      {'variables': 'A', 'summary_indices': 2, 'count_indices': (2,)}],
-                                                                     [{'variables': ('C', 'C'), 'summary_indices': 0, 'count_indices': (0, 0)},
-                                                                      {'variables': ('B', 'B'), 'summary_indices': 1, 'count_indices': (1, 1)},
-                                                                      {'variables': ('A', 'A'), 'summary_indices': 2, 'count_indices': (2, 2)}],
-                                                                     [{'variables': ('C', 'B'), 'summary_indices': 0, 'count_indices': (0, 1)},
-                                                                      {'variables': ('C', 'A'), 'summary_indices': 1, 'count_indices': (0, 2)},
-                                                                      {'variables': ('B', 'A'), 'summary_indices': 2, 'count_indices': (1, 2)}]))
+        mean_only = False
+        assert(me.Data.create_data_variable_order(['C', 'B', 'A'], mean_only) == (
+                        [{'variables': 'C', 'summary_indices': 0, 'count_indices': (0,)},
+                          {'variables': 'B', 'summary_indices': 1, 'count_indices': (1,)},
+                          {'variables': 'A', 'summary_indices': 2, 'count_indices': (2,)}],
+                         [{'variables': ('C', 'C'), 'summary_indices': 0, 'count_indices': (0, 0)},
+                          {'variables': ('B', 'B'), 'summary_indices': 1, 'count_indices': (1, 1)},
+                          {'variables': ('A', 'A'), 'summary_indices': 2, 'count_indices': (2, 2)}],
+                         [{'variables': ('C', 'B'), 'summary_indices': 0, 'count_indices': (0, 1)},
+                          {'variables': ('C', 'A'), 'summary_indices': 1, 'count_indices': (0, 2)},
+                          {'variables': ('B', 'A'), 'summary_indices': 2, 'count_indices': (1, 2)}]))
 
     def test_create_data_variable_order_no_validation_here(self):
-        assert(me.Data.create_data_variable_order(['A', 'A']) == ([{'variables': 'A', 'summary_indices': 0, 'count_indices': (0,)},
-                                                                      {'variables': 'A', 'summary_indices': 1, 'count_indices': (1,)}],
-                                                                     [{'variables': ('A', 'A'), 'summary_indices': 0, 'count_indices': (0, 0)},
-                                                                      {'variables': ('A', 'A'), 'summary_indices': 1, 'count_indices': (1, 1)}],
-                                                                     [{'variables': ('A', 'A'), 'summary_indices': 0, 'count_indices': (0, 1)}]))
+        mean_only = False
+        assert(me.Data.create_data_variable_order(['A', 'A'], mean_only) == (
+                        [{'variables': 'A', 'summary_indices': 0, 'count_indices': (0,)},
+                          {'variables': 'A', 'summary_indices': 1, 'count_indices': (1,)}],
+                         [{'variables': ('A', 'A'), 'summary_indices': 0, 'count_indices': (0, 0)},
+                          {'variables': ('A', 'A'), 'summary_indices': 1, 'count_indices': (1, 1)}],
+                         [{'variables': ('A', 'A'), 'summary_indices': 0, 'count_indices': (0, 1)}]))
+
+    ### tests for process_mean_exist_only
+    def test_process_mean_exist_only_counts(self):
+        assert(False == me.Data.process_mean_exist_only('counts', None, None))
+
+    def test_process_mean_exist_only_summary_mean_only(self):
+        assert(True == me.Data.process_mean_exist_only('summary', None, None))
+
+    def test_process_mean_exist_only_summary_mean_only_via_empty(self):
+        var_data = np.empty((2, 0, 3)) # some fake data
+        cov_data = np.empty((2, 0, 3)) # some fake data
+        assert(True == me.Data.process_mean_exist_only('summary', var_data, cov_data))
+
+    def test_process_mean_exist_only_summary_mean_only_mixed_1(self):
+        var_data = np.empty((2, 0, 3)) # some fake data
+        assert(True == me.Data.process_mean_exist_only('summary', var_data, None))
+
+    def test_process_mean_exist_only_summary_mean_only_mixed_2(self):
+        cov_data = np.empty((2, 0, 3)) # some fake data
+        assert(True == me.Data.process_mean_exist_only('summary', None, cov_data))
+
+    def test_process_mean_exist_only_counts_var_and_cov(self):
+        var_data = np.empty((2, 2, 3)) # some fake data
+        cov_data = np.empty((2, 1, 3)) # some fake data
+        assert(False == me.Data.process_mean_exist_only('summary', var_data, cov_data))
+
+    def test_process_mean_exist_only_counts_var_only(self):
+        var_data = np.empty((2, 2, 3)) # some fake data
+        assert(False == me.Data.process_mean_exist_only('summary', var_data, None))
+
+    def test_process_mean_exist_only_counts_cov_only(self):
+        cov_data = np.empty((2, 1, 3)) # some fake data
+        assert(False == me.Data.process_mean_exist_only('summary', None, cov_data))
+
+    ### tests for convert_none_data_to_empty_array
+    def test_convert_none_data_to_empty_array_none_data(self):
+        count_data = None
+        mean_data = None
+        var_data = None
+        cov_data = None
+        num_variables = 2
+        num_time_values = 3
+
+        res_counts, res_mean, res_var, res_cov = me.Data.convert_none_data_to_empty_array(
+                                count_data, mean_data,
+                                var_data, cov_data,
+                                num_variables, num_time_values)
+
+        sol_counts = np.empty((0, 2, 3))
+        sol_mean = np.empty((2, 0, 3))
+        sol_var = np.empty((2, 0, 3))
+        sol_cov = np.empty((2, 0, 3))
+        np.testing.assert_allclose(sol_counts, res_counts)
+        np.testing.assert_allclose(sol_mean, res_mean)
+        np.testing.assert_allclose(sol_var, res_var)
+        np.testing.assert_allclose(sol_cov, res_cov)
+
+    def test_convert_none_data_to_empty_array_random_data(self):
+        # create some random fake data
+        # with 4 wells, 2 variables, 3 time points
+        sol_counts = np.random.rand(4, 2, 3)
+        sol_mean = np.random.rand(2, 2, 3)
+        sol_var = np.random.rand(2, 2, 3)
+        sol_cov = np.random.rand(2, 1, 3)
+        num_variables = 2
+        num_time_values = 3
+
+        res_counts, res_mean, res_var, res_cov = me.Data.convert_none_data_to_empty_array(
+                                sol_counts, sol_mean,
+                                sol_var, sol_cov,
+                                num_variables, num_time_values)
+
+        np.testing.assert_allclose(sol_counts, res_counts)
+        np.testing.assert_allclose(sol_mean, res_mean)
+        np.testing.assert_allclose(sol_var, res_var)
+        np.testing.assert_allclose(sol_cov, res_cov)
+
     ### tests for bootstrapping methods
     def test_bootstrapping_mean(self):
         stat_sample, se_stat_sample = me.Data.bootstrapping_mean(np.array([1.0, 2.0, 3.0]), 100000)
@@ -294,14 +386,16 @@ class TestDataClass(object):
         assert(3.8 < theta_fit[0] < 4.2)
         assert(0.4 < theta_fit[1] < 0.6)
 
-    def test_load(self):
-        data = me.Data('data_init')
+    ### test load method
+    # @pytest.mark.slow
+    def test_load_count_data(self):
         variables = ['A', 'B']
         time_values = np.linspace(0.0, 4.0, num=5)
         count_data = np.array([[[0.0, 0.0, 2.0, 2.0, 4.0], [1.0, 1.0, 1.0, 1.0, 0.0]],
                              [[0.0, 1.0, 2.0, 4.0, 4.0], [1.0, 1.0, 0.0, 0.0, 0.0]],
                              [[0.0, 1.0, 1.0, 4.0, 4.0], [1.0, 1.0, 0.0, 0.0, 0.0]],
                             [[0.0, 0.0, 0.0, 2.0, 4.0], [1.0, 0.0, 0.0, 0.0, 0.0]]])
+        data = me.Data('data_init')
         data.load(variables, time_values, count_data)
         sol_mean = np.array([[[0.,         0.5,        1.25,       3.,         4.        ],
                               [1.,         0.75,       0.25,       0.25,       0.        ]],
@@ -316,3 +410,100 @@ class TestDataClass(object):
         np.testing.assert_allclose(sol_mean, data.data_mean, rtol=0.1)
         np.testing.assert_allclose(sol_var, data.data_variance, rtol=0.1)
         np.testing.assert_allclose(sol_cov, data.data_covariance, rtol=0.1)
+
+        assert(data.data_mean_exists_only == False)
+        assert(data.data_num_variables == 2)
+        assert(data.data_num_time_values == 5)
+        assert(data.data_mean_order == [{'variables': 'A', 'summary_indices': 0, 'count_indices': (0,)},
+                                          {'variables': 'B', 'summary_indices': 1, 'count_indices': (1,)}])
+        assert(data.data_variance_order == [{'variables': ('A', 'A'), 'summary_indices': 0, 'count_indices': (0, 0)},
+                                             {'variables': ('B', 'B'), 'summary_indices': 1, 'count_indices': (1, 1)}])
+        assert(data.data_covariance_order == [{'variables': ('A', 'B'), 'summary_indices': 0, 'count_indices': (0, 1)}])
+        assert(data.data_type == 'counts')
+        assert(data.data_num_values == 25)
+        assert(data.data_num_values_mean_only == 10)
+
+    def test_load_summary_data(self):
+        variables = ['A', 'B']
+        time_values = np.linspace(0.0, 4.0, num=5)
+        sol_mean = np.array([[[0.,         0.5,        1.25,       3.,         4.        ],
+                              [1.,         0.75,       0.25,       0.25,       0.        ]],
+                             [[0.,         0.25096378, 0.41313568, 0.50182694, 0.        ],
+                              [0.,         0.21847682, 0.21654396, 0.21624184, 0.        ]]])
+        sol_var = np.array([[[0.,         0.33333333, 0.91666667, 1.33333333, 0.,        ],
+                      [0.,         0.25,       0.25,       0.25,       0.,        ]],
+                     [[0.,         0.10247419, 0.39239737, 0.406103,   0.,        ],
+                      [0.,         0.13197367, 0.13279328, 0.13272021, 0.,        ]]])
+        sol_cov = np.array([[[ 0.,          0.16666667,  0.25,       -0.33333333,  0.        ]],
+                             [[ 0.,          0.11379549,  0.18195518,  0.22722941,  0.        ]]])
+        data = me.Data('data_init')
+        data.load(variables, time_values, None, data_type='summary',
+                    mean_data=sol_mean, var_data=sol_var, cov_data=sol_cov)
+        np.testing.assert_allclose(sol_mean, data.data_mean)
+        np.testing.assert_allclose(sol_var, data.data_variance)
+        np.testing.assert_allclose(sol_cov, data.data_covariance)
+
+        assert(data.data_mean_exists_only == False)
+        assert(data.data_num_variables == 2)
+        assert(data.data_num_time_values == 5)
+        assert(data.data_mean_order == [{'variables': 'A', 'summary_indices': 0, 'count_indices': (0,)},
+                                          {'variables': 'B', 'summary_indices': 1, 'count_indices': (1,)}])
+        assert(data.data_variance_order == [{'variables': ('A', 'A'), 'summary_indices': 0, 'count_indices': (0, 0)},
+                                             {'variables': ('B', 'B'), 'summary_indices': 1, 'count_indices': (1, 1)}])
+        assert(data.data_covariance_order == [{'variables': ('A', 'B'), 'summary_indices': 0, 'count_indices': (0, 1)}])
+        assert(data.data_type == 'summary')
+        assert(data.data_num_values == 25)
+        assert(data.data_num_values_mean_only == 10)
+
+    def test_load_summary_data_mean_only_1(self):
+        variables = ['A', 'B']
+        time_values = np.linspace(0.0, 4.0, num=5)
+        sol_mean = np.array([[[0.,         0.5,        1.25,       3.,         4.        ],
+                              [1.,         0.75,       0.25,       0.25,       0.        ]],
+                             [[0.,         0.25096378, 0.41313568, 0.50182694, 0.        ],
+                              [0.,         0.21847682, 0.21654396, 0.21624184, 0.        ]]])
+        sol_var = np.empty((2, 0, 5))
+        sol_cov = np.empty((2, 0, 5))
+        data = me.Data('data_init')
+        data.load(variables, time_values, None, data_type='summary',
+                        mean_data=sol_mean, var_data=sol_var, cov_data=sol_cov)
+        np.testing.assert_allclose(sol_mean, data.data_mean)
+        np.testing.assert_allclose(sol_var, data.data_variance)
+        np.testing.assert_allclose(sol_cov, data.data_covariance)
+
+        assert(data.data_mean_exists_only == True)
+        assert(data.data_num_variables == 2)
+        assert(data.data_num_time_values == 5)
+        assert(data.data_mean_order == [{'variables': 'A', 'summary_indices': 0, 'count_indices': (0,)},
+                                          {'variables': 'B', 'summary_indices': 1, 'count_indices': (1,)}])
+        assert(data.data_variance_order == [])
+        assert(data.data_covariance_order == [])
+        assert(data.data_type == 'summary')
+        assert(data.data_num_values == 10)
+        assert(data.data_num_values_mean_only == 10)
+
+    def test_load_summary_data_mean_only_2(self):
+        variables = ['A', 'B']
+        time_values = np.linspace(0.0, 4.0, num=5)
+        sol_mean = np.array([[[0.,         0.5,        1.25,       3.,         4.        ],
+                              [1.,         0.75,       0.25,       0.25,       0.        ]],
+                             [[0.,         0.25096378, 0.41313568, 0.50182694, 0.        ],
+                              [0.,         0.21847682, 0.21654396, 0.21624184, 0.        ]]])
+        sol_var = np.empty((2, 0, 5))
+        sol_cov = np.empty((2, 0, 5))
+        data = me.Data('data_init')
+        data.load(variables, time_values, None, data_type='summary', mean_data=sol_mean)
+        np.testing.assert_allclose(sol_mean, data.data_mean)
+        np.testing.assert_allclose(sol_var, data.data_variance)
+        np.testing.assert_allclose(sol_cov, data.data_covariance)
+
+        assert(data.data_mean_exists_only == True)
+        assert(data.data_num_variables == 2)
+        assert(data.data_num_time_values == 5)
+        assert(data.data_mean_order == [{'variables': 'A', 'summary_indices': 0, 'count_indices': (0,)},
+                                          {'variables': 'B', 'summary_indices': 1, 'count_indices': (1,)}])
+        assert(data.data_variance_order == [])
+        assert(data.data_covariance_order == [])
+        assert(data.data_type == 'summary')
+        assert(data.data_num_values == 10)
+        assert(data.data_num_values_mean_only == 10)
