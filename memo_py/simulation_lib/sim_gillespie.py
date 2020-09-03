@@ -18,7 +18,8 @@ class GillespieSim(object):
                             in self.net.net_hidden_node_order[0] if node!='Z_env__centric']
 
         # load the net_hidden information of all indiviual edges (reactions)
-        self.net_hidden_edges = sorted(self.net.net_hidden.edges(data=True))
+        # (keys=True provides unique identifiers for parallel multiedges)
+        self.net_hidden_edges = sorted(self.net.net_hidden.edges(data=True, keys=True))
 
         # instantiate variable for preparation of the simulations
         self.sim_gill_propensities_eval = None
@@ -201,32 +202,32 @@ class GillespieSim(object):
             # 1) indices of start and end node for each reaction with respect to node_order
             # if the start or end node is 'Z_env__centric' (environment node) then return signal word 'env'
             try:
-                start_node_ind = node_order.index(edge[2]['edge_start_end_identifier'][0])
+                start_node_ind = node_order.index(edge[3]['edge_start_end_identifier'][0])
             except:
                 start_node_ind = 'env'
 
             try:
-                end_node_ind = node_order.index(edge[2]['edge_start_end_identifier'][1])
+                end_node_ind = node_order.index(edge[3]['edge_start_end_identifier'][1])
             except:
                 end_node_ind = 'env'
 
             # 2) rate of a reaction (including the factor of the step size); e.g., '2.0 * theta_0'
-            reaction_rate_symbolic = edge[2]['edge_rate_symbol_identifier']
+            reaction_rate_symbolic = edge[3]['edge_rate_symbol_identifier']
 
             # 3) the reaction type of this edge (not of the module)
-            reaction_type = edge[2]['edge_type']
+            reaction_type = edge[3]['edge_type']
 
             # 4) the centric nodes connected by the module where this reaction is part of
             # (i.e., needed for S -> E1 + E2 reaction)
             # if 'Z_env__centric' is start or end node return 'env' signal word
             try:
-                start_module_centric_node_ind = node_order.index(edge[2]['edge_centric_start_end_identifier'][0])
+                start_module_centric_node_ind = node_order.index(edge[3]['edge_centric_start_end_identifier'][0])
 
             except:
                 start_module_centric_node_ind = 'env'
 
             try:
-                end_module_centric_node_ind = node_order.index(edge[2]['edge_centric_start_end_identifier'][1])
+                end_module_centric_node_ind = node_order.index(edge[3]['edge_centric_start_end_identifier'][1])
             except:
                 end_module_centric_node_ind = 'env'
             ###

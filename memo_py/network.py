@@ -11,11 +11,11 @@ class Network(object):
         self._validate_net_name_input(net_name)
         self.net_name = net_name
 
-        # initialise the main network as networkx DiGraph
-        self.net_main = nx.DiGraph()
+        # initialise the main network as networkx MultiDiGraph
+        self.net_main = nx.MultiDiGraph()
 
-        # initialise the hidden network as networkx DiGraph
-        self.net_hidden = nx.DiGraph()
+        # initialise the hidden network as networkx MultiDiGraph
+        self.net_hidden = nx.MultiDiGraph()
 
         # initialise the network modules as list
         self.net_modules = list()
@@ -46,10 +46,10 @@ class Network(object):
         self.net_theta_symbolic = self.create_theta_order(self.net_modules)
 
         # define the main network structure
-        self.net_main = self.structure_net_main(nx.DiGraph(), self.net_modules)
+        self.net_main = self.structure_net_main(nx.MultiDiGraph(), self.net_modules)
 
         # define the hidden network structure
-        self.net_hidden = self.structure_net_hidden(nx.DiGraph(), self.net_modules)
+        self.net_hidden = self.structure_net_hidden(nx.MultiDiGraph(), self.net_modules)
 
         # create a list ordering the nodes and pairs of nodes of the main and hidden networks
         self.net_main_node_order = self.create_node_order(self.net_main.nodes())
@@ -321,8 +321,8 @@ class Network(object):
             ###
 
         # edge settings
-        for node1_id, node2_id, edge_inf in net_main_graphviz.edges(data=True):
-            edge = (node1_id, node2_id)
+        for node1_id, node2_id, key, edge_inf in net_main_graphviz.edges(data=True, keys=True):
+            edge = (node1_id, node2_id, key)
 
             sym_rate = edge_inf['module_rate_symbol']
             edge_label = edge_settings[sym_rate]['label']
@@ -409,8 +409,8 @@ class Network(object):
             ###
 
         # edge settings
-        for node1_id, node2_id, edge_inf in net_hidden_graphviz.edges(data=True):
-            edge = (node1_id, node2_id)
+        for node1_id, node2_id, key, edge_inf in net_hidden_graphviz.edges(data=True, keys=True):
+            edge = (node1_id, node2_id, key)
 
             sym_rate = edge_inf['module_rate_symbol']
             module_steps = edge_inf['module_steps']

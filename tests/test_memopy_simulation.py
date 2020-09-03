@@ -352,8 +352,6 @@ class TestEstimationClass(object):
         np.testing.assert_allclose(sim_sol_cov, sim_res_cov, rtol=0.2, atol=0.2)
 
     ### parallel2 model df2 ds4 l3
-    # TODO: current implementation way of two parallel channels
-    # (this should be replaced by multichannel nets at some point)
     def test_parallel2_model_df2_ds4_l3_moments(self):
         net = me.Network('net_par2')
         net.structure([
@@ -370,6 +368,60 @@ class TestEstimationClass(object):
         theta_values = {'l': 0.06, 'd4': 0.06, 'd2': 0.08}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
         variables = {'X_t': ('S_t', 'P1_t', 'P2_t'), 'Y_t': ('Y_t', )}
+
+        sim = me.Simulation(net)
+        res = sim.simulate('moments', variables, initial_values, theta_values, time_values)
+
+        sim_sol_mean = np.array([[1.        , 0.9892332 , 0.9628573 , 0.92641326, 0.88291527,
+                                 0.83425905, 0.78189005, 0.72708038, 0.671013  , 0.61478239,
+                                 0.55936821, 0.50560865, 0.45418393, 0.40561213, 0.36025565,
+                                 0.31833546, 0.27994993, 0.24509568, 0.21368863, 0.18558362,
+                                 0.16059206, 0.13849701, 0.11906575, 0.10205975, 0.08724246,
+                                 0.07438504, 0.06327037, 0.05369577],
+                                [0.        , 0.01077441, 0.03733088, 0.07470416, 0.1208133 ,
+                                 0.1748674 , 0.23655813, 0.30571417, 0.38219578, 0.46589589,
+                                 0.55677665, 0.6549082 , 0.76049766, 0.8739066 , 0.99565908,
+                                 1.12644342, 1.2671107 , 1.41867221, 1.58229732, 1.75931293,
+                                 1.95120503, 2.15962273, 2.38638491, 2.63348958, 2.90312602,
+                                 3.1976896 , 3.51979935, 3.87231827]])
+        sim_sol_var = np.array([[0.00000000e+00, 1.06508802e-02, 3.57631223e-02, 6.81717355e-02,
+                                 1.03375893e-01, 1.38270887e-01, 1.70537997e-01, 1.98434501e-01,
+                                 2.20754555e-01, 2.36825004e-01, 2.46475416e-01, 2.49968543e-01,
+                                 2.47900888e-01, 2.41090929e-01, 2.30471516e-01, 2.16997996e-01,
+                                 2.01577965e-01, 1.85023789e-01, 1.68025800e-01, 1.51142341e-01,
+                                 1.34802248e-01, 1.19315590e-01, 1.04889097e-01, 9.16435597e-02,
+                                 7.96312172e-02, 6.88519022e-02, 5.92672286e-02, 5.08125332e-02],
+                                [0.00000000e+00, 1.06735467e-02, 3.63144252e-02, 7.13734183e-02,
+                                 1.13789945e-01, 1.63071913e-01, 2.19273854e-01, 2.82664130e-01,
+                                 3.53752593e-01, 4.33448130e-01, 5.23227776e-01, 6.25276607e-01,
+                                 7.42598855e-01, 8.79117068e-01, 1.03977907e+00, 1.23068991e+00,
+                                 1.45928261e+00, 1.73453877e+00, 2.06726949e+00, 2.47046781e+00,
+                                 2.95974360e+00, 3.55385666e+00, 4.27536741e+00, 5.15142343e+00,
+                                 6.21471343e+00, 7.50461864e+00, 9.06860280e+00, 1.09638889e+01]])
+        sim_sol_cov = np.array([[ 0.        , -0.01065841, -0.03594431, -0.06920692, -0.10666791,
+                                 -0.14588471, -0.18496245, -0.22227878, -0.25645833, -0.28642458,
+                                 -0.31144316, -0.33112725, -0.34540582, -0.35446711, -0.35869181,
+                                 -0.35858689, -0.35472755, -0.34771044, -0.33811895, -0.32649966,
+                                 -0.31334803, -0.2991013 , -0.28413671, -0.2687733 , -0.25327587,
+                                 -0.23786026, -0.222699  , -0.20792711]])
+
+        np.testing.assert_allclose(sim_sol_mean, sim.sim_moments_res[0], rtol=1e-06, atol=1e-06)
+        np.testing.assert_allclose(sim_sol_var, sim.sim_moments_res[1], rtol=1e-06, atol=1e-06)
+        np.testing.assert_allclose(sim_sol_cov, sim.sim_moments_res[2], rtol=1e-06, atol=1e-06)
+
+    def test_parallel2_model_df2_ds4_l3_moments_multiedge(self):
+        net = me.Network('net_par2')
+        net.structure([
+            {'start': 'X_t', 'end': 'Y_t', 'rate_symbol': 'd4', 'type': 'S -> E', 'reaction_steps': 4},
+            {'start': 'X_t', 'end': 'Y_t', 'rate_symbol': 'd2', 'type': 'S -> E', 'reaction_steps': 2},
+            {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
+            ])
+
+        initial_values = {'X_t': 1, 'Y_t': 0}
+        # differentiation theta values have to be half now
+        theta_values = {'l': 0.06, 'd4': 0.03, 'd2': 0.04}
+        time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
+        variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
 
         sim = me.Simulation(net)
         res = sim.simulate('moments', variables, initial_values, theta_values, time_values)
@@ -476,6 +528,67 @@ class TestEstimationClass(object):
         np.testing.assert_allclose(sim_sol_cov, sim_res_cov, rtol=0.2, atol=0.2)
 
     @pytest.mark.slow
+    def test_parallel2_model_df2_ds4_l3_gillespie_multiedge(self):
+        net = me.Network('net_par2')
+        net.structure([
+            {'start': 'X_t', 'end': 'Y_t', 'rate_symbol': 'd4', 'type': 'S -> E', 'reaction_steps': 4},
+            {'start': 'X_t', 'end': 'Y_t', 'rate_symbol': 'd2', 'type': 'S -> E', 'reaction_steps': 2},
+            {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
+            ])
+
+        initial_values = {'X_t': 1, 'Y_t': 0}
+        # differentiation theta values have to be half now
+        theta_values = {'l': 0.06, 'd4': 0.03, 'd2': 0.04}
+        time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
+        variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
+
+        num_iter = 10000
+        sim = me.Simulation(net)
+        res_list = list()
+        for __ in range(num_iter):
+            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
+
+        sims = np.array(res_list)
+        sim_res_mean =  np.mean(sims, axis=0)
+        sim_res_var = np.var(sims, axis=0, ddof=1)
+        sim_res_cov = np.array([np.cov(sims[:, 0, i], sims[:, 1, i], ddof=1)[1,0]
+                                                    for i in range(sims.shape[2])])
+
+        # the solutions have been computed with num_iter = 100000
+        sim_sol_mean = np.array([[1.     , 0.98917, 0.96263, 0.92617, 0.88359, 0.83522, 0.78319,
+                                0.72803, 0.67007, 0.61486, 0.55918, 0.50559, 0.45419, 0.40623,
+                                0.36079, 0.31911, 0.28094, 0.24543, 0.21371, 0.18521, 0.15994,
+                                0.1384 , 0.11941, 0.10197, 0.08769, 0.07461, 0.06377, 0.05413],
+                               [0.     , 0.01084, 0.03752, 0.07478, 0.12034, 0.17392, 0.23561,
+                                0.30488, 0.38269, 0.46588, 0.55629, 0.65378, 0.75971, 0.87289,
+                                0.99413, 1.1231 , 1.26451, 1.41578, 1.58057, 1.75827, 1.94899,
+                                2.15551, 2.38079, 2.62727, 2.89559, 3.19119, 3.51406, 3.86838]])
+        sim_sol_var = np.array([[0.00000000e+00, 1.07128182e-02, 3.59738428e-02, 6.83798149e-02,
+                                1.02859740e-01, 1.37628928e-01, 1.69805122e-01, 1.98004299e-01,
+                                2.21078406e-01, 2.36809548e-01, 2.46500193e-01, 2.49971252e-01,
+                                2.47903923e-01, 2.41209599e-01, 2.30622882e-01, 2.17280981e-01,
+                                2.02014737e-01, 1.85195967e-01, 1.68039716e-01, 1.50908765e-01,
+                                1.34360540e-01, 1.19246632e-01, 1.05152303e-01, 9.15730348e-02,
+                                8.00012639e-02, 6.90440383e-02, 5.97039841e-02, 5.12004551e-02],
+                               [0.00000000e+00, 1.07426018e-02, 3.64126137e-02, 7.11286629e-02,
+                                1.13819423e-01, 1.62513459e-01, 2.19480123e-01, 2.82591012e-01,
+                                3.53281897e-01, 4.33220158e-01, 5.20336639e-01, 6.22157933e-01,
+                                7.40698123e-01, 8.81641864e-01, 1.04132596e+00, 1.22763867e+00,
+                                1.45927905e+00, 1.72986429e+00, 2.05994907e+00, 2.46300124e+00,
+                                2.94169740e+00, 3.53208196e+00, 4.25209150e+00, 5.10897344e+00,
+                                6.18169037e+00, 7.47975118e+00, 9.04491277e+00, 1.09330855e+01]])
+        sim_sol_cov = np.array([ 0.        , -0.01072271, -0.03611824, -0.06925969, -0.10633228,
+                               -0.14526292, -0.18452924, -0.22196401, -0.25643165, -0.28645384,
+                               -0.31106935, -0.33054794, -0.34505614, -0.35459765, -0.35867575,
+                               -0.35839602, -0.35525499, -0.34747836, -0.33778699, -0.32565244,
+                               -0.31172458, -0.29832557, -0.28429298, -0.2679054 , -0.25391683,
+                               -0.23809707, -0.22409385, -0.2093975 ])
+
+        np.testing.assert_allclose(sim_sol_mean, sim_res_mean, rtol=0.2, atol=0.2)
+        np.testing.assert_allclose(sim_sol_var, sim_res_var, rtol=0.2, atol=0.2)
+        np.testing.assert_allclose(sim_sol_cov, sim_res_cov, rtol=0.2, atol=0.2)
+
+    @pytest.mark.slow
     def test_parallel2_model_df2_ds4_l3_gillespie_independent(self):
         # add the summary stats here of an independent gillespie simulation
         # (see jupyter notebooks gillespie_test_1 and gillespie_test_2)
@@ -491,6 +604,61 @@ class TestEstimationClass(object):
 
         num_iter = 10000
         sims = gill_indep_test_2(initial_values, time_values, d4, d2, l, num_iter)
+        sim_res_mean =  np.mean(sims, axis=0)
+        sim_res_var = np.var(sims, axis=0, ddof=1)
+        sim_res_cov = np.array([np.cov(sims[:, 0, i], sims[:, 1, i], ddof=1)[1,0]
+                                                    for i in range(sims.shape[2])])
+
+        # the solutions have been computed with num_iter = 100000
+        sim_sol_mean = np.array([[1.     , 0.98943, 0.9631 , 0.92714, 0.88312, 0.83479, 0.78267,
+                                0.72796, 0.67315, 0.61471, 0.5597 , 0.50621, 0.45568, 0.40713,
+                                0.36222, 0.31951, 0.28133, 0.24632, 0.21476, 0.18607, 0.161  ,
+                                0.13809, 0.11862, 0.10166, 0.08677, 0.07401, 0.06294, 0.05356],
+                               [0.     , 0.0106 , 0.0371 , 0.07394, 0.12049, 0.17407, 0.23557,
+                                0.30505, 0.3802 , 0.46596, 0.55587, 0.65428, 0.75853, 0.87224,
+                                0.9934 , 1.12505, 1.26381, 1.41601, 1.58016, 1.7573 , 1.94785,
+                                2.15775, 2.38401, 2.62926, 2.89853, 3.19214, 3.51472, 3.86759]])
+        sim_sol_var = np.array([[0.00000000e+00, 1.04583797e-02, 3.55387454e-02, 6.75520959e-02,
+                                1.03220098e-01, 1.37917035e-01, 1.70099372e-01, 1.98036219e-01,
+                                2.20021278e-01, 2.36843984e-01, 2.46438374e-01, 2.49963936e-01,
+                                2.48038218e-01, 2.41377577e-01, 2.31018982e-01, 2.17425534e-01,
+                                2.02185453e-01, 1.85648314e-01, 1.68639829e-01, 1.51449470e-01,
+                                1.35080351e-01, 1.19022342e-01, 1.04550341e-01, 9.13261577e-02,
+                                7.92417595e-02, 6.85332052e-02, 5.89791462e-02, 5.06918333e-02],
+                               [0.00000000e+00, 1.05477455e-02, 3.61239512e-02, 7.06735831e-02,
+                                1.13273293e-01, 1.62051256e-01, 2.18438959e-01, 2.83377331e-01,
+                                3.53771498e-01, 4.34305621e-01, 5.23163775e-01, 6.26783949e-01,
+                                7.43369673e-01, 8.84046223e-01, 1.04654691e+00, 1.23784488e+00,
+                                1.45946888e+00, 1.73526303e+00, 2.06791505e+00, 2.48022151e+00,
+                                2.96636004e+00, 3.56040054e+00, 4.26600898e+00, 5.13526321e+00,
+                                6.18845572e+00, 7.46423686e+00, 9.04141374e+00, 1.09308469e+01]])
+        sim_sol_cov = np.array([ 0.        , -0.01048806, -0.03573137, -0.06855342, -0.10640819,
+                               -0.14531335, -0.18437542, -0.22206642, -0.25593419, -0.28643314,
+                               -0.31112355, -0.33120639, -0.34565041, -0.35511862, -0.35983295,
+                               -0.35946832, -0.35555122, -0.34879507, -0.33935856, -0.32698408,
+                               -0.31360699, -0.29796668, -0.28279409, -0.26729324, -0.25150796,
+                               -0.23625264, -0.22121869, -0.20715019])
+
+        np.testing.assert_allclose(sim_sol_mean, sim_res_mean, rtol=0.2, atol=0.2)
+        np.testing.assert_allclose(sim_sol_var, sim_res_var, rtol=0.2, atol=0.2)
+        np.testing.assert_allclose(sim_sol_cov, sim_res_cov, rtol=0.2, atol=0.2)
+
+    @pytest.mark.slow
+    def test_parallel2_model_df2_ds4_l3_gillespie_independent_multiedge(self):
+        # add the summary stats here of an independent gillespie simulation
+        # (see jupyter notebooks gillespie_test_1 and gillespie_test_2)
+
+        # order of the variables of the hidden layer
+        # 0,1,2,3,4: X centric, X diff4 0, X diff4 1, X diff4 2, X diff2 0,
+        # 5,6,7: Y centric, Y div 0, Y div 1
+        initial_values = np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+        time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
+        d4 = 0.03
+        d2 = 0.04
+        l = 0.06
+
+        num_iter = 10000
+        sims = gill_indep_test_2_multiedge(initial_values, time_values, d4, d2, l, num_iter)
         sim_res_mean =  np.mean(sims, axis=0)
         sim_res_var = np.var(sims, axis=0, ddof=1)
         sim_res_cov = np.array([np.cov(sims[:, 0, i], sims[:, 1, i], ddof=1)[1,0]
@@ -879,8 +1047,6 @@ class TestEstimationClass(object):
         np.testing.assert_allclose(sim_sol_cov, sim.sim_moments_res[2], rtol=1e-06, atol=1e-06)
 
     ### mean only parallel2 model df2 ds4 l3
-    # TODO: current implementation way of two parallel channels
-    # (this should be replaced by multichannel nets at some point)
     def test_parallel2_model_df2_ds4_l3_moments_mean_only(self):
         net = me.Network('net_par2')
         net.structure([
@@ -897,6 +1063,43 @@ class TestEstimationClass(object):
         theta_values = {'l': 0.06, 'd4': 0.06, 'd2': 0.08}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
         variables = {'X_t': ('S_t', 'P1_t', 'P2_t'), 'Y_t': ('Y_t', )}
+
+        sim = me.Simulation(net)
+        sim_res_mom = sim.simulate('moments', variables, initial_values,
+                                    theta_values, time_values, sim_mean_only=True)
+
+        sim_sol_mean = np.array([[1.        , 0.9892332 , 0.9628573 , 0.92641326, 0.88291527,
+                                 0.83425905, 0.78189005, 0.72708038, 0.671013  , 0.61478239,
+                                 0.55936821, 0.50560865, 0.45418393, 0.40561213, 0.36025565,
+                                 0.31833546, 0.27994993, 0.24509568, 0.21368863, 0.18558362,
+                                 0.16059206, 0.13849701, 0.11906575, 0.10205975, 0.08724246,
+                                 0.07438504, 0.06327037, 0.05369577],
+                                [0.        , 0.01077441, 0.03733088, 0.07470416, 0.1208133 ,
+                                 0.1748674 , 0.23655813, 0.30571417, 0.38219578, 0.46589589,
+                                 0.55677665, 0.6549082 , 0.76049766, 0.8739066 , 0.99565908,
+                                 1.12644342, 1.2671107 , 1.41867221, 1.58229732, 1.75931293,
+                                 1.95120503, 2.15962273, 2.38638491, 2.63348958, 2.90312602,
+                                 3.1976896 , 3.51979935, 3.87231827]])
+        sim_sol_var = np.empty(shape=(0, 28), dtype=np.float64)
+        sim_sol_cov = np.empty(shape=(0, 28), dtype=np.float64)
+
+        np.testing.assert_allclose(sim_sol_mean, sim.sim_moments_res[0], rtol=1e-06, atol=1e-06)
+        np.testing.assert_allclose(sim_sol_var, sim.sim_moments_res[1], rtol=1e-06, atol=1e-06)
+        np.testing.assert_allclose(sim_sol_cov, sim.sim_moments_res[2], rtol=1e-06, atol=1e-06)
+
+    def test_parallel2_model_df2_ds4_l3_moments_mean_only_multiedge(self):
+        net = me.Network('net_par2')
+        net.structure([
+            {'start': 'X_t', 'end': 'Y_t', 'rate_symbol': 'd4', 'type': 'S -> E', 'reaction_steps': 4},
+            {'start': 'X_t', 'end': 'Y_t', 'rate_symbol': 'd2', 'type': 'S -> E', 'reaction_steps': 2},
+            {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
+            ])
+
+        initial_values = {'X_t': 1, 'Y_t': 0}
+        # differentiation theta values have to be half now
+        theta_values = {'l': 0.06, 'd4': 0.03, 'd2': 0.04}
+        time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
+        variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
 
         sim = me.Simulation(net)
         sim_res_mom = sim.simulate('moments', variables, initial_values,
@@ -1141,6 +1344,116 @@ def gill_indep_test_2(initial_state, time_values, d4, d2, l, num_iter):
                 # differentiation d2 channel
                 2.0/2 * d2 * cell_state[0], # d from Xcentric to X0
                 2.0/2 * d2 * cell_state[4], # d from X0 to X1
+
+                # division
+                3.0 * l * cell_state[5], # l from Ycentric to Y0
+                3.0 * l * cell_state[6], # l from Y0 to Y1
+                3.0 * l * cell_state[7], # l from Y1 to Ycentric
+            ])
+#             print('\n while start')
+#             print('reac_props: ', reac_props)
+
+            # draw exponential random time for next reaction
+            total_prop = np.sum(reac_props)
+            dt = np.random.exponential(1.0/total_prop)
+
+#             print('total_prop: ', total_prop)
+#             print('dt: ', dt)
+
+            # save cell state results for relevant time points
+            for ind in np.where((time_values >= time_current)
+                                & (time_values < time_current + dt))[0]:
+                res[i, :, ind] = copy.deepcopy(cell_state).reshape((1,8))
+
+#             print('res: ', res)
+
+            # draw which reaction takes place
+            reac_probs = reac_props/np.sum(reac_props)
+            reac_rand = np.random.choice(reac_props.shape[0], p=reac_probs)
+
+#             print('reac_probs: ', reac_probs)
+#             print('reac_rand: ', reac_rand)
+
+            # update cell state according to selected reaction
+            # differentiation d4 channel
+            if reac_rand==0:
+                cell_state[0] += -1.0
+                cell_state[1] += +1.0
+            elif reac_rand==1:
+                cell_state[1] += -1.0
+                cell_state[2] += +1.0
+            elif reac_rand==2:
+                cell_state[2] += -1.0
+                cell_state[3] += +1.0
+            elif reac_rand==3:
+                cell_state[3] += -1.0
+                cell_state[5] += +1.0
+
+            # differentiation d2 channel
+            elif reac_rand==4:
+                cell_state[0] += -1.0
+                cell_state[4] += +1.0
+            elif reac_rand==5:
+                cell_state[4] += -1.0
+                cell_state[5] += +1.0
+
+            # division
+            elif reac_rand==6:
+                cell_state[5] += -1.0
+                cell_state[6] += +1.0
+            elif reac_rand==7:
+                cell_state[6] += -1.0
+                cell_state[7] += +1.0
+            elif reac_rand==8:
+                cell_state[7] += -1.0
+                cell_state[5] += +2.0
+            else:
+                print('error')
+
+            # update current time by delta t
+            time_current += dt
+
+#             print('cell_state: ', cell_state)
+#             print('time_current: ', time_current)
+#             print('\n')
+
+    # sum hidden states to get observable layer
+    res_obs = np.zeros((num_iter, 2, time_values.shape[0]))
+    res_obs[:, 0, :] = np.sum(res[:, (0,1,2,3,4), :], axis=1)
+    res_obs[:, 1, :] = np.sum(res[:, (5,6,7), :], axis=1)
+    return res_obs
+
+# function taken from gillespie_test_2 notebook
+def gill_indep_test_2_multiedge(initial_state, time_values, d4, d2, l, num_iter):
+    # initialisation
+    res = np.zeros((num_iter, 8, time_values.shape[0]))
+
+    for i in range(num_iter):
+        time_current = time_values[0]
+        time_max = time_values[-1]
+        cell_state = np.zeros(8)
+        cell_state = copy.deepcopy(initial_state)
+
+#         print('iter: ', i)
+#         print('time_current: ', time_current)
+#         print('time_max: ', time_max)
+#         print('cell_state: ', cell_state)
+
+        while time_current <= time_max:
+            # reaction propensities
+            reac_props = np.array([
+                # NOTE: division by 2 in the diff channels is only due to
+                # current workaround for multigraphs (with P intermediate nodes)
+
+                # differentiation d4 channel
+                4.0 * d4 * cell_state[0], # d from Xcentric to X0
+                4.0 * d4 * cell_state[1], # d from X0 to X1
+                4.0 * d4 * cell_state[2], # d from X1 to X2
+                4.0 * d4 * cell_state[3], # d from X2 to Ycentric
+
+                # differentiation d2 channel
+                2.0 * d2 * cell_state[0], # d from Xcentric to X0
+                2.0 * d2 * cell_state[4], # d from X0 to X1
 
                 # division
                 3.0 * l * cell_state[5], # l from Ycentric to Y0

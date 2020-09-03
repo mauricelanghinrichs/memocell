@@ -24,7 +24,8 @@ class MomentsSim(object):
         self.net = net
 
         # load the net_hidden information of all indiviual edges (reactions)
-        self.net_hidden_edges = sorted(self.net.net_hidden.edges(data=True))
+        # (keys=True provides unique identifiers for parallel multiedges)
+        self.net_hidden_edges = sorted(self.net.net_hidden.edges(data=True, keys=True))
 
         # boolean to indicate if (first) or (first and second) order moments should be derived
         # specified through upper level class Simulation
@@ -330,16 +331,16 @@ class MomentsSim(object):
             z_node_end = z_aux_vars_dict[edge[1]] if edge[1]!='Z_env__centric' else '1.0'
 
             # read out reaction type and reaction rate (symbolic form, accelerated by step size)
-            reac_type = edge[2]['edge_type']
+            reac_type = edge[3]['edge_type']
             # example for reaction_rate: '3.0 * theta_2_q' (if module has theta rate 'theta_2' and three reaction steps)
-            reac_rate = edge[2]['edge_rate_symbol_identifier'].replace(edge[2]['module_rate_symbol_identifier'],
-                                                                theta_repl_dict[edge[2]['module_rate_symbol_identifier']])
+            reac_rate = edge[3]['edge_rate_symbol_identifier'].replace(edge[3]['module_rate_symbol_identifier'],
+                                                                theta_repl_dict[edge[3]['module_rate_symbol_identifier']])
 
             # for the special case of an edge type of 'S -> E1 + E2' capture both end nodes
             # this edge type occurs for the last reaction of a 'S -> S + E' module
             if reac_type == 'S -> E1 + E2':
                 # the end node which is the start (centric) node of the module
-                z_node_end_1 = z_aux_vars_dict[edge[2]['edge_centric_start_end_identifier'][0]]
+                z_node_end_1 = z_aux_vars_dict[edge[3]['edge_centric_start_end_identifier'][0]]
 
                 # the end node which the start node is actually connected to
                 z_node_end_2 = z_node_end
