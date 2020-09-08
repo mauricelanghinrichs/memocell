@@ -63,5 +63,5 @@ html_logo = '../images/MemoCellLogo.png'
 html_theme_options = {
     'logo_only': True,
     'display_version': False,
-    'style_nav_header_background': 'aliceblue',
+    'style_nav_header_background': 'lightgrey' # 'aliceblue',
 }
