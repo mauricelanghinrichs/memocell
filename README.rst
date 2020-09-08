@@ -1,7 +1,8 @@
 
 .. image:: images/MemoCellLogo.svg
-   :width: 500px
+   :width: 300px
    :align: center
+   margin:0px auto;
 
 Memopy
 ======
