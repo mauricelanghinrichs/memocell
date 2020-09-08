@@ -1,8 +1,8 @@
 
+.. class:: center
+
 .. image:: images/MemoCellLogo.svg
    :width: 300px
-   :align: center
-   margin: 0px auto
 
 Memopy
 ======
