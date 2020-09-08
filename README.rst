@@ -1,5 +1,6 @@
 
 .. image:: images/MemoCellLogo.svg
+   :width: 100px
 
 Memopy
 ======
