@@ -4,6 +4,12 @@
 *.pdf
 *.png
 *.npy
+*.svg
+
+# User keep
+!images/*.pdf
+!images/*.png
+!images/*.svg
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

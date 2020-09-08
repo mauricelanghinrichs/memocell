@@ -1,3 +1,7 @@
+
+<p align="center"><img src="images/MemoCellLogo.png" alt="" width="350"></p>
+<hr>
+
 Memopy
 ======
 
@@ -8,6 +12,8 @@ Memopy
 .. image:: https://travis-ci.org/borntyping/cookiecutter-pypackage-minimal.png
    :target: https://travis-ci.org/borntyping/cookiecutter-pypackage-minimal
    :alt: Latest Travis CI build status
+
+![MemoCell](/images/MemoCellLogo.pdf)
 
 An exact modelling framework for stochastic processes with and without **memo**\ ry in **Py**\ thon.
 
