@@ -54,7 +54,7 @@ To get a coverage report, run one of the following options::
 Building Documentation
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Requirements are ``sphinx`` and the ``sphinx_rtd_theme``, available via ``pip``. Go into the ``./docs/`` directory and run::
+Requirements are ``sphinx``, ``numpydoc`` and the ``sphinx_rtd_theme``, available via ``pip``. Go into the ``./docs/`` directory and run::
 
    make html
 
