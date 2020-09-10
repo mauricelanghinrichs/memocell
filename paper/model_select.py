@@ -21,22 +21,22 @@ import pickle
 # print(len(models))
 
 # alternative list of models (minimal model, different steps)
-# def make_net(steps_d, steps_l):
-#     name = 'net_' + str(steps_d) + '_' + str(steps_l)
+# def make_net(n_d, n_l):
+#     name = 'min_' + 'd_' + str(n_d) + '_l_' + str(n_l)
 #     topology = [
-#         {'start': 'M_t', 'end': 'A_t', 'rate_symbol': 'd_ma', 'type': 'S -> E', 'reaction_steps': steps_d},
-#         {'start': 'A_t', 'end': 'A_t', 'rate_symbol': 'la_a', 'type': 'S -> S + S', 'reaction_steps': steps_l}
+#         {'start': 'M_t', 'end': 'A_t', 'rate_symbol': 'd', 'type': 'S -> E', 'reaction_steps': n_d},
+#         {'start': 'A_t', 'end': 'A_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': n_l}
 #         ]
 #
 #     net = me.Network(name)
 #     net.structure(topology)
 #     return net
 #
-# nets = [make_net(steps_d, steps_l) for steps_d in range(1, 6) for steps_l in range(1, 21)] # range(1, 6) and range(1, 21) # range(3, 8) # [50, 60, 70, 80]
+# nets = [make_net(n_d, n_l) for n_d in range(1, 6) for n_l in range(1, 21)] # range(1, 6) and range(1, 21) # range(3, 8) # [50, 60, 70, 80]
 # variables = [{'M_t': ('M_t', ), 'A_t': ('A_t', )}]*len(nets)
 # initial_values = [{'M_t': 1.0, 'A_t': 0.0}]*len(nets)
-# theta_bounds = [{'d_ma': (0.0, 0.15), 'la_a': (0.0, 0.15)}]*len(nets)
-# fit_mean_only = True
+# theta_bounds = [{'d': (0.0, 0.15), 'l': (0.0, 0.15)}]*len(nets)
+# fit_mean_only = False
 # print(len(nets))
 
 ### alternative list of models
@@ -146,36 +146,11 @@ import pickle
 # print(len(models))
 
 ### 2 parallel activation (new multiedge version); fit_mean_only True and False
-# def make_net(n_d1, n_d2, n_l1):
-#     name = 'par2_d_' + str(n_d1) + '_' + str(n_d2) + '_l_' + str(n_l1)
-#     topology = [
-#         {'start': 'M_t', 'end': 'A_t', 'rate_symbol': 'd1', 'type': 'S -> E', 'reaction_steps': n_d1},
-#         {'start': 'M_t', 'end': 'A_t', 'rate_symbol': 'd2', 'type': 'S -> E', 'reaction_steps': n_d2},
-#         {'start': 'A_t', 'end': 'A_t', 'rate_symbol': 'l1', 'type': 'S -> S + S', 'reaction_steps': n_l1},
-#         ]
-#
-#     net = me.Network(name)
-#     net.structure(topology)
-#     return net
-#
-# n_d_list = [1, 2, 4, 6, 8, 10, 14, 18]
-# n_d_sparse = list(itertools.combinations_with_replacement(n_d_list, 2))
-# n_l_list = n_d_list
-# nets = [make_net(n_d1, n_d2, n_l1) for n_d1, n_d2 in n_d_sparse
-#                                          for n_l1 in n_l_list]
-# variables = [{'M_t': ('M_t', ), 'A_t': ('A_t', )}]*len(nets)
-# initial_values = [{'M_t': 1.0, 'A_t': 0.0}]*len(nets)
-# theta_bounds = [{'d1': (0.0, 0.15), 'd2': (0.0, 0.15), 'l1': (0.0, 0.15)}]*len(nets)
-# fit_mean_only = True # True or False
-# print(len(nets))
-
-### 3 parallel activation (new multiedge version); fit_mean_only True and False
-def make_net(n_d1, n_d2, n_d3, n_l1):
-    name = 'par3_d_' + str(n_d1) + '_' + str(n_d2) + '_' + str(n_d3) + '_l_' + str(n_l1)
+def make_net(n_d1, n_d2, n_l1):
+    name = 'par2_d_' + str(n_d1) + '_' + str(n_d2) + '_l_' + str(n_l1)
     topology = [
         {'start': 'M_t', 'end': 'A_t', 'rate_symbol': 'd1', 'type': 'S -> E', 'reaction_steps': n_d1},
         {'start': 'M_t', 'end': 'A_t', 'rate_symbol': 'd2', 'type': 'S -> E', 'reaction_steps': n_d2},
-        {'start': 'M_t', 'end': 'A_t', 'rate_symbol': 'd3', 'type': 'S -> E', 'reaction_steps': n_d3},
         {'start': 'A_t', 'end': 'A_t', 'rate_symbol': 'l1', 'type': 'S -> S + S', 'reaction_steps': n_l1},
         ]
 
@@ -184,15 +159,40 @@ def make_net(n_d1, n_d2, n_d3, n_l1):
     return net
 
 n_d_list = [1, 2, 4, 6, 8, 10, 14, 18]
-n_d_sparse = list(itertools.combinations_with_replacement(n_d_list, 3))
+n_d_sparse = list(itertools.combinations_with_replacement(n_d_list, 2))
 n_l_list = n_d_list
-nets = [make_net(n_d1, n_d2, n_d3, n_l1) for n_d1, n_d2, n_d3 in n_d_sparse
+nets = [make_net(n_d1, n_d2, n_l1) for n_d1, n_d2 in n_d_sparse
                                          for n_l1 in n_l_list]
 variables = [{'M_t': ('M_t', ), 'A_t': ('A_t', )}]*len(nets)
 initial_values = [{'M_t': 1.0, 'A_t': 0.0}]*len(nets)
-theta_bounds = [{'d1': (0.0, 0.15), 'd2': (0.0, 0.15), 'd3': (0.0, 0.15), 'l1': (0.0, 0.15)}]*len(nets)
-fit_mean_only = False # True or False
+theta_bounds = [{'d1': (0.0, 0.15), 'd2': (0.0, 0.15), 'l1': (0.0, 0.15)}]*len(nets)
+fit_mean_only = True # True or False
 print(len(nets))
+
+### 3 parallel activation (new multiedge version); fit_mean_only True and False
+# def make_net(n_d1, n_d2, n_d3, n_l1):
+#     name = 'par3_d_' + str(n_d1) + '_' + str(n_d2) + '_' + str(n_d3) + '_l_' + str(n_l1)
+#     topology = [
+#         {'start': 'M_t', 'end': 'A_t', 'rate_symbol': 'd1', 'type': 'S -> E', 'reaction_steps': n_d1},
+#         {'start': 'M_t', 'end': 'A_t', 'rate_symbol': 'd2', 'type': 'S -> E', 'reaction_steps': n_d2},
+#         {'start': 'M_t', 'end': 'A_t', 'rate_symbol': 'd3', 'type': 'S -> E', 'reaction_steps': n_d3},
+#         {'start': 'A_t', 'end': 'A_t', 'rate_symbol': 'l1', 'type': 'S -> S + S', 'reaction_steps': n_l1},
+#         ]
+#
+#     net = me.Network(name)
+#     net.structure(topology)
+#     return net
+#
+# n_d_list = [1, 2, 4, 6, 8, 10, 14, 18]
+# n_d_sparse = list(itertools.combinations_with_replacement(n_d_list, 3))
+# n_l_list = n_d_list
+# nets = [make_net(n_d1, n_d2, n_d3, n_l1) for n_d1, n_d2, n_d3 in n_d_sparse
+#                                          for n_l1 in n_l_list]
+# variables = [{'M_t': ('M_t', ), 'A_t': ('A_t', )}]*len(nets)
+# initial_values = [{'M_t': 1.0, 'A_t': 0.0}]*len(nets)
+# theta_bounds = [{'d1': (0.0, 0.15), 'd2': (0.0, 0.15), 'd3': (0.0, 0.15), 'l1': (0.0, 0.15)}]*len(nets)
+# fit_mean_only = False # True or False
+# print(len(nets))
 
 ### models with 2 parallel activation and 2 parallel division
 # def make_net(n_d1, n_d2, n_l1, n_l2):
@@ -220,7 +220,7 @@ print(len(nets))
 # print(len(nets))
 
 ### load the data
-data = pickle.load(open('count_data_cd44_manual_counting_18_01_14_filtered_sigma022.pickle', 'rb'))
+data = pickle.load(open('count_data_cd44_manual_counting_18_01_14_filtered_thin4.pickle', 'rb'))
 print(data.data_name)
 
 ### input for selection
@@ -248,5 +248,5 @@ res = me.select_models(nets, variables, initial_values,
                     nlive=1000, tolerance=0.01)
 
 ### save estimation with pickle
-with open('estimation_count_data_cd44_filtered_sigma022_par3_new.pickle', 'wb') as file_: # in_silico_estimation
+with open('estimation_count_data_cd44_filtered_thin4_par2_meanfit.pickle', 'wb') as file_: # in_silico_estimation
     pickle.dump(res, file_)
