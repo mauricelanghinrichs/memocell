@@ -82,15 +82,17 @@ class Estimation(object):
         self.data_cov_values = None
         self.data_num_values = None
 
-        # instantiate object for time values as the data, but more intermediate points
-        self.data_time_values_dense = None
-
         ### network related settings
         # instantiate object for rate parameter bounds (theta bounds)
         self.net_theta_bounds = None
 
         # instantiate object for initial values of network states (main nodes)
         self.net_initial_values = None
+
+        # instantiate time values for fitting and index readouts
+        self.net_time_values = None
+        self.net_time_values_dense = None
+        self.net_time_ind = None
 
         # set simulation type of the network to 'moments'
         self.net_simulation_type = 'moments'
@@ -167,6 +169,7 @@ class Estimation(object):
         # ###
 
     def estimate(self, variables, initial_values, theta_bounds,
+                            time_values=None,
                             sim_mean_only=False, fit_mean_only=False,
                             nlive=1000, tolerance=0.01,
                             bound='multi', sample='unif',):
@@ -206,6 +209,10 @@ class Estimation(object):
         theta_bounds : dict
             Uniform prior bounds of the parameters as
             `key:value=parameter:tuple of (lower bound, upper bound)` dictionary pairs.
+        time_values : None or 1d numpy.ndarray, optional
+            Time values to simulate the model with. If `None` (default), the time values
+            of the data will be used (`data.data_time_values`). If specified, `time_values`
+            has to contain at least all time values of the data, but can have more.
         sim_mean_only : bool, optional
             If the model simulations shall be computed for the first moment (means)
             only, specify `sim_mean_only=True`. If the model simulations shall be
@@ -263,7 +270,7 @@ class Estimation(object):
         # initialise estimation
         # (set up network, simulation and sampling properties)
         self.initialise_estimation(variables, initial_values, theta_bounds,
-                                    sim_mean_only, fit_mean_only,
+                                    time_values, sim_mean_only, fit_mean_only,
                                     nlive, tolerance, bound, sample)
         # self.initialise_estimation(network_setup, mcmc_setup)
 
@@ -281,7 +288,7 @@ class Estimation(object):
 
 
     def initialise_estimation(self, variables, initial_values, theta_bounds,
-                                sim_mean_only, fit_mean_only,
+                                time_values, sim_mean_only, fit_mean_only,
                                 nlive, tolerance, bound, sample):
         """Initialise and prepare an estimation.
 
@@ -319,12 +326,20 @@ class Estimation(object):
                                         self.net.net_nodes_identifier,
                                         type='centric_mean_only')
 
-        ### initialise data
+        ### initialise time values (fitting and data)
+        # read out time values of the data
         self.data_time_values = self.data.data_time_values
-        self.data_time_values_dense = np.linspace(np.min(self.data_time_values),
-                                                            np.max(self.data_time_values),
-                                                            endpoint=True, num=1000)
 
+        # validate user input for time_values (None or array)
+        # and if array, check if it contains all data time values
+        self._validate_time_values_input(time_values, self.data_time_values)
+
+        # initialise fit time values and time indices for model readout
+        (self.net_time_values,
+        self.net_time_values_dense,
+        self.net_time_ind) = self.initialise_time_values(time_values, self.data_time_values)
+
+        ### initialise data
         # check mapping between simulation variables and data variables
         self._validate_simulation_and_data_variables_mapping(self.net_simulation.sim_variables,
                                                         self.data.data_variables)
@@ -375,8 +390,9 @@ class Estimation(object):
                                                 self.bay_nested_ndims, bound=self.bay_nested_bound,
                                                 sample=self.bay_nested_sample, nlive=self.bay_nested_nlive,
                                     logl_args=((self.net_simulation.sim_moments.moment_initial_values,
-                                                self.data_time_values, self.data_mean_values,
-                                                self.data_var_values, self.data_cov_values)))
+                                                self.net_time_values, self.net_time_ind,
+                                                self.data_mean_values, self.data_var_values,
+                                                self.data_cov_values)))
 
 
     def run_estimation(self):
@@ -760,8 +776,9 @@ class Estimation(object):
     #         # print('log_prior (ms)', (et - st)*1000)
     #         return -np.inf
 
-    def log_likelihood(self, theta_values, moment_initial_values, time_values,
-                                                mean_data, var_data, cov_data):
+    def log_likelihood(self, theta_values, moment_initial_values,
+                                        time_values, time_ind,
+                                        mean_data, var_data, cov_data):
         """Compute the logarithmic likelihood :math:`\\mathrm{ln}(\\mathcal{L(\\theta)}) =
         \\mathrm{ln}(p(D | \\theta, M))` for parameter values :math:`\\theta` of a given
         model :math:`M` and given data :math:`D`. This method is used in the nested
@@ -799,8 +816,13 @@ class Estimation(object):
             moments corresponds to
             `est.net_simulation.sim_moments.moment_order_hidden`.
         time_values : 1d numpy.ndarray
-            Time values of data and model evaluation points;
-            passed to a moment simulation method.
+            Time values for which model simulations are solved;
+            passed to a moment simulation method. After estimation
+            initialisation available at `est.net_time_values`.
+        time_ind : slice or tuple of int
+            Indexing information to read out model simulations at the time points
+            of the data to allow comparison. After estimation
+            initialisation available at `est.net_time_ind`.
         mean_data : numpy.ndarray
             Data mean statistics and standard errors with shape
             (2, `number of means`, `number of time points`) that have been matched
@@ -829,8 +851,9 @@ class Estimation(object):
         --------
         >>> # est is a memopy estimation instance obtained by est.estimate(...)
         >>> theta_values = np.array([0.03, 0.07])
-        >>> est.log_likelihood(theta_values, est.net_initial_values,
-        >>>            est.data_time_values, est.net_simulation.sim_variables,
+        >>> est.log_likelihood(theta_values,
+        >>>            est.net_simulation.sim_moments.moment_initial_values,
+        >>>            est.net_time_values, est.net_time_ind,
         >>>            est.data_mean_values, est.data_var_values,
         >>>            est.data_cov_values)
         32.823084036435795
@@ -852,14 +875,14 @@ class Estimation(object):
         # compute the value of the log_likelihood
         if self.net_simulation_fit_mean_only:
             # when only mean values are fitted (first moments only)
-            chi_mean = np.sum( ((mean_data[0, :, :] - mean_m)/(mean_data[1, :, :]))**2 )
+            chi_mean = np.sum( ((mean_data[0, :, :] - mean_m[:, time_ind])/(mean_data[1, :, :]))**2 )
             chi_var = 0.0
             chi_cov = 0.0
         else:
             # when first (mean) and second moments (i.e., variance and covariance) are fitted
-            chi_mean = np.sum( ((mean_data[0, :, :] - mean_m)/(mean_data[1, :, :]))**2 )
-            chi_var = np.sum( ((var_data[0, :, :] - var_m)/(var_data[1, :, :]))**2 )
-            chi_cov = np.sum( ((cov_data[0, :, :] - cov_m)/(cov_data[1, :, :]))**2 )
+            chi_mean = np.sum( ((mean_data[0, :, :] - mean_m[:, time_ind])/(mean_data[1, :, :]))**2 )
+            chi_var = np.sum( ((var_data[0, :, :] - var_m[:, time_ind])/(var_data[1, :, :]))**2 )
+            chi_cov = np.sum( ((cov_data[0, :, :] - cov_m[:, time_ind])/(cov_data[1, :, :]))**2 )
 
         return -0.5 * (chi_mean + chi_var + chi_cov) + self.bay_log_likelihood_norm
 
@@ -978,6 +1001,92 @@ class Estimation(object):
     #     for i in range(num_theta):
     #         mcmc_initial_params[:, :, i] = np.random.uniform(low=theta_bounds[i, 0], high=theta_bounds[i, 1], size=(num_temps, num_walkers))
     #     return mcmc_initial_params
+
+    @staticmethod
+    def initialise_time_values(time_values, data_time_values):
+        """Obtain time values that can be used for model simulations
+        (`net_time_values`).
+
+        If `time_values=None`, the `data_time_values` are used to obtain
+        `net_time_values`. If `time_values` are specified explicitly as array,
+        `net_time_values` is referenced to them. This method also returns a
+        dense version (`net_time_values_dense`) and tuple of indices to read
+        out model simulations for time points of the data.
+
+        Before this method is used the input should be checked with
+        `_validate_time_values_input`.
+
+        Parameters
+        ----------
+        time_values : None or 1d numpy.ndarray
+            Information for time values for model simulations. If `None`,
+            `net_time_values` will be referenced to data time values
+            (`data.data_time_values`). If specified as array,
+            `net_time_values=time_values`. Note in this case that
+            `time_values` has to contain at least all time
+            values of the data, but can have more.
+        data_time_values : 1d numpy.ndarray
+            Time values of the data. Typically at `data.data_time_values` of a
+            memopy data object `data`.
+
+        Returns
+        -------
+        net_time_values : 1d numpy.ndarray
+            Time values for the model simulations.
+        net_time_values_dense : 1d numpy.ndarray
+            A dense version of `net_time_values` with the same minimal and
+            maximal values but 1000 equally spaced total values.
+        net_time_ind : slice or tuple of int
+            Index information that can be used for numpy array indexing to read
+            out model simulations at the data time points (`data_time_values`).
+
+        Examples
+        --------
+        >>> import memo_py as me
+        >>> time_values = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+        >>> data_time_values = np.array([1.0, 3.0, 5.0])
+        >>> net_time_values, __, net_time_ind = me.Estimation.initialise_time_values(time_values, data_time_values)
+        >>> net_time_values
+        np.array([0., 1., 2., 3., 4., 5., 6.])
+        >>> net_time_ind
+        (1, 3, 5)
+        """
+        # NOTE that time_values and data_time_values were already checked
+        # at this stage by _validate_time_values_input method
+
+        # if time_values are not given explicitly (default), use data time values
+        # in this case, we have to take the complete slice later for simulation readout
+        if time_values is None:
+            net_time_values = data_time_values
+            # this is identical to ':', i.e. a[:, :]==a[:, slice(None)]
+            # and faster than tuple indixing for all elements
+            net_time_ind = slice(None)
+
+        # if time_values is not None but equal to data_time_values,
+        # we catch this case to set net_time_ind = slice(None)
+        # (for performence issues since tuple of all elements is slower)
+        elif np.array_equal(time_values, data_time_values):
+            net_time_values = time_values
+            net_time_ind = slice(None)
+
+        # if times_values is not None and not equal, they are specified as array
+        else:
+            net_time_values = time_values
+
+            # get a tuple of indices (net_time_ind) that can be used
+            # to access a simulation at the time points where we have data
+            net_time_where = [list(np.where(net_time_values==val)[0])
+                                            for val in data_time_values]
+            # flatten net_time_where and convert list to tuple
+            net_time_ind = tuple([item for sublist in net_time_where
+                                            for item in sublist])
+
+        # in any case, we define a dense version of net_time_values
+        net_time_values_dense = np.linspace(np.min(net_time_values),
+                                            np.max(net_time_values),
+                                            endpoint=True, num=1000)
+
+        return (net_time_values, net_time_values_dense, net_time_ind)
 
     @staticmethod
     def initialise_net_theta_bounds(theta_symbolic, theta_identifier, theta_bounds):
@@ -1196,7 +1305,7 @@ class Estimation(object):
 
         self.net_simulation_bestfit = self.net_simulation.sim_moments.run_moment_ode_system(
                                             self.net_simulation.sim_moments.moment_initial_values,
-                                            self.data_time_values_dense,
+                                            self.net_time_values_dense,
                                             self.bay_est_params_median)
         self.net_simulation_bestfit_exists = True
 
@@ -1250,7 +1359,7 @@ class Estimation(object):
 
         sim_ensemble = [self.net_simulation.sim_moments.run_moment_ode_system(
                                             self.net_simulation.sim_moments.moment_initial_values,
-                                            self.data_time_values_dense,
+                                            self.net_time_values_dense,
                                             theta)
                                             for theta in theta_ensemble]
 
@@ -1355,7 +1464,7 @@ class Estimation(object):
         sim_variables_order_mean = self.net_simulation.sim_variables_order[0]
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
 
-        x_arr = self.data_time_values_dense
+        x_arr = self.net_time_values_dense
         y_arr = np.zeros((len(sim_variables_order_mean), len(x_arr)))
         attributes = dict()
 
@@ -1378,7 +1487,7 @@ class Estimation(object):
         sim_variables_order_mean = self.net_simulation.sim_variables_order[0]
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
 
-        x_arr_line = self.data_time_values_dense
+        x_arr_line = self.net_time_values_dense
         y_line = np.zeros((len(sim_variables_order_mean), len(x_arr_line)))
 
         x_arr_dots = self.data_time_values
@@ -1412,7 +1521,7 @@ class Estimation(object):
         sim_variables_order_mean = self.net_simulation.sim_variables_order[0]
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
 
-        x_arr = self.data_time_values_dense
+        x_arr = self.net_time_values_dense
         y_line = np.zeros((len(sim_variables_order_mean), len(x_arr)))
         y_lower = np.zeros((len(sim_variables_order_mean), len(x_arr)))
         y_upper = np.zeros((len(sim_variables_order_mean), len(x_arr)))
@@ -1444,11 +1553,11 @@ class Estimation(object):
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
 
         x_arr_dots = self.data_time_values
-        x_arr_line = self.data_time_values_dense
+        x_arr_line = self.net_time_values_dense
         y_dots_err = np.zeros((len(self.data.data_mean_order), self.data.data_num_time_values, 2))
-        y_line = np.zeros((len(sim_variables_order_mean), len(self.data_time_values_dense)))
-        y_lower = np.zeros((len(sim_variables_order_mean), len(self.data_time_values_dense)))
-        y_upper = np.zeros((len(sim_variables_order_mean), len(self.data_time_values_dense)))
+        y_line = np.zeros((len(sim_variables_order_mean), len(self.net_time_values_dense)))
+        y_lower = np.zeros((len(sim_variables_order_mean), len(self.net_time_values_dense)))
+        y_upper = np.zeros((len(sim_variables_order_mean), len(self.net_time_values_dense)))
         attributes = dict()
 
         for i, (variable_id, ) in enumerate(sim_variables_order_mean):
@@ -1475,7 +1584,7 @@ class Estimation(object):
         sim_variables_order_var = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.net_simulation.sim_variables_order[1] if variable1_id==variable2_id]
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
 
-        x_arr = self.data_time_values_dense
+        x_arr = self.net_time_values_dense
         y_arr = np.zeros((len(sim_variables_order_var), len(x_arr)))
         attributes = dict()
 
@@ -1498,7 +1607,7 @@ class Estimation(object):
         sim_variables_order_var = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.net_simulation.sim_variables_order[1] if variable1_id==variable2_id]
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
 
-        x_arr_line = self.data_time_values_dense
+        x_arr_line = self.net_time_values_dense
         y_line = np.zeros((len(sim_variables_order_var), len(x_arr_line)))
 
         x_arr_dots = self.data_time_values
@@ -1534,7 +1643,7 @@ class Estimation(object):
         sim_variables_order_var = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.net_simulation.sim_variables_order[1] if variable1_id==variable2_id]
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
 
-        x_arr = self.data_time_values_dense
+        x_arr = self.net_time_values_dense
         y_line = np.zeros((len(sim_variables_order_var), len(x_arr)))
         y_lower = np.zeros((len(sim_variables_order_var), len(x_arr)))
         y_upper = np.zeros((len(sim_variables_order_var), len(x_arr)))
@@ -1566,11 +1675,11 @@ class Estimation(object):
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
 
         x_arr_dots = self.data_time_values
-        x_arr_line = self.data_time_values_dense
+        x_arr_line = self.net_time_values_dense
         y_dots_err = np.zeros((len(self.data.data_variance_order), self.data.data_num_time_values, 2))
-        y_line = np.zeros((len(sim_variables_order_var), len(self.data_time_values_dense)))
-        y_lower = np.zeros((len(sim_variables_order_var), len(self.data_time_values_dense)))
-        y_upper = np.zeros((len(sim_variables_order_var), len(self.data_time_values_dense)))
+        y_line = np.zeros((len(sim_variables_order_var), len(self.net_time_values_dense)))
+        y_lower = np.zeros((len(sim_variables_order_var), len(self.net_time_values_dense)))
+        y_upper = np.zeros((len(sim_variables_order_var), len(self.net_time_values_dense)))
         attributes = dict()
 
         for i, (variable1_id, variable2_id) in enumerate(sim_variables_order_var):
@@ -1599,7 +1708,7 @@ class Estimation(object):
         sim_variables_order_cov = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.net_simulation.sim_variables_order[1] if variable1_id!=variable2_id]
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
 
-        x_arr = self.data_time_values_dense
+        x_arr = self.net_time_values_dense
         y_arr = np.zeros((len(sim_variables_order_cov), len(x_arr)))
         attributes = dict()
 
@@ -1626,7 +1735,7 @@ class Estimation(object):
         sim_variables_order_cov = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.net_simulation.sim_variables_order[1] if variable1_id!=variable2_id]
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
 
-        x_arr_line = self.data_time_values_dense
+        x_arr_line = self.net_time_values_dense
         y_line = np.zeros((len(sim_variables_order_cov), len(x_arr_line)))
 
         x_arr_dots = self.data_time_values
@@ -1666,7 +1775,7 @@ class Estimation(object):
         sim_variables_order_cov = [(variable1_id, variable2_id) for (variable1_id, variable2_id) in self.net_simulation.sim_variables_order[1] if variable1_id!=variable2_id]
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
 
-        x_arr = self.data_time_values_dense
+        x_arr = self.net_time_values_dense
         y_line = np.zeros((len(sim_variables_order_cov), len(x_arr)))
         y_lower = np.zeros((len(sim_variables_order_cov), len(x_arr)))
         y_upper = np.zeros((len(sim_variables_order_cov), len(x_arr)))
@@ -1702,11 +1811,11 @@ class Estimation(object):
         sim_variables_identifier = self.net_simulation.sim_variables_identifier
 
         x_arr_dots = self.data_time_values
-        x_arr_line = self.data_time_values_dense
+        x_arr_line = self.net_time_values_dense
         y_dots_err = np.zeros((len(self.data.data_covariance_order), self.data.data_num_time_values, 2))
-        y_line = np.zeros((len(sim_variables_order_cov), len(self.data_time_values_dense)))
-        y_lower = np.zeros((len(sim_variables_order_cov), len(self.data_time_values_dense)))
-        y_upper = np.zeros((len(sim_variables_order_cov), len(self.data_time_values_dense)))
+        y_line = np.zeros((len(sim_variables_order_cov), len(self.net_time_values_dense)))
+        y_lower = np.zeros((len(sim_variables_order_cov), len(self.net_time_values_dense)))
+        y_upper = np.zeros((len(sim_variables_order_cov), len(self.net_time_values_dense)))
         attributes = dict()
 
         for i, (variable1_id, variable2_id) in enumerate(sim_variables_order_cov):
@@ -1810,6 +1919,31 @@ class Estimation(object):
                 raise ValueError('Bounds of rate parameters (theta bounds) are expected to provide a set of keys identical to the symbolic network parameters (theta).')
         else:
             raise TypeError('Bounds of rate parameters (theta bounds) are expected to be provided as a dictionary.')
+
+    @staticmethod
+    def _validate_time_values_input(time_values, data_time_values):
+        """Private validation method."""
+
+        # check for correct user input for the time_values
+        # data_time_values are checked in data class (no need here)
+        if isinstance(time_values, np.ndarray) or isinstance(time_values, type(None)):
+            pass
+        else:
+            raise TypeError('Times values are expected to be None or a numpy array.')
+
+        if isinstance(time_values, np.ndarray):
+            if time_values.ndim == 1:
+                pass
+            else:
+                raise ValueError('Times values are expected to be provided as a numpy array with shape \'(n, )\' with n being the number of values.')
+
+        # if time_values is specified, check if each data time point
+        # can be found in time_values (needed for index readout later)
+        # (NOTE: it seems that this np function does not check for 1d-ness)
+        if isinstance(time_values, np.ndarray):
+            if not np.in1d(data_time_values, time_values).all():
+                raise ValueError('Time values have to contain all data time values.')
+
 
     ##### TODO: old/adapt
     # def setup_prior(self, reac_ranges_list):

@@ -59,6 +59,7 @@ class TestEstimationClass(object):
         variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
         initial_values = {'X_t': 1, 'Y_t': 0}
         theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
+        time_values = None
         sim_mean_only = False
         fit_mean_only = False
 
@@ -69,7 +70,7 @@ class TestEstimationClass(object):
 
         est = me.Estimation('est_min_2_4', net, data)
         est.estimate(variables, initial_values, theta_bounds,
-                            sim_mean_only, fit_mean_only,
+                            time_values, sim_mean_only, fit_mean_only,
                             nlive, tolerance, bound, sample)
         return est
 
@@ -108,6 +109,7 @@ class TestEstimationClass(object):
         variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
         initial_values = {'X_t': 1, 'Y_t': 0}
         theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
+        time_values = None
         sim_mean_only = False
         fit_mean_only = False
 
@@ -118,7 +120,7 @@ class TestEstimationClass(object):
 
         est = me.Estimation('est_min_2_4', net, data)
         est.estimate(variables, initial_values, theta_bounds,
-                            sim_mean_only, fit_mean_only,
+                            time_values, sim_mean_only, fit_mean_only,
                             nlive, tolerance, bound, sample)
         return est
 
@@ -270,16 +272,18 @@ class TestEstimationClass(object):
         theta_values = np.array([0.03, 0.07])
         logl_res = simple_est_setup.log_likelihood(theta_values,
                    simple_est_setup.net_simulation.sim_moments.moment_initial_values,
-                   simple_est_setup.data_time_values, simple_est_setup.data_mean_values,
-                   simple_est_setup.data_var_values, simple_est_setup.data_cov_values)
+                   simple_est_setup.net_time_values, simple_est_setup.net_time_ind,
+                   simple_est_setup.data_mean_values, simple_est_setup.data_var_values,
+                   simple_est_setup.data_cov_values)
         logl_sol = 32.823084036435795
         np.testing.assert_allclose(logl_sol, logl_res)
 
         theta_values = np.array([0.028, 0.075])
         logl_res = simple_est_setup.log_likelihood(theta_values,
                    simple_est_setup.net_simulation.sim_moments.moment_initial_values,
-                   simple_est_setup.data_time_values, simple_est_setup.data_mean_values,
-                   simple_est_setup.data_var_values, simple_est_setup.data_cov_values)
+                   simple_est_setup.net_time_values, simple_est_setup.net_time_ind,
+                   simple_est_setup.data_mean_values, simple_est_setup.data_var_values,
+                   simple_est_setup.data_cov_values)
         logl_sol = 35.485136238014185
         np.testing.assert_allclose(logl_sol, logl_res)
 
@@ -431,6 +435,7 @@ class TestEstimationClass(object):
         variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
         initial_values = {'X_t': 1, 'Y_t': 0}
         theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
+        time_values = None
         sim_mean_only = True
         fit_mean_only = True
 
@@ -441,7 +446,7 @@ class TestEstimationClass(object):
 
         est = me.Estimation('est_min_2_4', net, data)
         est.estimate(variables, initial_values, theta_bounds,
-                            sim_mean_only, fit_mean_only,
+                            time_values, sim_mean_only, fit_mean_only,
                             nlive, tolerance, bound, sample)
         return est
 
@@ -479,6 +484,7 @@ class TestEstimationClass(object):
         variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
         initial_values = {'X_t': 1, 'Y_t': 0}
         theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
+        time_values = None
         sim_mean_only = True
         fit_mean_only = True
 
@@ -489,7 +495,7 @@ class TestEstimationClass(object):
 
         est = me.Estimation('est_min_2_4', net, data)
         est.estimate(variables, initial_values, theta_bounds,
-                            sim_mean_only, fit_mean_only,
+                            time_values, sim_mean_only, fit_mean_only,
                             nlive, tolerance, bound, sample)
         return est
 
@@ -521,6 +527,7 @@ class TestEstimationClass(object):
         variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
         initial_values = {'X_t': 1, 'Y_t': 0}
         theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
+        time_values = None
         sim_mean_only = True
         fit_mean_only = True
 
@@ -531,7 +538,7 @@ class TestEstimationClass(object):
 
         est = me.Estimation('est_min_2_4', net, data)
         est.estimate(variables, initial_values, theta_bounds,
-                            sim_mean_only, fit_mean_only,
+                            time_values, sim_mean_only, fit_mean_only,
                             nlive, tolerance, bound, sample)
         return est
 
@@ -774,3 +781,24 @@ class TestEstimationClass(object):
         np.testing.assert_allclose(data_order_sol_1[0], data_order_res_1[0])
         np.testing.assert_allclose(data_order_sol_1[1], data_order_res_1[1])
         np.testing.assert_allclose(data_order_sol_1[2], data_order_res_1[2])
+
+    def test_initialise_time_values_different(self):
+        time_values = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+        data_time_values = np.array([1.0, 3.0, 5.0])
+        net_time_values, __, net_time_ind = me.Estimation.initialise_time_values(time_values, data_time_values)
+        np.testing.assert_allclose(net_time_values, np.array([0., 1., 2., 3., 4., 5., 6.]))
+        assert net_time_ind==(1, 3, 5)
+
+    def test_initialise_time_values_none(self):
+        time_values = None
+        data_time_values = np.array([1.0, 3.0, 5.0])
+        net_time_values, __, net_time_ind = me.Estimation.initialise_time_values(time_values, data_time_values)
+        np.testing.assert_allclose(net_time_values, np.array([1.0, 3.0, 5.0]))
+        assert net_time_ind==slice(None)
+
+    def test_initialise_time_values_equal(self):
+        time_values = np.array([1.0, 3.0, 5.0])
+        data_time_values = np.array([1.0, 3.0, 5.0])
+        net_time_values, __, net_time_ind = me.Estimation.initialise_time_values(time_values, data_time_values)
+        np.testing.assert_allclose(net_time_values, np.array([1.0, 3.0, 5.0]))
+        assert net_time_ind==slice(None)

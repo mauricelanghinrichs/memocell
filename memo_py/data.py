@@ -1602,7 +1602,10 @@ class Data(object):
 
         # check data input time values
         if isinstance(time_values, np.ndarray):
-            pass
+            if time_values.ndim == 1:
+                pass
+            else:
+                raise ValueError('Times values are expected to be provided as a numpy array with shape \'(n, )\' with n being the number of values.')
         else:
             raise TypeError('Numpy array expected for time_values.')
 

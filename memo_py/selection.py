@@ -20,7 +20,8 @@ from tqdm.autonotebook import tqdm
 import warnings
 
 def select_models(networks, variables, initial_values, theta_bounds,
-                            data, sim_mean_only=False, fit_mean_only=False,
+                            data, time_values=None,
+                            sim_mean_only=False, fit_mean_only=False,
                             nlive=1000, tolerance=0.01,
                             bound='multi', sample='unif',
                             parallel=True, processes=None):
@@ -56,6 +57,10 @@ def select_models(networks, variables, initial_values, theta_bounds,
         `key:value=parameter:tuple of (lower bound, upper bound)` pairs.
     data : memo_py.Data.data
         A memo_py data object used in the statistical inference.
+    time_values : None or list of (1d numpy.ndarray or None), optional
+        List of time values to simulate each model with. If `None` (default), the time values
+        of the data will be used (`data.data_time_values`). If specified, `time_values`
+        has to contain at least all time values of the data, but can have more.
     sim_mean_only : bool, optional
         If the model simulations shall be computed for the first moment (means)
         only, specify `sim_mean_only=True`. If the model simulations shall be
@@ -139,7 +144,12 @@ def select_models(networks, variables, initial_values, theta_bounds,
 
     # validation check on user inputs
     _validate_selection_input(networks, variables, initial_values,
-                                theta_bounds, data, sim_mean_only, fit_mean_only)
+                                theta_bounds, data, time_values,
+                                sim_mean_only, fit_mean_only)
+
+    # create list of None's for time_values to fit to estimation interface
+    if time_values is None:
+        time_values = [None]*len(networks)
 
     # create input variable 'input_var' (in net_estimation fct) that is stored in
     # 'pool_inputs' for the parallelised loop over the networks
@@ -149,11 +159,14 @@ def select_models(networks, variables, initial_values, theta_bounds,
         net_variables = variables[est_iter]
         net_initial_values = initial_values[est_iter]
         net_theta_bounds = theta_bounds[est_iter]
+        net_time_values = time_values[est_iter]
+
 
         pool_inputs.append((net,
                             net_variables,
                             net_initial_values,
                             net_theta_bounds,
+                            net_time_values,
                             data, # data that is tried to fit by the model
                             est_iter, # integer i denoting the i-th model in the set of models
                             sim_mean_only, fit_mean_only,
@@ -228,6 +241,7 @@ def net_estimation(input_var):
     net_variables,
     net_initial_values,
     net_theta_bounds,
+    net_time_values,
     data, # data that is tried to fit by the model
     est_iter, # integer i denoting the i-th model in the set of models
     sim_mean_only, fit_mean_only,
@@ -239,9 +253,10 @@ def net_estimation(input_var):
     # conduct the estimation via the Estimation class
     est_name = 'est_' + net.net_name
     est = Estimation(est_name, net, data, est_iter=est_iter)
-    est.estimate(net_variables, net_initial_values, net_theta_bounds,
-                                    sim_mean_only, fit_mean_only,
-                                    nlive, tolerance, bound, sample)
+    est.estimate(net_variables, net_initial_values,
+                                net_theta_bounds, net_time_values,
+                                sim_mean_only, fit_mean_only,
+                                nlive, tolerance, bound, sample)
 
     # reset the eval() function 'moment_system' to prevent pickling error
     # 'reset' is just a placeholder string to indicate the reset
@@ -569,7 +584,8 @@ def _dots_wo_bars_evidence_from_bic(estimation_instances, settings):
 
 ### validation functions
 def _validate_selection_input(networks, variables, initial_values,
-                            theta_bounds, data, sim_mean_only, fit_mean_only):
+                            theta_bounds, data, time_values,
+                            sim_mean_only, fit_mean_only):
     """Private validation method."""
     # TODO: probably more checks possible to integrate here..
 
@@ -633,6 +649,12 @@ def _validate_selection_input(networks, variables, initial_values,
         pass
     else:
         raise TypeError('Dict as theta bounds expected.')
+
+    # check time_values (more in-depth checks happen at estimation level)
+    if isinstance(time_values, list) or isinstance(time_values, type(None)):
+        pass
+    else:
+        raise TypeError('List or None-type expected for time values.')
 
     # length of network inputs must match
     num_nets = len(networks)
