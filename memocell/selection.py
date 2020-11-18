@@ -35,8 +35,8 @@ def select_models(networks, variables, initial_values, theta_bounds,
 
     Parameters
     ----------
-    networks : list of memo_py.Network.network
-        A list of memopy network objects to run the statistical inference with.
+    networks : list of memocell.Network.network
+        A list of memocell network objects to run the statistical inference with.
         Each network is associated with further information given by `variables`,
         `initial_values` and `theta_bounds` to specify a complete model
         (all lists must have the same length).
@@ -55,8 +55,8 @@ def select_models(networks, variables, initial_values, theta_bounds,
         List of uniform prior bounds of the parameters for each network as
         dictionary. Each network dictionary requires
         `key:value=parameter:tuple of (lower bound, upper bound)` pairs.
-    data : memo_py.Data.data
-        A memo_py data object used in the statistical inference.
+    data : memocell.Data.data
+        A memocell data object used in the statistical inference.
     time_values : None or list of (1d numpy.ndarray or None), optional
         List of time values to simulate each model with. If `None` (default), the time values
         of the data will be used (`data.data_time_values`). If specified, `time_values`
@@ -107,12 +107,12 @@ def select_models(networks, variables, initial_values, theta_bounds,
 
     Returns
     -------
-    est_res : list of memo_py.estimation.Estimation
-        A list of memo_py estimation objects for the models.
+    est_res : list of memocell.estimation.Estimation
+        A list of memocell estimation objects for the models.
 
     Examples
     --------
-    >>> # given some memo_py data object, models are defined as follows
+    >>> # given some memocell data object, models are defined as follows
     >>> # (here a simple model with symmetric division of one cell type)
     >>> net1 = me.Network('net_l2')
     >>> net1.structure([{'start': 'X_t', 'end': 'X_t',
@@ -220,7 +220,7 @@ def net_estimation(input_var):
     `Note`: Please use the top-level `select_models` function for
     all inference tasks; if you wish to estimate a single model only, you can
     just apply `select_models` on a one-model list or use `estimate` from the
-    memo_py estimation class.
+    memocell estimation class.
 
     Parameters
     ----------
@@ -230,8 +230,8 @@ def net_estimation(input_var):
 
     Returns
     -------
-    est : memo_py.estimation.Estimation
-        A memo_py estimation object.
+    est : memocell.estimation.Estimation
+        A memocell estimation object.
     """
     ### this function handles the parameter and evidence estimation of a
     ### single model/network as specified by input_var
@@ -278,8 +278,8 @@ def compute_model_probabilities(estimation_instances, mprior=None):
 
     Parameters
     ----------
-    estimation_instances : list of memo_py.estimation.Estimation
-        A list of memo_py estimation objects for the models;
+    estimation_instances : list of memocell.estimation.Estimation
+        A list of memocell estimation objects for the models;
         for example obtained by the `select_models` function.
     mprior : None or 1d numpy.ndarray, optional
         Array of prior model probabilities; if `mprior=None` (default) an uniform model
@@ -437,8 +437,8 @@ def compute_model_bayes_factors(estimation_instances):
 
     Parameters
     ----------
-    estimation_instances : list of memo_py.estimation.Estimation
-        A list of memo_py estimation objects for the models;
+    estimation_instances : list of memocell.estimation.Estimation
+        A list of memocell estimation objects for the models;
         for example obtained by the `select_models` function.
 
     Returns

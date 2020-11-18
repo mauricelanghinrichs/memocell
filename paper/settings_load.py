@@ -1,6 +1,6 @@
 
 ### package imports
-import memo_py as me
+import memocell as me
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -370,7 +370,7 @@ def hist_cell_counts_samples(res, celltypeind, time_point, sample_n, count_max, 
             initial_values = {'N_t': 1, 'I_t': 0, 'A_t': 0}
             variables = {'M_t': ('N_t', 'I_t'), 'A_t': ('A_t', )}
 
-            # different memopy versions
+            # different memocell versions
             # (sim = me.Simulation(est.net)) usually works
             dna_steps = est.net.net_modules[0]['module_steps']
             dni_steps = est.net.net_modules[1]['module_steps']
@@ -411,7 +411,7 @@ def hist_cell_counts_samples(res, celltypeind, time_point, sample_n, count_max, 
             initial_values = {'M_t': 1, 'A_t': 0}
             variables = {'M_t': ('M_t', ), 'A_t': ('A_t', )}
 
-            # different memopy versions
+            # different memocell versions
             # (sim = me.Simulation(est.net)) usually works
             d_steps = est.net.net_modules[0]['module_steps']
             l_steps = est.net.net_modules[1]['module_steps']
@@ -524,7 +524,7 @@ def event_model_samples(res, sample_n, sim_n, time_values, mprior):
             initial_values = {'N_t': 1, 'I_t': 0, 'A_t': 0}
             variables = {'M_t': ('N_t', 'I_t'), 'A_t': ('A_t', )}
 
-            # different memopy versions
+            # different memocell versions
             # (sim = me.Simulation(est.net)) usually works
             dna_steps = est.net.net_modules[0]['module_steps']
             dni_steps = est.net.net_modules[1]['module_steps']
@@ -561,7 +561,7 @@ def event_model_samples(res, sample_n, sim_n, time_values, mprior):
             initial_values = {'M_t': 1, 'A_t': 0}
             variables = {'M_t': ('M_t', ), 'A_t': ('A_t', )}
 
-            # different memopy versions
+            # different memocell versions
             # (sim = me.Simulation(est.net)) usually works
             d_steps = est.net.net_modules[0]['module_steps']
             l_steps = est.net.net_modules[1]['module_steps']

@@ -1,10 +1,10 @@
 
 # for package testing with pytest call
 # in upper directory "$ python setup.py pytest"
-# or in this directory "$ py.test test_memopy_[...].py"
-# or after pip installation $py.test --pyargs memo_py$
+# or in this directory "$ py.test test_memocell_[...].py"
+# or after pip installation $py.test --pyargs memocell$
 
-import memo_py as me
+import memocell as me
 import numpy as np
 
 # TODO: adapt expected output in those tests

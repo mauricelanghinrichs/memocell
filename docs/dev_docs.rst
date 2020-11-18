@@ -7,7 +7,7 @@ Running Tests
 
 Running tests requires the ``pytest`` package, available via ``pip`` or ``conda``.
 
-Go into the Memopy directory and run::
+Go into the MemoCell directory and run::
 
    # run all fast tests
    python setup.py pytest
@@ -20,7 +20,7 @@ Alternatively, go into the ``./tests/`` directory and run::
 To run test scripts individually (within the ``./tests/`` directory)::
 
    # adapt line to run an individual script
-   pytest test_memopy_<some tests>.py
+   pytest test_memocell_<some tests>.py
 
 Some tests are marked as slow as they are expensive; these are typically skipped
 during testing. To include them, add the runslow option (within the ``./tests/`` directory)::
@@ -29,7 +29,7 @@ during testing. To include them, add the runslow option (within the ``./tests/``
    pytest --runslow
 
    # all tests (fast and slow) of an individual script
-   pytest test_memopy_<some tests>.py --runslow
+   pytest test_memocell_<some tests>.py --runslow
 
 Test Coverage
 ^^^^^^^^^^^^^

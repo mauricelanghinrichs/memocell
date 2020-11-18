@@ -2,17 +2,17 @@
 License
 =======
 
-This package can be used under the MIT License (MIT), see `LICENSE file on Github <https://github.com/mauricelanghinrichs/memo_py>`_.
+This package can be used under the MIT License (MIT), see `LICENSE file on Github <https://github.com/mauricelanghinrichs/memocell>`_.
 
 Authors
 =======
 
-Memopy was written and developed by `Maurice Langhinrichs <m.langhinrichs@icloud.com>`_ and `Lisa Buchauer <lisa.buchauer@posteo.de>`_ `@TSB <https://www.dkfz.de/en/modellierung-biologischer-systeme/>`_.
+MemoCell was written and developed by `Maurice Langhinrichs <m.langhinrichs@icloud.com>`_ and `Lisa Buchauer <lisa.buchauer@posteo.de>`_ `@TSB <https://www.dkfz.de/en/modellierung-biologischer-systeme/>`_.
 
 Citation
 ========
 
-The release paper of Memopy can be found here ``[TODO add link]``.
+The release paper of MemoCell can be found here ``[TODO add link]``.
 
 Please cite this publication as
 

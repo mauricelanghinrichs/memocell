@@ -1,6 +1,6 @@
 
 import pytest
-import memo_py as me
+import memocell as me
 import numpy as np
 import copy
 

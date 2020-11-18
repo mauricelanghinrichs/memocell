@@ -26,14 +26,14 @@ class Data(object):
 
     Returns
     -------
-    data : memo_py.data.Data
-        Initialised memopy data object. Typically, continue with the `data.load`
+    data : memocell.data.Data
+        Initialised memocell data object. Typically, continue with the `data.load`
         method to add the actual data information.
 
     Examples
     --------
     >>> # initialise data
-    >>> import memo_py as me
+    >>> import memocell as me
     >>> import numpy as np
     >>> data = me.Data('my_data')
     >>> # use load() to fill it
@@ -176,7 +176,7 @@ class Data(object):
 
         Examples
         --------
-        >>> import memo_py as me
+        >>> import memocell as me
         >>> import numpy as np
         >>> data = me.Data('my_data')
         >>> variables = ['A', 'B']
@@ -471,20 +471,20 @@ class Data(object):
         ----------
         data_num_time_values : int
             Number of time values; typical usage with `data_num_time_values=data.data_num_time_values`
-            of a memo_py data object.
+            of a memocell data object.
         data_mean_order : list of dict
-            Data mean order of a memo_py data object; typical usage with
+            Data mean order of a memocell data object; typical usage with
             `data_mean_order=data.data_mean_order`.
         data_variance_order : list of dict
-            Data variance order of a memo_py data object; typical usage with
+            Data variance order of a memocell data object; typical usage with
             `data_variance_order=data.data_variance_order`.
         data_covariance_order : list of dict
-            Data covariance order of a memo_py data object; typical usage with
+            Data covariance order of a memocell data object; typical usage with
             `data_covariance_order=data.data_covariance_order`.
         count_data : numpy.ndarray
             Numpy array of the count data to bootstrap with shape (`n`, `m`, `t`); the
             number of repeats `n`, the number of variables `m`, the number of time points `t`.
-            Typical usage with `count_data=data.data_counts` of a memo_py data object.
+            Typical usage with `count_data=data.data_counts` of a memocell data object.
             Order of the variables should match with `data_mean_order`,
             `data_variance_order` and `data_covariance_order`. Time points `t` should be
             equal to `data_num_time_values`.

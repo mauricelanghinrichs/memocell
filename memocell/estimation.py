@@ -34,22 +34,22 @@ class Estimation(object):
     ----------
     est_name : str
         A name for the estimation object.
-    network : memo_py.network.Network
-        A memopy network object.
-    data : memo_py.data.Data
-        A memopy data object.
+    network : memocell.network.Network
+        A memocell network object.
+    data : memocell.data.Data
+        A memocell data object.
     est_iter : None or int, optional
         Number to indicate iteration of a set of estimations; default is `None`.
 
     Returns
     -------
-    est : memo_py.estimation.Estimation
-        Initialised memopy estimation object. Typically, continue with the
+    est : memocell.estimation.Estimation
+        Initialised memocell estimation object. Typically, continue with the
         `est.estimate` method to run the actual estimation.
 
     Examples
     --------
-    >>> import memo_py as me
+    >>> import memocell as me
     >>> import numpy as np
     >>> # initialise some data and a network
     >>> data = me.Data('my_data')
@@ -253,8 +253,8 @@ class Estimation(object):
 
         Examples
         --------
-        >>> # net is a memopy network object
-        >>> # data is a memopy data object
+        >>> # net is a memocell network object
+        >>> # data is a memocell data object
         >>> # with this, an estimation can look like this
         >>> variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
         >>> initial_values = {'X_t': 1, 'Y_t': 0}
@@ -438,7 +438,7 @@ class Estimation(object):
         either use the weighted samples directly (`samples_weighted`) or use the original
         samples and the weights to weight them manually (`samples` and `weights`).
 
-        `Note`: After running a memopy estimation there is no need to run this
+        `Note`: After running a memocell estimation there is no need to run this
         method, one can simply access the output at `est.bay_est_samples`,
         `est.bay_est_samples_weighted` and `est.bay_est_weights`
         for the estimation instance `est`.
@@ -446,7 +446,7 @@ class Estimation(object):
         Parameters
         ----------
         sampler_result : dynesty.results.Results
-            Nested sampling result of a memopy estimation. Typically available at
+            Nested sampling result of a memocell estimation. Typically available at
             `est.bay_nested_sampler_res`.
 
         Returns
@@ -463,7 +463,7 @@ class Estimation(object):
 
         Examples
         --------
-        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> # est is a memocell estimation instance obtained by est.estimate(...)
         >>> est.get_posterior_samples(est.bay_nested_sampler_res)
         (array([[0.14791189, 0.14857705],
             [0.12864247, 0.14920066],
@@ -497,7 +497,7 @@ class Estimation(object):
         Median is obtained as 50-th percentile and the interval bounds are obtained by
         2.5-th and 97.5-th percentiles, respectively.
 
-        `Note`: After running a memopy estimation there is no need to run this
+        `Note`: After running a memocell estimation there is no need to run this
         method, one can simply access the medians and credible intervals for the parameters
         with `est.bay_est_params_cred` for the estimation instance `est`.
 
@@ -517,7 +517,7 @@ class Estimation(object):
 
         Examples
         --------
-        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> # est is a memocell estimation instance obtained by est.estimate(...)
         >>> samples = est.bay_est_samples_weighted
         >>> samples.shape
         (12962, 2)
@@ -549,7 +549,7 @@ class Estimation(object):
         """Obtain logarithmic evidence value and its error estimate from the
         nested sampling result.
 
-        `Note`: After running a memopy estimation there is no need to run this
+        `Note`: After running a memocell estimation there is no need to run this
         method, one can simply access the logarithmic model evidence and its error
         with `est.bay_est_log_evidence` and `est.bay_est_log_evidence_error` for the
         estimation instance `est`.
@@ -557,7 +557,7 @@ class Estimation(object):
         Parameters
         ----------
         sampler_result : dynesty.results.Results
-            Nested sampling result of a memopy estimation. Typically available at
+            Nested sampling result of a memocell estimation. Typically available at
             `est.bay_nested_sampler_res`.
 
         Returns
@@ -571,7 +571,7 @@ class Estimation(object):
 
         Examples
         --------
-        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> # est is a memocell estimation instance obtained by est.estimate(...)
         >>> est.get_model_evidence(est.bay_nested_sampler_res)
         (28.139812540432732, 0.11225503808864087)
         >>> est.bay_est_log_evidence
@@ -594,14 +594,14 @@ class Estimation(object):
         """Obtain the maximal logarithmic likelihood value from the nested
         sampling result.
 
-        `Note`: After running a memopy estimation there is no need to run this
+        `Note`: After running a memocell estimation there is no need to run this
         method, one can simply access the maximal log-likelihood
         with `est.bay_est_log_likelihood_max` for the estimation instance `est`.
 
         Parameters
         ----------
         sampler_result : dynesty.results.Results
-            Nested sampling result of a memopy estimation. Typically available at
+            Nested sampling result of a memocell estimation. Typically available at
             `est.bay_nested_sampler_res`.
 
         Returns
@@ -612,7 +612,7 @@ class Estimation(object):
 
         Examples
         --------
-        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> # est is a memocell estimation instance obtained by est.estimate(...)
         >>> est.get_maximal_log_likelihood(est.bay_nested_sampler_res)
         35.48531419345989
         >>> est.bay_est_log_likelihood_max
@@ -631,7 +631,7 @@ class Estimation(object):
         data points (`num_data`) and :math:`\\mathrm{ln}(L_{max})` is the maximal
         log-likelihood value (`log_likelihood_max`).
 
-        `Note`: After running a memopy estimation there is no need to run this
+        `Note`: After running a memocell estimation there is no need to run this
         method, one can simply access the BIC with `est.bay_est_bayesian_information_criterion`
         for the estimation instance `est`.
 
@@ -654,7 +654,7 @@ class Estimation(object):
 
         Examples
         --------
-        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> # est is a memocell estimation instance obtained by est.estimate(...)
         >>> est.compute_bayesian_information_criterion(
         >>>         est.data_num_values,
         >>>         est.bay_nested_ndims,
@@ -682,7 +682,7 @@ class Estimation(object):
         `BIC (wiki) <https://en.wikipedia.org/wiki/Bayesian_information_criterion>`_.
 
         `Note`: This calculation is more a consistency check and can be accessed
-        with `est.bay_est_log_evidence_from_bic` after a memopy estimation for `est`.
+        with `est.bay_est_log_evidence_from_bic` after a memocell estimation for `est`.
         The more accurate value of the logarithmic evidence from the nested sampling
         should be preferred for serious tasks (at `est.bay_est_log_evidence`).
 
@@ -701,7 +701,7 @@ class Estimation(object):
 
         Examples
         --------
-        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> # est is a memocell estimation instance obtained by est.estimate(...)
         >>> est.compute_log_evidence_from_bic(est.bay_est_bayesian_information_criterion)
         32.77726399235768
         >>> est.bay_est_log_evidence_from_bic
@@ -738,7 +738,7 @@ class Estimation(object):
 
         Examples
         --------
-        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> # est is a memocell estimation instance obtained by est.estimate(...)
         >>> est.net_theta_bounds
         array([[0.  , 0.15],
                [0.  , 0.15]])
@@ -849,7 +849,7 @@ class Estimation(object):
 
         Examples
         --------
-        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> # est is a memocell estimation instance obtained by est.estimate(...)
         >>> theta_values = np.array([0.03, 0.07])
         >>> est.log_likelihood(theta_values,
         >>>            est.net_simulation.sim_moments.moment_initial_values,
@@ -934,7 +934,7 @@ class Estimation(object):
 
         Examples
         --------
-        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> # est is a memocell estimation instance obtained by est.estimate(...)
         >>> est.compute_log_likelihood_norm(est.data_mean_values,
         >>>                         est.data_var_values,
         >>>                         est.data_cov_values,
@@ -1027,7 +1027,7 @@ class Estimation(object):
             values of the data, but can have more.
         data_time_values : 1d numpy.ndarray
             Time values of the data. Typically at `data.data_time_values` of a
-            memopy data object `data`.
+            memocell data object `data`.
 
         Returns
         -------
@@ -1042,7 +1042,7 @@ class Estimation(object):
 
         Examples
         --------
-        >>> import memo_py as me
+        >>> import memocell as me
         >>> time_values = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
         >>> data_time_values = np.array([1.0, 3.0, 5.0])
         >>> net_time_values, __, net_time_ind = me.Estimation.initialise_time_values(time_values, data_time_values)
@@ -1117,7 +1117,7 @@ class Estimation(object):
 
         Examples
         --------
-        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> # est is a memocell estimation instance obtained by est.estimate(...)
         >>> est.net.net_theta_symbolic
         ['theta_0', 'theta_1']
         >>> est.net.net_rates_identifier
@@ -1204,7 +1204,7 @@ class Estimation(object):
 
         Examples
         --------
-        >>> # est is a memopy estimation instance obtained by est.estimate(...)
+        >>> # est is a memocell estimation instance obtained by est.estimate(...)
         >>> est.net_simulation.sim_variables_order
         [[('V_0',), ('V_1',)], [('V_0', 'V_0'), ('V_0', 'V_1'), ('V_1', 'V_1')]]
         >>> est.net_simulation.sim_variables_identifier

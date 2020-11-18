@@ -18,7 +18,7 @@ import sphinx_rtd_theme
 
 # -- Project information -----------------------------------------------------
 
-project = 'memo_py'
+project = 'memocell'
 copyright = '2020, mlanghinrichs'
 author = 'mlanghinrichs'
 

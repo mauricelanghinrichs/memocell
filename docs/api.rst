@@ -2,14 +2,14 @@
 API Reference
 =============
 
-This page details the methods and classes provided by the ``memo_py`` module. Some
+This page details the methods and classes provided by the ``memocell`` module. Some
 plotting helper methods and input validation methods are flagged as private and will
 not appear below; please see the raw code on github for these.
 
 Networks
 ========
 
-.. automodule:: memo_py.network
+.. automodule:: memocell.network
     :members:
     :undoc-members:
     :show-inheritance:
@@ -17,7 +17,7 @@ Networks
 Simulations
 ===========
 
-.. automodule:: memo_py.simulation
+.. automodule:: memocell.simulation
     :members:
     :undoc-members:
     :show-inheritance:
@@ -25,7 +25,7 @@ Simulations
 Data
 ====
 
-.. automodule:: memo_py.data
+.. automodule:: memocell.data
     :members:
     :undoc-members:
     :show-inheritance:
@@ -33,7 +33,7 @@ Data
 Estimation
 ==========
 
-.. automodule:: memo_py.estimation
+.. automodule:: memocell.estimation
     :members:
     :undoc-members:
     :show-inheritance:
@@ -41,7 +41,7 @@ Estimation
 Model Selection
 ===============
 
-.. automodule:: memo_py.selection
+.. automodule:: memocell.selection
     :members:
     :undoc-members:
     :show-inheritance:
@@ -49,12 +49,12 @@ Model Selection
 Simulation Libraries
 ====================
 
-.. automodule:: memo_py.simulation_lib.sim_gillespie
+.. automodule:: memocell.simulation_lib.sim_gillespie
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: memo_py.simulation_lib.sim_moments
+.. automodule:: memocell.simulation_lib.sim_moments
     :members:
     :undoc-members:
     :show-inheritance:
@@ -62,7 +62,7 @@ Simulation Libraries
 Plotting
 ========
 
-.. automodule:: memo_py.plots
+.. automodule:: memocell.plots
     :members:
     :undoc-members:
     :show-inheritance:

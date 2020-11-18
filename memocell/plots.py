@@ -37,8 +37,8 @@ def net_main_plot(net, node_settings=None, edge_settings=None,
 
     Parameters
     ----------
-    net : memo_py.network.Network
-        A memo_py network object.
+    net : memocell.network.Network
+        A memocell network object.
     node_settings : dict of dict, optional
         Optional label and color settings for the network nodes.
     edge_settings : dict of dict, optional
@@ -92,8 +92,8 @@ def net_hidden_plot(net, node_settings=None, edge_settings=None,
 
     Parameters
     ----------
-    net : memo_py.network.Network
-        A memo_py network object.
+    net : memocell.network.Network
+        A memocell network object.
     node_settings : dict of dict, optional
         Optional label and color settings for the network nodes.
     edge_settings : dict of dict, optional
@@ -149,8 +149,8 @@ def sim_counts_plot(sim, settings=None,
 
     Parameters
     ----------
-    sim : memo_py.simulation.Simulation
-        A memo_py simulation object that contains a Gillespie simulation.
+    sim : memocell.simulation.Simulation
+        A memocell simulation object that contains a Gillespie simulation.
     settings : dict of dict, optional
         Optional label and color settings for the simulation variables.
     x_label : str, optional
@@ -203,8 +203,8 @@ def sim_mean_plot(sim, settings=None,
 
     Parameters
     ----------
-    sim : memo_py.simulation.Simulation
-        A memo_py simulation object that contains a moment simulation.
+    sim : memocell.simulation.Simulation
+        A memocell simulation object that contains a moment simulation.
     settings : dict of dict, optional
         Optional label and color settings for the mean traces.
     x_label : str, optional
@@ -257,8 +257,8 @@ def sim_variance_plot(sim, settings=None,
 
     Parameters
     ----------
-    sim : memo_py.simulation.Simulation
-        A memo_py simulation object that contains a moment simulation.
+    sim : memocell.simulation.Simulation
+        A memocell simulation object that contains a moment simulation.
     settings : dict of dict, optional
         Optional label and color settings for the variance traces.
     x_label : str, optional
@@ -312,8 +312,8 @@ def sim_covariance_plot(sim, settings=None,
 
     Parameters
     ----------
-    sim : memo_py.simulation.Simulation
-        A memo_py simulation object that contains a moment simulation.
+    sim : memocell.simulation.Simulation
+        A memocell simulation object that contains a moment simulation.
     settings : dict of dict, optional
         Optional label and color settings for the covariance traces.
     x_label : str, optional
@@ -367,8 +367,8 @@ def data_mean_plot(data, settings=None,
 
     Parameters
     ----------
-    data : memo_py.data.Data
-        A memo_py data object.
+    data : memocell.data.Data
+        A memocell data object.
     settings : dict of dict, optional
         Optional label and color settings for the mean traces.
     x_label : str, optional
@@ -421,8 +421,8 @@ def data_variance_plot(data, settings=None,
 
     Parameters
     ----------
-    data : memo_py.data.Data
-        A memo_py data object.
+    data : memocell.data.Data
+        A memocell data object.
     settings : dict of dict, optional
         Optional label and color settings for the variance traces.
     x_label : str, optional
@@ -470,13 +470,13 @@ def data_covariance_plot(data, settings=None,
                     x_label='Time', x_lim=None, x_log=False,
                     y_label='Covariance', y_lim=None, y_log=False,
                     show=True, save=None):
-    """Plot the covariance statistics with standard errors of a data object (if 
+    """Plot the covariance statistics with standard errors of a data object (if
     covariance data are available).
 
     Parameters
     ----------
-    data : memo_py.data.Data
-        A memo_py data object.
+    data : memocell.data.Data
+        A memocell data object.
     settings : dict of dict, optional
         Optional label and color settings for the covariance traces.
     x_label : str, optional
@@ -528,8 +528,8 @@ def data_hist_variables_plot(data, time_ind, normalised=False, settings=None,
 
     Parameters
     ----------
-    data : memo_py.data.Data
-        A memo_py data object.
+    data : memocell.data.Data
+        A memocell data object.
     time_ind : int
         Time index to take variable counts from; the time point is then given by
         `data.data_time_values[time_ind]`.
@@ -587,8 +587,8 @@ def data_hist_waiting_times_plot(data, data_events, normalised=True,
 
     Parameters
     ----------
-    data : memo_py.data.Data
-        A memo_py data object.
+    data : memocell.data.Data
+        A memocell data object.
     data_events : list of tuples with (bool, float or None)
         Data events to take waiting times from; e.g. `data.event_all_first_cell_type_conversion`.
         The `boolean` value of the tuples indicates whether an event happened or not. If not,
@@ -654,8 +654,8 @@ def data_variable_scatter_plot(data, time_ind, variable1, variable2, settings=No
 
     Parameters
     ----------
-    data : memo_py.data.Data
-        A memo_py data object.
+    data : memocell.data.Data
+        A memocell data object.
     time_ind : int
         Time index to take variable counts from; the time point is then given by
         `data.data_time_values[time_ind]`.
@@ -710,8 +710,8 @@ def selection_plot(estimation_instances, est_type='evidence',
 
     Parameters
     ----------
-    estimation_instances : list of memo_py.estimation.Estimation
-        A list of memo_py estimation objects.
+    estimation_instances : list of memocell.estimation.Estimation
+        A list of memocell estimation objects.
     est_type : str, optional
         Specify type of selection plot. `est_type='evidence'` (default) to plot logarithmic
         evidence values from nested sampling. `est_type='likelihood'` to plot the maximal
@@ -786,8 +786,8 @@ def est_runplot(estimation, color='limegreen', show=True, save=None):
 
     Parameters
     ----------
-    estimation : memo_py.estimation.Estimation
-        A memo_py estimation object.
+    estimation : memocell.estimation.Estimation
+        A memocell estimation object.
     color : str, optional
         Optional color passed to `dynesty`'s `runplot`.
     show : bool, optional
@@ -819,8 +819,8 @@ def est_traceplot(estimation, settings=None, show=True, save=None):
 
     Parameters
     ----------
-    estimation : memo_py.estimation.Estimation
-        A memo_py estimation object.
+    estimation : memocell.estimation.Estimation
+        A memocell estimation object.
     settings : dict of dict, optional
         Optional labels for parameters.
     show : bool, optional
@@ -870,8 +870,8 @@ def est_parameter_plot(estimation, settings=None, show_errorbar=True,
 
     Parameters
     ----------
-    estimation : memo_py.estimation.Estimation
-        A memo_py estimation object.
+    estimation : memocell.estimation.Estimation
+        A memocell estimation object.
     settings : dict of dict, optional
         Optional label and color for parameters.
     show_errorbar : bool, optional
@@ -922,8 +922,8 @@ def est_corner_plot(estimation, settings=None, show=True, save=None):
 
     Parameters
     ----------
-    estimation : memo_py.estimation.Estimation
-        A memo_py estimation object.
+    estimation : memocell.estimation.Estimation
+        A memocell estimation object.
     settings : dict of dict, optional
         Optional labels for parameters.
     show : bool, optional
@@ -963,8 +963,8 @@ def est_corner_kernel_plot(estimation, settings=None, show=True, save=None):
 
     Parameters
     ----------
-    estimation : memo_py.estimation.Estimation
-        A memo_py estimation object.
+    estimation : memocell.estimation.Estimation
+        A memocell estimation object.
     settings : dict of dict, optional
         Optional labels for parameters.
     show : bool, optional
@@ -1008,8 +1008,8 @@ def est_corner_weight_plot(estimation, settings=None, show=True, save=None):
 
     Parameters
     ----------
-    estimation : memo_py.estimation.Estimation
-        A memo_py estimation object.
+    estimation : memocell.estimation.Estimation
+        A memocell estimation object.
     settings : dict of dict, optional
         Optional labels for parameters.
     show : bool, optional
@@ -1050,8 +1050,8 @@ def est_corner_bounds_plot(estimation, num_iter=14, settings=None, show=True, sa
 
     Parameters
     ----------
-    estimation : memo_py.estimation.Estimation
-        A memo_py estimation object.
+    estimation : memocell.estimation.Estimation
+        A memocell estimation object.
     num_iter : int, optional
         Number of iterations/subplots (iterations that are selected for plotting
         lie uniformly between first and last iteration of the nested sampling run).
@@ -1123,8 +1123,8 @@ def est_chains_plot(estimation, weighted=True,
 
     Parameters
     ----------
-    estimation : memo_py.estimation.Estimation
-        A memo_py estimation object.
+    estimation : memocell.estimation.Estimation
+        A memocell estimation object.
     weighted : bool, optional
         Plot parameter samples of the nested sampling run weighted (default)
         or unweighted. Samples need to be weighted to correspond to the actual
@@ -1203,8 +1203,8 @@ def est_bestfit_mean_plot(estimation, settings=None, data=True, cred=True,
 
     Parameters
     ----------
-    estimation : memo_py.estimation.Estimation
-        A memo_py estimation object.
+    estimation : memocell.estimation.Estimation
+        A memocell estimation object.
     settings : dict of dict, optional
         Optional label and color settings for the mean traces.
     data : bool, optional
@@ -1299,8 +1299,8 @@ def est_bestfit_variance_plot(estimation, settings=None, data=True, cred=True,
 
     Parameters
     ----------
-    estimation : memo_py.estimation.Estimation
-        A memo_py estimation object.
+    estimation : memocell.estimation.Estimation
+        A memocell estimation object.
     settings : dict of dict, optional
         Optional label and color settings for the variance traces.
     data : bool, optional
@@ -1396,8 +1396,8 @@ def est_bestfit_covariance_plot(estimation, settings=None, data=True, cred=True,
 
     Parameters
     ----------
-    estimation : memo_py.estimation.Estimation
-        A memo_py estimation object.
+    estimation : memocell.estimation.Estimation
+        A memocell estimation object.
     settings : dict of dict, optional
         Optional label and color settings for the covariance traces.
     data : bool, optional
