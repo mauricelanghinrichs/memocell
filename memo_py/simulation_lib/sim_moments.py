@@ -1,8 +1,4 @@
 
-# TODO: remove this when version check is no longer needed
-import sympy
-#
-
 from sympy import var
 from sympy import sympify
 from sympy import Function
@@ -13,8 +9,6 @@ import numpy as np
 from scipy.integrate import odeint
 from numba import jit
 
-# TODO: delete after run time analysis
-import time
 
 class MomentsSim(object):
     """docstring for ."""
