@@ -294,7 +294,7 @@ def hist_cell_counts_samples(res, celltypeind, time_point, sample_n, count_max, 
     model_type_counts = np.zeros((4,))
 
     for i in range(sample_n):
-        print(i)
+        if i%20==0: print(i)
         # get random model according to p(M|D)
         model_rand = np.random.choice(range(len(model_probs)), p=model_probs, replace=True)
         est = res[model_rand]
@@ -442,7 +442,7 @@ def hist_cell_counts_samples(res, celltypeind, time_point, sample_n, count_max, 
 def event_percentage(events):
     return 100.0*sum([1.0 if e[0] else 0.0 for e in events])/len(events)
 
-def event_model_samples(res, sample_n, sim_n, mprior):
+def event_model_samples(res, sample_n, sim_n, time_values, mprior):
     model_probs = me.selection.compute_model_probabilities(res, mprior=mprior)
 
     e_act_model_samples = np.zeros(sample_n)
@@ -450,14 +450,13 @@ def event_model_samples(res, sample_n, sim_n, mprior):
     e_div2_model_samples = np.zeros(sample_n)
     e_div3_model_samples = np.zeros(sample_n)
 
-    time_values = res[0].data.data_time_values
     data_variables = ['A_t', 'M_t']
 
     # for checking set a counter
     model_type_counts = np.zeros((4,))
 
     for i in range(sample_n):
-        print(i)
+        if i%20==0: print(i)
         # get random model according to p(M|D)
         model_rand = np.random.choice(range(len(model_probs)), p=model_probs, replace=True)
         est = res[model_rand]
@@ -475,7 +474,7 @@ def event_model_samples(res, sample_n, sim_n, mprior):
                                 'd3': d3, 'l1': l}
 
             # sim settings for par3 model
-            time_values = est.data.data_time_values
+            # time_values = est.data.data_time_values
             initial_values = {'M_t': 1, 'A_t': 0}
             variables = {'M_t': ('M_t', ), 'A_t': ('A_t', )}
 
@@ -498,7 +497,7 @@ def event_model_samples(res, sample_n, sim_n, mprior):
             theta_values = {'d1': d1, 'd2': d2, 'l1': l1}
 
             # sim settings for par2 model
-            time_values = est.data.data_time_values
+            # time_values = est.data.data_time_values
             initial_values = {'M_t': 1, 'A_t': 0}
             variables = {'M_t': ('M_t', ), 'A_t': ('A_t', )}
 
@@ -521,7 +520,7 @@ def event_model_samples(res, sample_n, sim_n, mprior):
             theta_values = {'d_na': dna, 'd_ni': dni, 'la_a': l}
 
             # sim settings for par3 model
-            time_values = est.data.data_time_values
+            # time_values = est.data.data_time_values
             initial_values = {'N_t': 1, 'I_t': 0, 'A_t': 0}
             variables = {'M_t': ('N_t', 'I_t'), 'A_t': ('A_t', )}
 
@@ -558,7 +557,7 @@ def event_model_samples(res, sample_n, sim_n, mprior):
             theta_values = {'d_ma': a1, 'la_a': l}
 
             # sim settings for par3 model
-            time_values = est.data.data_time_values
+            # time_values = est.data.data_time_values
             initial_values = {'M_t': 1, 'A_t': 0}
             variables = {'M_t': ('M_t', ), 'A_t': ('A_t', )}
 
