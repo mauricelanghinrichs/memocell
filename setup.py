@@ -15,7 +15,7 @@ def read(filename):
 
 
 setup(
-    name="memocell", # memo<rho>y
+    name="memocell",
     version="0.1.0",
     url="https://github.com/mauricelanghinrichs/memocell.git",
     license='MIT',
@@ -23,7 +23,7 @@ setup(
     author="Maurice Langhinrichs",
     author_email="m.langhinrichs@icloud.com",
 
-    description="An exact modelling framework for stochastic processes with and without memory in Python.",
+    description="Bayesian inference of stochastic cellular processes with and without memory in Python.",
     long_description=read("README.rst"),
 
     packages=find_packages(exclude=('tests',)),
@@ -34,7 +34,7 @@ setup(
                         'matplotlib>=2.1.2', 'seaborn>=0.9.0', 'cycler>=0.10.0',
                         'setuptools>=38.5.1', 'numba>=0.43.1',
                         # 'graphviz>=0.10.1', 'pygraphviz>=1.5', # should be installed separately before
-                        'pydot>=1.4.1', 'pytest>=6.0.0',
+                        'pydot>=1.4.1',
                         'IPython>=7.8.0', 'tqdm>=4.31.1'],
 
     # run pytest with "$ python setup.py pytest" in this directory
