@@ -66,3 +66,11 @@ Plotting
     :members:
     :undoc-members:
     :show-inheritance:
+
+Utility Methods
+===============
+
+.. automodule:: memocell.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
