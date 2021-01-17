@@ -26,6 +26,10 @@ class GillespieSim(object):
         self.sim_gill_reaction_update_exec = None
         self.sim_gill_reaction_number = None
 
+        # instantiate variables used in simulations
+        self.sim_gill_theta_numeric_exec = None
+        self.sim_gill_initial_values = None
+
         # instantiate objects for summation indices from hidden network
         # nodes to simulation variables
         self.summation_indices_nodes = None
@@ -71,16 +75,17 @@ class GillespieSim(object):
         # only able to run a simulation, once preparations are done
         if self.gillespie_preparation_exists:
             # create an executable string setting the numerical values of the rates (as theta identifiers)
-            theta_numeric_exec = self.create_theta_numeric_exec(self.net.net_theta_symbolic, theta_values_order)
+            self.sim_gill_theta_numeric_exec = self.create_theta_numeric_exec(self.net.net_theta_symbolic, theta_values_order)
 
             # process user given initial values to hidden nodes
-            initial_values = self.process_initial_values_order(self.net_hidden_node_order_without_env,
+            self.sim_gill_initial_values = self.process_initial_values_order(self.net_hidden_node_order_without_env,
                                                                 initial_values_dict,
                                                                 self.net.net_nodes_identifier)
             ###
 
             # run the actual gillespie algorithm (first reaction method)
-            sim_gill_sol = self.run_gillespie_first_reaction_method(time_values, initial_values, theta_numeric_exec,
+            sim_gill_sol = self.run_gillespie_first_reaction_method(time_values,
+                                                    self.sim_gill_initial_values, self.sim_gill_theta_numeric_exec,
                                                     self.sim_gill_propensities_eval, self.sim_gill_reaction_number,
                                                     self.sim_gill_reaction_update_exec)
 
@@ -100,7 +105,8 @@ class GillespieSim(object):
 
     # TODO: implement direct method or other algorithms that might be more efficient
     @staticmethod
-    def run_gillespie_first_reaction_method(time_arr_expl, initial_values, reac_rates_exec, prop_arr_eval, num_reacs, reac_event_fct):
+    def run_gillespie_first_reaction_method(time_arr_expl, initial_values,
+                    reac_rates_exec, prop_arr_eval, num_reacs, reac_event_fct):
         """docstring for ."""
 
         # initialise solution arrays
