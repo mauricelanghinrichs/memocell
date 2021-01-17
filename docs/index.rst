@@ -6,7 +6,7 @@
 MemoCell
 ========
 
-An exact modelling framework for stochastic processes with and without memory in Python.
+Bayesian inference of stochastic cellular processes with and without memory in Python.
 
 Content
 ^^^^^^^

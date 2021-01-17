@@ -483,7 +483,13 @@ class Estimation(object):
             9.93638169e-06, 9.93651290e-06, 9.93662331e-06]))
         """
 
-        # TODO: understand this and comment!
+        # see methods text or goodnotes
+        # theta samples from nested sampling are reweighted (not just
+        # taking as uniform) to get the "true" posterior samples
+        # a given sample theta_i has to obey p(theta_i)=(Li deltaXi)/Z=:wi
+        # where the evidence Z=sum over all Li deltaXi
+        # thus the code below follows:
+        # with logwt_i=log(Li deltaXi), logZ[-1]=log(Z)
         samples = sampler_result.samples
         weights = np.exp(sampler_result.logwt - sampler_result.logz[-1])
         samples_weighted = dyfunc.resample_equal(samples, weights)
