@@ -19,8 +19,8 @@ from tqdm.autonotebook import tqdm
 
 import warnings
 
-def select_models(networks, variables, initial_values, theta_bounds,
-                            data, time_values=None,
+def select_models(networks, variables, initial_values_types, initial_values,
+                            theta_bounds, data, time_values=None,
                             sim_mean_only=False, fit_mean_only=False,
                             nlive=1000, tolerance=0.01,
                             bound='multi', sample='unif',
@@ -38,8 +38,8 @@ def select_models(networks, variables, initial_values, theta_bounds,
     networks : list of memocell.Network.network
         A list of memocell network objects to run the statistical inference with.
         Each network is associated with further information given by `variables`,
-        `initial_values` and `theta_bounds` to specify a complete model
-        (all lists must have the same length).
+        `initial_values_types`, `initial_values` and `theta_bounds` to specify
+        a complete model (all lists must have the same length).
     variables : list of dict
         List of simulation variables for each network as dictionary. Each
         network dictionary requires
@@ -47,10 +47,17 @@ def select_models(networks, variables, initial_values, theta_bounds,
         The simulation variables have to correspond
         to the data variables. The tuple of network main nodes can be used to sum
         up multiple network nodes to one simulation variable.
+    initial_values_types : list of str
+        List of initial value types to specify the multinomial distribution scheme
+        of observable variables to the hidden variables for each network
+        (`'synchronous'` or `'uniform'`).
     initial_values : list of dict
-        List of initial values for each network's main nodes as dictionary. Each
-        network dictionary requires
-        `key:value=network main node:initial value (float or int)` pairs.
+        List of initial values for the moments of each network's main nodes for the
+        simulations during the estimation. For each network dict,
+        means are specified as `key:value=(node, ):initial value (float)`,
+        variances are specified as `key:value=(node, node):initial value (float)`
+        and covariances are specified as `key:value=(node1, node2):initial value (float)`
+        dictionary pairs.
     theta_bounds : list of dict
         List of uniform prior bounds of the parameters for each network as
         dictionary. Each network dictionary requires
@@ -126,10 +133,11 @@ def select_models(networks, variables, initial_values, theta_bounds,
     >>>                  'reaction_steps': 5}])
     >>> nets = [net1, net2]
     >>> variables = [{'X_t': ('X_t', )}]*2
-    >>> initial_values = [{'X_t': 1.0}]*2
+    >>> initial_values_types = ['synchronous']*2
+    >>> initial_values = [{('X_t', ): 1.0, ('X_t', 'X_t'): 0.0}]*2
     >>> theta_bounds = [{'l': (0.0, 0.5)}]*2
     >>> # then the inference is started with
-    >>> est_res = me.selection.select_models(nets, variables,
+    >>> est_res = me.selection.select_models(nets, variables, initial_values_types,
     >>>                                      initial_values, theta_bounds, data)
     """
     ### this is the top-level function of this script to handle the set of
@@ -143,7 +151,8 @@ def select_models(networks, variables, initial_values, theta_bounds,
     #     tqdm_version = tqdm.std.tqdm
 
     # validation check on user inputs
-    _validate_selection_input(networks, variables, initial_values,
+    _validate_selection_input(networks, variables,
+                                initial_values_types, initial_values,
                                 theta_bounds, data, time_values,
                                 sim_mean_only, fit_mean_only)
 
@@ -157,6 +166,7 @@ def select_models(networks, variables, initial_values, theta_bounds,
     for est_iter, net in enumerate(networks):
 
         net_variables = variables[est_iter]
+        net_initial_values_type = initial_values_types[est_iter]
         net_initial_values = initial_values[est_iter]
         net_theta_bounds = theta_bounds[est_iter]
         net_time_values = time_values[est_iter]
@@ -164,6 +174,7 @@ def select_models(networks, variables, initial_values, theta_bounds,
 
         pool_inputs.append((net,
                             net_variables,
+                            net_initial_values_type,
                             net_initial_values,
                             net_theta_bounds,
                             net_time_values,
@@ -239,6 +250,7 @@ def net_estimation(input_var):
     # read out input_var
     (net,
     net_variables,
+    net_initial_values_type,
     net_initial_values,
     net_theta_bounds,
     net_time_values,
@@ -253,7 +265,7 @@ def net_estimation(input_var):
     # conduct the estimation via the Estimation class
     est_name = 'est_' + net.net_name
     est = Estimation(est_name, net, data, est_iter=est_iter)
-    est.estimate(net_variables, net_initial_values,
+    est.estimate(net_variables, net_initial_values_type, net_initial_values,
                                 net_theta_bounds, net_time_values,
                                 sim_mean_only, fit_mean_only,
                                 nlive, tolerance, bound, sample)
@@ -297,7 +309,7 @@ def compute_model_probabilities(estimation_instances, mprior=None):
     >>> # estimation_instances for example by est_res = me.select_models(...)
     >>> # with estimated log evidences = [4.1, 1.8, 4.4, -1.6]
     >>> # (see compute_model_probabilities_from_log_evidences for more examples)
-    >>> me.selection.compute_model_probabilities_from_log_evidences(logevids)
+    >>> me.selection.compute_model_probabilities(est_res)
     array([0.40758705, 0.04086421, 0.55018497, 0.00136377])
     """
     ### wrapper for compute_model_probabilities_from_log_evidences
@@ -583,7 +595,8 @@ def _dots_wo_bars_evidence_from_bic(estimation_instances, settings):
 ###
 
 ### validation functions
-def _validate_selection_input(networks, variables, initial_values,
+def _validate_selection_input(networks, variables,
+                            initial_values_types, initial_values,
                             theta_bounds, data, time_values,
                             sim_mean_only, fit_mean_only):
     """Private validation method."""
@@ -628,6 +641,17 @@ def _validate_selection_input(networks, variables, initial_values,
     else:
         raise TypeError('Dict as variables expected.')
 
+    # check initial_values_types
+    if isinstance(initial_values_types, list):
+        pass
+    else:
+        raise TypeError('List of initial value types expected.')
+
+    if all(isinstance(el, str) for el in initial_values_types):
+        pass
+    else:
+        raise TypeError('String as initial values type expected.')
+
     # check initial_values
     if isinstance(initial_values, list):
         pass
@@ -659,6 +683,7 @@ def _validate_selection_input(networks, variables, initial_values,
     # length of network inputs must match
     num_nets = len(networks)
     if (num_nets==len(variables) and num_nets==len(initial_values)
+            and num_nets==len(initial_values_types)
             and num_nets==len(theta_bounds)):
         pass
     else:

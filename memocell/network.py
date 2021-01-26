@@ -31,6 +31,11 @@ class Network(object):
         self.net_main_node_order = list()
         self.net_hidden_node_order = list()
 
+        # initialise dicts to store number of hidden nodes for each main node
+        # (as dict, using node identifiers; including env node)
+        self.net_main_node_numbers = dict()
+        self.net_hidden_node_numbers = dict()
+
 
     # validate user input and define the network structure
     def structure(self, net_structure):
@@ -54,6 +59,10 @@ class Network(object):
         # create a list ordering the nodes and pairs of nodes of the main and hidden networks
         self.net_main_node_order = self.create_node_order(self.net_main.nodes())
         self.net_hidden_node_order = self.create_node_order(self.net_hidden.nodes())
+
+        # count number of main and hidden nodes for each node identifier, including env
+        self.net_main_node_numbers = self.count_net_main_nodes(self.net_main.nodes())
+        self.net_hidden_node_numbers = self.count_net_hidden_nodes(self.net_hidden.nodes())
 
 
     def create_net_modules_and_identifiers(self, net_structure):
@@ -187,6 +196,40 @@ class Network(object):
                                 if i<=j])
 
         return net_node_order
+
+    @staticmethod
+    def count_net_main_nodes(net_main_nodes):
+        """docstring for ."""
+
+        # initialise and add Z_env in any case with zero counts
+        net_main_node_numbers = dict()
+        net_main_node_numbers['Z_env'] = 0
+
+        # loop over nodes and add a count if a variable was seen
+        # .get allows you to specify a default value if the key does not exist
+        # (from stackoverflow)
+        for node in net_main_nodes:
+            net_main_node_numbers[node] = net_main_node_numbers.get(node, 0) + 1
+
+        return net_main_node_numbers
+
+    @staticmethod
+    def count_net_hidden_nodes(net_hidden_nodes):
+        """docstring for ."""
+
+        # initialise and add Z_env in any case with zero counts
+        net_hidden_node_numbers = dict()
+        net_hidden_node_numbers['Z_env'] = 0
+
+        # loop over nodes and add a count if a variable was seen
+        # .get allows you to specify a default value if the key does not exist
+        # (from stackoverflow)
+        for node in net_hidden_nodes:
+            # extract the main node identifier
+            node_main = node.split('__')[0]
+            net_hidden_node_numbers[node_main] = net_hidden_node_numbers.get(node_main, 0) + 1
+
+        return net_hidden_node_numbers
 
     @staticmethod
     def create_module_nodes(start_main_node, end_main_node, module_ident, module_steps):

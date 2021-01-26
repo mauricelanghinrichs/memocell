@@ -38,6 +38,7 @@ class MomentsSim(object):
         self.moment_aux_vars_dict = dict()
 
         # instantiate object for initial values for the moments
+        self.moment_initial_values_main = None
         self.moment_initial_values = None
 
         # instantiate objects for string-replaceable symbolic parameters (theta notation)
@@ -122,7 +123,8 @@ class MomentsSim(object):
             # once this function has run preparations are done
             self.moments_preparation_exists = True
 
-    def moment_simulation(self, initial_values_dict, theta_values_order, time_values):
+    def moment_simulation(self, theta_values_order, time_values,
+                                initial_values_main, initial_values_type):
         """docstring for ."""
 
         ### TODO: maybe use getter/setter attributes or similar to only rerun these
@@ -135,12 +137,9 @@ class MomentsSim(object):
             # NOTE: this happens every time, if moment_initial_values don't change
             # for many moment_simulation calls one should prepare them separately
             # and then use run_moment_ode_system directly
-            self.moment_initial_values = self.process_initial_values_order(
-                                                    self.moment_order_hidden,
-                                                    initial_values_dict,
-                                                    self.net.net_nodes_identifier,
-                                                    type='centric_mean_only')
-
+            self.moment_initial_values = self.process_initial_values(
+                                                    initial_values_main,
+                                                    initial_values_type)
 
             # setting the numerical values of the rates
             # (as theta identifiers and in symbolic theta order)
@@ -210,71 +209,249 @@ class MomentsSim(object):
         ###
         return variables_mean, variables_var, variables_cov
 
-    @staticmethod
-    def process_initial_values_order(moment_order_hidden, initial_values_dict, net_nodes_identifier, type=None):
+
+    def process_initial_values(self, initial_values_main, initial_values_type):
+        """docstring for .
+        copied from jupyter notebook (env_initial_values)
+
+        more info on written notes in goodnotes
+
+        - currently, MemoCell offers zero-variance, zero-covariance, synchronous initial values only
+        - aim: allow more general choice of initial values
+        - see goodnotes notes on initial_values, where a more general multinomial distribution scheme is derived
+        - the idea is: one has to specify
+            - the observable distribution (moments for moment simulations, distribution for stochastic simulations)
+            - a distribution scheme on the hidden layer (based on multinomial parameters; e.g., uniform or synchronous)
+        - then one can derive the relevant initial values for hidden layer too
+        - the following relations for the hidden variable moments can be derived
+            - hidden variable of cell type `i`: :math:`\\mathrm{E}(W^{(i,j)}_0) = p_j\\,\\mathrm{E}(W^{(i)}_0)`
+            - hidden variable of cell type `i`: :math:`\\mathrm{Var}(W^{(i,j)}_0) = p_j (1-p_j)\\,\\mathrm{E}(W^{(i)}_0) + p_j^2 \\,\\mathrm{Var}(W^{(i)}_0)`
+            - two hidden variables of cell type `i`: :math:`\\mathrm{Cov}(W^{(i,j)}_0, W^{(i,l)}_0) = - p_j p_l \\,\\mathrm{E}(W^{(i)}_0) + p_j p_l \\,\\mathrm{Var}(W^{(i)}_0)`
+            - hidden variables between two different cell types `i,k`: :math:`\\mathrm{Cov}(W^{(i,j)}_0, W^{(k,l)}_0) = p_j p_l \\, \\mathrm{Cov}(W^{(i)}_0, W^{(k)}_0)`
+        - with general multinomial parameters `p_j`, which is the probability that the hidden variable `(i,j)` gets a cell from obserbale variable `(i)`; i.e. :math:`(..., W^{(i,j)}_0,...) \\sim \\mathrm{MultiNomial}(p_1,...,p_j,...,p_{u_i}; N)` where `N` is random with :math:`N=W^{(i)}_0`, hence all the proofs for above relations use theorems of conditional expectation, variance and covariance
+        - note that generally we set up the stochastic process with :math:`W^{(i)}_t = \\sum_{j \\in \\{1,...,u_i\\} } W^{(i,j)}_t`, where `u_i` is the number of all hidden variables of cell type `i`
+
+        continue:
+
+        - In MemoCell we have to provide the initial values for the moments :math:`\\mathrm{E}(X)`, :math:`\\mathrm{E}(X(X-1))` and :math:`\\mathrm{E}(XY)`
+        - so we have to calculate what the above mean, variance and covariance relations imply for these moments
+        - we derive:
+            - the mean stays for cell type `i`: :math:`\\mathrm{E}(W^{(i,j)}_0) = p_j\\,\\mathrm{E}(W^{(i)}_0)`
+            - the second factorial moment for cell type `i`: :math:`\\mathrm{E}\\big(W^{(i,j)}_0 (W^{(i,j)}_0-1)\\big) = p_j^2\\,\\big(\\mathrm{Var}(W^{(i)}_0)+ \\mathrm{E}(W^{(i)}_0)^2 - \\mathrm{E}(W^{(i)}_0)\\big)`
+            - the second mixed moment within cell type `i`: :math:`\\mathrm{E}(W^{(i,j)}_0 W^{(i,l)}_0) = p_j p_l\\big(\\mathrm{Var}(W^{(i)}_0)+ \\mathrm{E}(W^{(i)}_0)^2 - \\mathrm{E}(W^{(i)}_0)\\big)`
+            - the second mixed moment for different cell types `i,k`: :math:`\\mathrm{E}(W^{(i,j)}_0 W^{(k,l)}_0) = p_j p_l\\big(\\mathrm{Cov}(W^{(i)}_0, W^{(k)}_0) + \\mathrm{E}(W^{(i)}_0) \\, \\mathrm{E}(W^{(k)}_0) \\big)`
+
+        now define two modes:
+
+        - uniform: all cells for a given cell type are uniformly distributed between all its hidden nodes; i.e. `p_j=1/u_i` (for each cell type `i`)
+        - synchronous: all cells for a given cell type are placed into the 'centric' node; i.e. `p_1=1`, else `p_j=0`, `j>1` (for each cell type)
+        """
+        # NOTE: initial values processing was updated
+        # for paper version, see stalled memo_py module
+
+        # different initial values scheme on the hidden layer for the same
+        # observable layer mean, variance and covariance statistics
+
+        # idea for the distribution schemes:
+        # loop over the hidden moments, each of which has to obtain an
+        # initial value; we have to following moments types (examples):
+        # ('Z_0__module_1__0', ) = E(X)
+        # ('Z_0__centric', 'Z_0__module_1__0') = E(X Y)
+        # ('Z_0__centric', 'Z_0__centric') = E(X(X-1))
+        # so we can obtain the observable nodes with a string split method
+
+        # initial_values_main contain the same tuples, but for the original
+        # observable/main node names and the following types:
+        # ('X_t') = E(X)
+        # ('X_t', 'Y_t') = Cov(X, Y)
+        # ('X_t', 'X_t') = Var(X)
+
+        if initial_values_type=='synchronous':
+            initial_values_hidden = self.process_initial_values_synchronous(
+                                        self.moment_order_hidden,
+                                        initial_values_main,
+                                        self.net.net_nodes_identifier)
+
+        elif initial_values_type=='uniform':
+            initial_values_hidden = self.process_initial_values_uniform(
+                                        self.moment_order_hidden,
+                                        initial_values_main,
+                                        self.net.net_nodes_identifier,
+                                        self.net.net_hidden_node_numbers)
+
+        return initial_values_hidden
+
+
+    def process_initial_values_uniform(self, moment_order_hidden,
+                                initial_values_main, net_nodes_identifier,
+                                net_hidden_node_numbers):
         """docstring for ."""
 
-        # NOTE: there are many more types that could be imagined and implemented
-        if type == 'centric_mean_only':
-            # compute initial value for the hidden layer based on assumptions:
-            # - user-given initial values set mean levels to start with on the main layer
-            # - no variance of mean nodes, no covariance between main nodes
-            # - mean levels in the hidden layer are focused solely on centric nodes
-            # - no variance or covariance for hidden nodes
+        # for uniform initial values we have p_j = 1/u_i, where u_i is the
+        # number of all hidden nodes for a cell type / main node i, so each
+        # observable cell is distributed uniformly among its hidden variables
+        # (for multinomial distribution scheme on the hidden layer)
 
-            # this processing type gives rise to the following initial values for hidden nodes
-            # let x0 and y0 denote the respective mean levels on the main layer
-            # E( X_centric ) = x0,
-            # E( X_centric * (X_centric - 1) ) = x0 * x0 - x0,
-            # E( X_centric * Y_centric ) = x0 * y0
-            # and all remaining moments = 0
+        # we can calculate the 1/u_i fractions before starting with the loop
+        # we have net_hidden_node_numbers like {'Z_env': 1, 'Z_0': 2, 'Z_1': 3}
+        pj_uniform = dict()
+        for node_id in net_nodes_identifier.keys():
+            if not node_id is 'Z_env':
+                pj_uniform[node_id] = 1.0/float(net_hidden_node_numbers[node_id])
 
-            # loop over moment_order for hidden net and find initial values as above
-            init = list()
+        # loop over moment_order for hidden net and find initial values as above
+        init = list()
 
-            # first moments
-            for node, in moment_order_hidden[0]:
-                # e.g., 'Z_0__module_1__0' or 'Z_0__centric'
-                node_split = node.split('__')
+        # first moments
+        for node, in moment_order_hidden[0]:
+            # e.g., 'Z_0__module_1__0' or 'Z_0__centric'
+            # split to access main node
+            node_split = node.split('__')
+            node_id = node_split[0]
+            # read out mean via tuple notation, e.g. with key ('X_t',) for id 'Z_0'
+            node_orig = net_nodes_identifier[node_id]
+            mean_i = float(initial_values_main[(node_orig, )])
+            # get pj value for the respective main node / cell type
+            pj = pj_uniform[node_id]
+            init_val = self.compute_initial_moment_first(pj, mean_i)
+            init.append(init_val)
 
-                # get centric nodes and read out initial values (x0, y0, ...)
-                # case: E( X_centric ) = x0
-                if node_split[1] == 'centric':
-                    node_id = node_split[0]
-                    init_val = float(initial_values_dict[net_nodes_identifier[node_id]])
+        # second moments
+        for node1, node2 in moment_order_hidden[1]:
+            # split to access main nodes
+            node1_split = node1.split('__')
+            node2_split = node2.split('__')
+            node1_id = node1_split[0] # e.g., 'Z_0'
+            node2_id = node2_split[0]
+            node1_orig = net_nodes_identifier[node1_id] # e.g., 'X_t'
+            node2_orig = net_nodes_identifier[node2_id]
+            # three cases have to be distinguished
+            # 1) same main node, same hidden node -> 2nd factorial moment
+            # 2) same main node, different hidden nodes -> mixed 2nd for same i
+            # 3) different main nodes -> mixed 2nd for different i,k cell types
 
+            # case 1)
+            if node1==node2:
+                # read out mean and variance for main node
+                mean_i = float(initial_values_main[(node1_orig, )])
+                var_i = float(initial_values_main[(node1_orig, node1_orig)])
+                # get pj value for the respective main node / cell type
+                pj = pj_uniform[node1_id]
+                init_val = self.compute_initial_moment_second_factorial(
+                                                        pj, mean_i, var_i)
+            # case 2)
+            elif node1_id==node2_id:
+                # read out mean and variance for main node
+                mean_i = float(initial_values_main[(node1_orig, )])
+                var_i = float(initial_values_main[(node1_orig, node1_orig)])
+                # get pj=pl value for the respective main node / cell type
+                pj = pj_uniform[node1_id]
+                init_val = self.compute_initial_moment_second_mixed_ii(
+                                                    pj, pj, mean_i, var_i)
+            # case 3)
+            else:
+                # read out means and covariance for the two main nodes
+                mean_i = float(initial_values_main[(node1_orig, )])
+                mean_k = float(initial_values_main[(node2_orig, )])
+                # user input is checked, so one of these will work (unique)
+                try:
+                    cov_ik = float(initial_values_main[(node1_orig, node2_orig)])
+                except:
+                    cov_ik = float(initial_values_main[(node2_orig, node1_orig)])
+                # get pj and pl value for the respective main nodes / cell types
+                pj = pj_uniform[node1_id]
+                pl = pj_uniform[node2_id]
+                init_val = self.compute_initial_moment_second_mixed_ik(
+                                            pj, pl, mean_i, mean_k, cov_ik)
+            init.append(init_val)
+        return np.array(init)
+
+
+    def process_initial_values_synchronous(self, moment_order_hidden,
+                                initial_values_main, net_nodes_identifier):
+        """docstring for ."""
+        # for synchronous initial values we have p_1 = 1 (centric node), else 0
+        # (for multinomial distribution scheme on the hidden layer)
+
+        # loop over moment_order for hidden net and find initial values as above
+        init = list()
+
+        # first moments
+        for node, in moment_order_hidden[0]:
+            # e.g., 'Z_0__module_1__0' or 'Z_0__centric'
+            node_split = node.split('__')
+            # get centric nodes and read out mean value for cell type i
+            if node_split[1] == 'centric':
+                node_id = node_split[0]
+                # read out mean via tuple notation, e.g. with key ('X_t',) for id 'Z_0'
+                node_orig = net_nodes_identifier[node_id]
+                mean_i = float(initial_values_main[(node_orig, )])
+                # pj = 1.0
+                init_val = self.compute_initial_moment_first(1.0, mean_i)
+
+            else:
+                # pj = 0.0 implies compute_initial_moment_first()=0.0
+                init_val = 0.0
+            init.append(init_val)
+
+        # second moments
+        for node1, node2 in moment_order_hidden[1]:
+            node1_split = node1.split('__')
+            node2_split = node2.split('__')
+            # again, only centric nodes are interesting, otherwise pj=0 anyway;
+            # as there is only one centric node per cell type we never have the
+            # case of a non-zero mixed second moment within the same cell type;
+            # we only have cases like (Z_0__centric, Z_0__centric) or (Z_0__centric, Z_1__centric)
+            if node1_split[1] == 'centric' and node2_split[1] == 'centric':
+                # get main nodes / cell types
+                node1_id = node1_split[0]
+                node2_id = node2_split[0]
+
+                # case: E( X_centric * (X_centric - 1) )
+                if node1_id == node2_id:
+                    node_orig = net_nodes_identifier[node1_id]
+                    mean_i = float(initial_values_main[(node_orig, )])
+                    var_i = float(initial_values_main[(node_orig, node_orig)])
+                    init_val = self.compute_initial_moment_second_factorial(1.0, mean_i, var_i)
+
+                # case: E( X_centric * Y_centric )
                 else:
-                    init_val = 0.0
+                    node1_orig = net_nodes_identifier[node1_id]
+                    node2_orig = net_nodes_identifier[node2_id]
+                    mean_i = float(initial_values_main[(node1_orig, )])
+                    mean_k = float(initial_values_main[(node2_orig, )])
+                    # user input is checked, so one of these will work (unique)
+                    try:
+                        cov_ik = float(initial_values_main[(node1_orig, node2_orig)])
+                    except:
+                        cov_ik = float(initial_values_main[(node2_orig, node1_orig)])
+                    init_val = self.compute_initial_moment_second_mixed_ik(
+                                                1.0, 1.0, mean_i, mean_k, cov_ik)
+            else:
+                init_val = 0.0
+            init.append(init_val)
 
-                init.append(init_val)
+        return np.array(init)
 
-            # second moments
-            for node1, node2 in moment_order_hidden[1]:
-                node1_split = node1.split('__')
-                node2_split = node2.split('__')
+    @staticmethod
+    def compute_initial_moment_first(p_j, mean_i):
+        """docstring for ."""
+        return p_j * mean_i
 
-                if node1_split[1] == 'centric' and node2_split[1] == 'centric':
-                    node1_id = node1_split[0]
-                    node2_id = node2_split[0]
+    @staticmethod
+    def compute_initial_moment_second_factorial(p_j, mean_i, var_i):
+        """docstring for ."""
+        return p_j * p_j * (var_i + mean_i * mean_i - mean_i)
 
-                    # case: E( X_centric * (X_centric - 1) ) = x0 * x0 - x0
-                    if node1_id == node2_id:
-                        init_val1 = float(initial_values_dict[net_nodes_identifier[node1_id]])
-                        init_val = init_val1 * init_val1 - init_val1
+    @staticmethod
+    def compute_initial_moment_second_mixed_ii(p_j, p_l, mean_i, var_i):
+        """docstring for ."""
+        return p_j * p_l * (var_i + mean_i * mean_i - mean_i)
 
-                    # case: E( X_centric * Y_centric ) = x0 * y0
-                    else:
-                        init_val1 = float(initial_values_dict[net_nodes_identifier[node1_id]])
-                        init_val2 = float(initial_values_dict[net_nodes_identifier[node2_id]])
-                        init_val = init_val1 * init_val2
-                else:
-                    init_val = 0.0
-
-                init.append(init_val)
-
-            return np.array(init)
-        else:
-            raise ValueError('Type \'centric_mean_only\' expected for processing initial values.')
+    @staticmethod
+    def compute_initial_moment_second_mixed_ik(p_j, p_l, mean_i, mean_k, cov_ik):
+        """docstring for ."""
+        return p_j * p_l * (cov_ik + mean_i * mean_k)
 
     @staticmethod
     def derive_moment_order_main(node_order, mean_only):

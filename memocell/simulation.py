@@ -17,6 +17,10 @@ class Simulation(object):
         # validate network input (has to be instance of Network class) and instantiate
         self.net = self._validate_network_input(network)
 
+        # initialise general simulation settings
+        self.sim_type = None
+        self.sim_initial_values_type = None
+
         # initialise instances of MomentsSim and GillespieSim simulation classes
         self.sim_moments = MomentsSim(self.net)
         self.sim_gillespie = GillespieSim(self.net)
@@ -50,8 +54,10 @@ class Simulation(object):
 # - sym_params (in the right order with values)
 # - init_cond (in the right order with values)
 
-    def simulate(self, simulation_type, simulation_variables, initial_values,
-                        theta_values, time_values, sim_mean_only=False):
+    def simulate(self, simulation_type, simulation_variables,
+                        theta_values, time_values,
+                        initial_values_type, initial_gillespie=None,
+                        initial_moments=None, sim_mean_only=False):
         """docstring for .
 
         sim_mean_only=False
@@ -63,7 +69,8 @@ class Simulation(object):
         # information for sim_mean_only and simulation_variables
         # and trigger preparations in downstream moment or gillespie objects
         self.prepare_simulation(simulation_type, simulation_variables,
-                                    initial_values, sim_mean_only)
+                                    initial_values_type, initial_gillespie,
+                                    initial_moments, sim_mean_only)
 
         # validate and set time_values (at self.sim_time_values)
         self.prepare_time_values(time_values)
@@ -74,30 +81,46 @@ class Simulation(object):
         # ask for simulation_type and run respective class methods (Moments or Gillespie)
         if simulation_type=='moments':
             # run, store and return a simulation
-            self.sim_moments_res = self.sim_moments.moment_simulation(initial_values,
-                                            theta_values_order, self.sim_time_values)
+            self.sim_moments_res = self.sim_moments.moment_simulation(
+                                            theta_values_order, self.sim_time_values,
+                                            self.sim_moments.moment_initial_values_main,
+                                            self.sim_initial_values_type)
             return self.sim_moments_res
         elif simulation_type=='gillespie':
             # NOTE: maybe add kwargs for automatic multiple simulations, N = ...
             # run, store and return a simulation
-            self.sim_gillespie_res = self.sim_gillespie.gillespie_simulation(initial_values,
-                                            theta_values_order, self.sim_time_values)
+            self.sim_gillespie_res = self.sim_gillespie.gillespie_simulation(
+                                            theta_values_order, self.sim_time_values,
+                                            self.sim_gillespie.sim_gill_initial_values_main,
+                                            self.sim_initial_values_type)
             return self.sim_gillespie_res
 
     def prepare_simulation(self, simulation_type, simulation_variables,
-                                initial_values, sim_mean_only):
+                                initial_values_type, initial_gillespie,
+                                initial_moments, sim_mean_only):
         """docstring for ."""
         ### user input is checked and theta values (dict) are ordered
         # check user input for the simulation_type
         self._validate_simulation_type_input(simulation_type)
+        self.sim_type = simulation_type
 
         # check user input for the initial values
-        self._validate_initial_values_input(self.net.net_nodes_identifier, simulation_type, initial_values)
+        self._validate_initial_values_input(simulation_type, initial_values_type,
+                                        initial_gillespie, initial_moments)
+        self.sim_initial_values_type = initial_values_type
+
+        if simulation_type=='moments':
+            self._validate_initial_values_input_moments(initial_moments, sim_mean_only,
+                                                self.net.net_main_node_order, self.net.net_nodes_identifier)
+            self.sim_moments.moment_initial_values_main = initial_moments
+        elif simulation_type=='gillespie':
+            self._validate_initial_values_input_gillespie(initial_gillespie, self.net.net_nodes_identifier)
+            self.sim_gillespie.sim_gill_initial_values_main = initial_gillespie
 
         ### some symbolic preparations
         # read out mean only mode (default is False meaning that first
         # and second moments are used then)
-        self.sim_mean_only = self.process_sim_mean_only(simulation_type, sim_mean_only)
+        self.sim_mean_only = self.process_sim_mean_only(self.sim_type, sim_mean_only)
 
         # prepare simulation variables (this method acts only upon change
         # of previous simulation variables (or first time) and will in this
@@ -424,21 +447,78 @@ class Simulation(object):
         return network
 
     @staticmethod
-    def _validate_initial_values_input(net_nodes_identifier, simulation_type, initial_values):
+    def _validate_initial_values_input(simulation_type, initial_values_type,
+                                    initial_gillespie, initial_moments):
+        """Private validation method."""
+        # NOTE: some more checks specific to gillespie and moment sim below
+
+        # initial_values_type should be either 'synchronous' or 'uniform'
+        if initial_values_type=='synchronous' or initial_values_type=='uniform':
+            pass
+        elif not isinstance(initial_values_type, str):
+            raise TypeError('Initial values type is not a string.')
+        else:
+            raise ValueError('Unknown initial values type: \'synchronous\' or \'uniform\' are expected.')
+
+        # if simulation_type is gillespie, check if not None, but dict
+        if simulation_type=='gillespie':
+            if not isinstance(initial_gillespie, dict):
+                raise TypeError('Dictionary expected for initial values (gillespie).')
+
+        if simulation_type=='moments':
+            if not isinstance(initial_moments, dict):
+                raise TypeError('Dictionary expected for initial values (moments).')
+
+    @staticmethod
+    def _validate_initial_values_input_gillespie(initial_values, net_nodes_identifier):
         """Private validation method."""
 
         # check for correct user input for the initial values
-        if isinstance(initial_values, dict):
-            if set(net_nodes_identifier.values()) - set(['env']) == set(initial_values.keys()):
-                if ((simulation_type=='gillespie' and all(isinstance(val, int) for val in initial_values.values())) or
-                    (simulation_type=='moments' and all(isinstance(val, float) or isinstance(val, int) for val in initial_values.values()))):
-                    pass
-                else:
-                    raise ValueError('Initial values are expected to provide integer or float/integer values for Gillespie or Moment simulations, respectively.')
+        # (check for uniqueness not needed as dict have unique keys)
+        if set(net_nodes_identifier.values()) - set(['env']) == set(initial_values.keys()):
+            if all(isinstance(val, (np.integer, int)) for val in initial_values.values()):
+                pass
             else:
-                raise ValueError('Initial values are expected to provide a set of keys identical to the nodes of the main network.')
+                raise ValueError('Initial values are expected to provide integers for Gillespie simulations.')
         else:
-            raise TypeError('Initial values are expected to be provided as a dictionary.')
+            raise ValueError('Initial values are expected to provide a set of keys identical to the nodes of the main network.')
+
+    @staticmethod
+    def _validate_initial_values_input_moments(initial_moments, sim_mean_only,
+                                        net_main_node_order, net_nodes_identifier):
+        """Private validation method."""
+
+        # check for correct user input for the initial values
+        if all(isinstance(val, (np.floating, float)) for val in initial_moments.values()):
+            pass
+        else:
+            raise ValueError('Initial values are expected to provide floats for moment simulations.')
+
+        # 'moment_order' is not yet available at this validation check, so
+        # we basically repeat the order computation here for the check
+
+        # access all identifiers for mean or var/cov and convert to original names
+        moments_mean = [(net_nodes_identifier[node],) for node, in net_main_node_order[0] if not node=='Z_env']
+        moments_var_cov = [tuple(sorted((net_nodes_identifier[node_1], net_nodes_identifier[node_2])))
+                            for node_1, node_2 in net_main_node_order[1]
+                            if not (node_1=='Z_env' or node_2=='Z_env')]
+
+        # also sort initial values input
+        # (check for uniqueness not needed as dict have unique keys)
+        initial_moments_keys_sorted = [tuple(sorted(m)) for m in initial_moments.keys()]
+
+        # now it can happen that one specified a covariance with ('A', 'B') and ('B', A)
+        if not len(initial_moments_keys_sorted)==len(set(initial_moments_keys_sorted)):
+            raise ValueError('Non-unique initial values.')
+
+        # depending on mean-only mode check if all initial moments (exp, var, cov)
+        # are given as keys
+        if sim_mean_only:
+            if not set(moments_mean) == set(initial_moments_keys_sorted):
+                raise ValueError('Initial values have to match with main network nodes and given mean-only mode.')
+        else:
+            if not set(moments_mean + moments_var_cov) == set(initial_moments_keys_sorted):
+                raise ValueError('Initial values have to match with main network nodes and given mean-only mode.')
 
     @staticmethod
     def _validate_theta_values_input(net_rates_identifier, theta_values):

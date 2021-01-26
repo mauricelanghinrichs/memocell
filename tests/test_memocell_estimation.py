@@ -26,6 +26,7 @@ class TestEstimationClass(object):
 
         ### create data with known values
         num_iter = 100
+        initial_values_type = 'synchronous'
         initial_values = {'X_t': 1, 'Y_t': 0}
         theta_values = {'d': 0.03, 'l': 0.07}
         time_values = np.array([0.0, 20.0, 40.0])
@@ -35,7 +36,8 @@ class TestEstimationClass(object):
         res_list = list()
 
         for __ in range(num_iter):
-            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
+            res_list.append(sim.simulate('gillespie', variables, theta_values, time_values,
+                                            initial_values_type, initial_gillespie=initial_values)[1])
 
         sims = np.array(res_list)
 
@@ -57,7 +59,9 @@ class TestEstimationClass(object):
 
         ### run estimation and return object
         variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
-        initial_values = {'X_t': 1, 'Y_t': 0}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0,
+                        ('X_t','X_t'): 0.0, ('Y_t','Y_t'): 0.0, ('X_t','Y_t'): 0.0}
         theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
         time_values = None
         sim_mean_only = False
@@ -69,8 +73,8 @@ class TestEstimationClass(object):
         sample = 'unif'
 
         est = me.Estimation('est_min_2_4', net, data)
-        est.estimate(variables, initial_values, theta_bounds,
-                            time_values, sim_mean_only, fit_mean_only,
+        est.estimate(variables, initial_values_type, initial_values,
+                            theta_bounds, time_values, sim_mean_only, fit_mean_only,
                             nlive, tolerance, bound, sample)
         return est
 
@@ -107,7 +111,9 @@ class TestEstimationClass(object):
 
         ### run estimation and return object
         variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
-        initial_values = {'X_t': 1, 'Y_t': 0}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0,
+                        ('X_t','X_t'): 0.0, ('Y_t','Y_t'): 0.0, ('X_t','Y_t'): 0.0}
         theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
         time_values = None
         sim_mean_only = False
@@ -119,8 +125,8 @@ class TestEstimationClass(object):
         sample = 'unif'
 
         est = me.Estimation('est_min_2_4', net, data)
-        est.estimate(variables, initial_values, theta_bounds,
-                            time_values, sim_mean_only, fit_mean_only,
+        est.estimate(variables, initial_values_type, initial_values,
+                            theta_bounds, time_values, sim_mean_only, fit_mean_only,
                             nlive, tolerance, bound, sample)
         return est
 
@@ -402,6 +408,7 @@ class TestEstimationClass(object):
 
         ### create data with known values
         num_iter = 100
+        initial_values_type = 'synchronous'
         initial_values = {'X_t': 1, 'Y_t': 0}
         theta_values = {'d': 0.03, 'l': 0.07}
         time_values = np.array([0.0, 20.0, 40.0])
@@ -411,7 +418,8 @@ class TestEstimationClass(object):
         res_list = list()
 
         for __ in range(num_iter):
-            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
+            res_list.append(sim.simulate('gillespie', variables, theta_values, time_values,
+                            initial_values_type, initial_gillespie=initial_values)[1])
 
         sims = np.array(res_list)
 
@@ -433,7 +441,8 @@ class TestEstimationClass(object):
 
         ### run estimation and return object
         variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
-        initial_values = {'X_t': 1, 'Y_t': 0}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0}
         theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
         time_values = None
         sim_mean_only = True
@@ -445,8 +454,8 @@ class TestEstimationClass(object):
         sample = 'unif'
 
         est = me.Estimation('est_min_2_4', net, data)
-        est.estimate(variables, initial_values, theta_bounds,
-                            time_values, sim_mean_only, fit_mean_only,
+        est.estimate(variables, initial_values_type, initial_values,
+                            theta_bounds, time_values, sim_mean_only, fit_mean_only,
                             nlive, tolerance, bound, sample)
         return est
 
@@ -482,7 +491,8 @@ class TestEstimationClass(object):
 
         ### run estimation and return object
         variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
-        initial_values = {'X_t': 1, 'Y_t': 0}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0}
         theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
         time_values = None
         sim_mean_only = True
@@ -494,8 +504,8 @@ class TestEstimationClass(object):
         sample = 'unif'
 
         est = me.Estimation('est_min_2_4', net, data)
-        est.estimate(variables, initial_values, theta_bounds,
-                            time_values, sim_mean_only, fit_mean_only,
+        est.estimate(variables, initial_values_type, initial_values,
+                            theta_bounds, time_values, sim_mean_only, fit_mean_only,
                             nlive, tolerance, bound, sample)
         return est
 
@@ -525,7 +535,8 @@ class TestEstimationClass(object):
 
         ### run estimation and return object
         variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
-        initial_values = {'X_t': 1, 'Y_t': 0}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0}
         theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
         time_values = None
         sim_mean_only = True
@@ -537,8 +548,8 @@ class TestEstimationClass(object):
         sample = 'unif'
 
         est = me.Estimation('est_min_2_4', net, data)
-        est.estimate(variables, initial_values, theta_bounds,
-                            time_values, sim_mean_only, fit_mean_only,
+        est.estimate(variables, initial_values_type, initial_values,
+                            theta_bounds, time_values, sim_mean_only, fit_mean_only,
                             nlive, tolerance, bound, sample)
         return est
 

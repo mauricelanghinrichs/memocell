@@ -12,14 +12,15 @@ class TestEstimationClass(object):
         net.structure([{'start': 'X_t', 'end': 'X_t',
                         'rate_symbol': 'l',
                         'type': 'S -> S + S', 'reaction_steps': 2}])
-
-        initial_values = {'X_t': 1}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('X_t','X_t'): 0.0}
         theta_values = {'l': 0.15}
         time_values = np.linspace(0.0, 10.0, endpoint=True, num=11)
         variables = {'X_t': ('X_t', )}
 
         sim = me.Simulation(net)
-        sim_res_mom = sim.simulate('moments', variables, initial_values, theta_values, time_values)
+        sim_res_mom = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values)
 
         sim_sol_mean = np.array([[1.        , 1.03747108, 1.12877492, 1.25584829, 1.41121682,
                                  1.59270775, 1.80090981, 2.03796736, 2.30702475, 2.61198952,
@@ -38,6 +39,7 @@ class TestEstimationClass(object):
                         'rate_symbol': 'l',
                         'type': 'S -> S + S', 'reaction_steps': 2}])
 
+        initial_values_type = 'synchronous'
         initial_values = {'X_t': 1}
         theta_values = {'l': 0.15}
         time_values = np.linspace(0.0, 10.0, endpoint=True, num=11)
@@ -47,7 +49,8 @@ class TestEstimationClass(object):
         sim = me.Simulation(net)
         res_list = list()
         for __ in range(num_iter):
-            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
+            res_list.append(sim.simulate('gillespie', variables, theta_values, time_values,
+                                        initial_values_type, initial_gillespie=initial_values)[1])
 
         sims = np.array(res_list)
 
@@ -69,13 +72,15 @@ class TestEstimationClass(object):
                         'rate_symbol': 'l',
                         'type': 'S -> S + S', 'reaction_steps': 5}])
 
-        initial_values = {'X_t': 1}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('X_t','X_t'): 0.0}
         theta_values = {'l': 0.22}
         time_values = np.linspace(0.0, 10.0, endpoint=True, num=11)
         variables = {'X_t': ('X_t', )}
 
         sim = me.Simulation(net)
-        sim_res_mom = sim.simulate('moments', variables, initial_values, theta_values, time_values)
+        sim_res_mom = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values)
 
         sim_sol_mean = np.array([[1.        , 1.00543582, 1.07269814, 1.2418072 , 1.47882701,
                                  1.75244286, 2.06375747, 2.42784846, 2.85837618, 3.36664248,
@@ -94,6 +99,7 @@ class TestEstimationClass(object):
                         'rate_symbol': 'l',
                         'type': 'S -> S + S', 'reaction_steps': 5}])
 
+        initial_values_type = 'synchronous'
         initial_values = {'X_t': 1}
         theta_values = {'l': 0.22}
         time_values = np.linspace(0.0, 10.0, endpoint=True, num=11)
@@ -103,7 +109,8 @@ class TestEstimationClass(object):
         sim = me.Simulation(net)
         res_list = list()
         for __ in range(num_iter):
-            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
+            res_list.append(sim.simulate('gillespie', variables, theta_values, time_values,
+                                        initial_values_type, initial_gillespie=initial_values)[1])
 
         sims = np.array(res_list)
 
@@ -126,13 +133,15 @@ class TestEstimationClass(object):
                         'rate_symbol': 'l',
                         'type': 'S -> S + S', 'reaction_steps': 15}])
 
-        initial_values = {'X_t': 1}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('X_t','X_t'): 0.0}
         theta_values = {'l': 0.23}
         time_values = np.linspace(0.0, 10.0, endpoint=True, num=11)
         variables = {'X_t': ('X_t', )}
 
         sim = me.Simulation(net)
-        sim_res_mom = sim.simulate('moments', variables, initial_values, theta_values, time_values)
+        sim_res_mom = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values)
 
         sim_sol_mean = np.array([[1.        , 1.0000036 , 1.00504242, 1.1029673 , 1.40858873,
                                  1.74539991, 1.9836416 , 2.2599425 , 2.69956532, 3.24078993,
@@ -152,6 +161,7 @@ class TestEstimationClass(object):
                         'rate_symbol': 'l',
                         'type': 'S -> S + S', 'reaction_steps': 15}])
 
+        initial_values_type = 'synchronous'
         initial_values = {'X_t': 1}
         theta_values = {'l': 0.23}
         time_values = np.linspace(0.0, 10.0, endpoint=True, num=11)
@@ -161,7 +171,8 @@ class TestEstimationClass(object):
         sim = me.Simulation(net)
         res_list = list()
         for __ in range(num_iter):
-            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
+            res_list.append(sim.simulate('gillespie', variables, theta_values, time_values,
+                                        initial_values_type, initial_gillespie=initial_values)[1])
 
         sims = np.array(res_list)
 
@@ -184,13 +195,16 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
-        initial_values = {'X_t': 1, 'Y_t': 0}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0,
+                        ('X_t','X_t'): 0.0, ('Y_t','Y_t'): 0.0, ('X_t','Y_t'): 0.0}
         theta_values = {'l': 0.06, 'd': 0.04}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
         variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
 
         sim = me.Simulation(net)
-        res = sim.simulate('moments', variables, initial_values, theta_values, time_values)
+        sim_res_mom = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values)
 
         sim_sol_mean = np.array([[1.00000000e+00, 9.99661300e-01, 9.95786822e-01, 9.83366954e-01,
                                  9.58874286e-01, 9.21186515e-01, 8.71262892e-01, 8.11430693e-01,
@@ -239,6 +253,7 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
+        initial_values_type = 'synchronous'
         initial_values = {'X_t': 1, 'Y_t': 0}
         theta_values = {'l': 0.06, 'd': 0.04}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
@@ -248,7 +263,8 @@ class TestEstimationClass(object):
         sim = me.Simulation(net)
         res_list = list()
         for __ in range(num_iter):
-            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
+            res_list.append(sim.simulate('gillespie', variables, theta_values, time_values,
+                                        initial_values_type, initial_gillespie=initial_values)[1])
 
         sims = np.array(res_list)
         sim_res_mean =  np.mean(sims, axis=0)
@@ -364,13 +380,18 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
-        initial_values = {'S_t': 1, 'Y_t': 0, 'P1_t': 0, 'P2_t': 0}
+        initial_values_type = 'synchronous'
+        initial_values = {('S_t',): 1.0, ('Y_t',): 0.0, ('P1_t',): 0.0, ('P2_t',): 0.0,
+                        ('S_t','S_t'): 0.0, ('Y_t','Y_t'): 0.0, ('P1_t','P1_t'): 0.0, ('P2_t','P2_t'): 0.0,
+                        ('S_t','Y_t'): 0.0, ('S_t','P1_t'): 0.0, ('S_t','P2_t'): 0.0, ('Y_t','P1_t'): 0.0,
+                        ('Y_t','P2_t'): 0.0, ('P1_t','P2_t'): 0.0}
         theta_values = {'l': 0.06, 'd4': 0.06, 'd2': 0.08}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
         variables = {'X_t': ('S_t', 'P1_t', 'P2_t'), 'Y_t': ('Y_t', )}
 
         sim = me.Simulation(net)
-        res = sim.simulate('moments', variables, initial_values, theta_values, time_values)
+        res = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values)
 
         sim_sol_mean = np.array([[1.        , 0.9892332 , 0.9628573 , 0.92641326, 0.88291527,
                                  0.83425905, 0.78189005, 0.72708038, 0.671013  , 0.61478239,
@@ -417,14 +438,17 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
-        initial_values = {'X_t': 1, 'Y_t': 0}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0,
+                        ('X_t','X_t'): 0.0, ('Y_t','Y_t'): 0.0, ('X_t','Y_t'): 0.0}
         # differentiation theta values have to be half now
         theta_values = {'l': 0.06, 'd4': 0.03, 'd2': 0.04}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
         variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
 
         sim = me.Simulation(net)
-        res = sim.simulate('moments', variables, initial_values, theta_values, time_values)
+        res = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values)
 
         sim_sol_mean = np.array([[1.        , 0.9892332 , 0.9628573 , 0.92641326, 0.88291527,
                                  0.83425905, 0.78189005, 0.72708038, 0.671013  , 0.61478239,
@@ -476,6 +500,7 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
+        initial_values_type = 'synchronous'
         initial_values = {'S_t': 1, 'Y_t': 0, 'P1_t': 0, 'P2_t': 0}
         theta_values = {'l': 0.06, 'd4': 0.06, 'd2': 0.08}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
@@ -485,7 +510,8 @@ class TestEstimationClass(object):
         sim = me.Simulation(net)
         res_list = list()
         for __ in range(num_iter):
-            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
+            res_list.append(sim.simulate('gillespie', variables, theta_values, time_values,
+                                        initial_values_type, initial_gillespie=initial_values)[1])
 
         sims = np.array(res_list)
         sim_res_mean =  np.mean(sims, axis=0)
@@ -536,6 +562,7 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
+        initial_values_type = 'synchronous'
         initial_values = {'X_t': 1, 'Y_t': 0}
         # differentiation theta values have to be half now
         theta_values = {'l': 0.06, 'd4': 0.03, 'd2': 0.04}
@@ -546,7 +573,8 @@ class TestEstimationClass(object):
         sim = me.Simulation(net)
         res_list = list()
         for __ in range(num_iter):
-            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
+            res_list.append(sim.simulate('gillespie', variables, theta_values, time_values,
+                                        initial_values_type, initial_gillespie=initial_values)[1])
 
         sims = np.array(res_list)
         sim_res_mean =  np.mean(sims, axis=0)
@@ -707,13 +735,16 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
-        initial_values = {'X_t': 1, 'Y_t': 0}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0,
+                        ('X_t','X_t'): 0.0, ('Y_t','Y_t'): 0.0, ('X_t','Y_t'): 0.0}
         theta_values = {'l': 0.06, 'd': 0.04}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
         variables = {'X_t': ('X_t', )}
 
         sim = me.Simulation(net)
-        res = sim.simulate('moments', variables, initial_values, theta_values, time_values)
+        res = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values)
 
         sim_sol_mean = np.array([[1.00000000e+00, 9.99661300e-01, 9.95786822e-01, 9.83366954e-01,
                                  9.58874286e-01, 9.21186515e-01, 8.71262892e-01, 8.11430693e-01,
@@ -743,6 +774,7 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
+        initial_values_type = 'synchronous'
         initial_values = {'X_t': 1, 'Y_t': 0}
         theta_values = {'l': 0.06, 'd': 0.04}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
@@ -752,7 +784,8 @@ class TestEstimationClass(object):
         sim = me.Simulation(net)
         res_list = list()
         for __ in range(num_iter):
-            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
+            res_list.append(sim.simulate('gillespie', variables, theta_values, time_values,
+                                        initial_values_type, initial_gillespie=initial_values)[1])
 
         sims = np.array(res_list)
         sim_res_mean =  np.mean(sims, axis=0)
@@ -783,13 +816,16 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
-        initial_values = {'X_t': 1, 'Y_t': 0}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0,
+                        ('X_t','X_t'): 0.0, ('Y_t','Y_t'): 0.0, ('X_t','Y_t'): 0.0}
         theta_values = {'l': 0.06, 'd': 0.04}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
         variables = {'Y_t': ('Y_t', )}
 
         sim = me.Simulation(net)
-        res = sim.simulate('moments', variables, initial_values, theta_values, time_values)
+        res = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values)
 
         sim_sol_mean = np.array([[0.00000000e+00, 3.38772857e-04, 4.22009262e-03, 1.67215423e-02,
                                  4.16241791e-02, 8.06083680e-02, 1.33617836e-01, 1.99525682e-01,
@@ -819,6 +855,7 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
+        initial_values_type = 'synchronous'
         initial_values = {'X_t': 1, 'Y_t': 0}
         theta_values = {'l': 0.06, 'd': 0.04}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
@@ -828,7 +865,8 @@ class TestEstimationClass(object):
         sim = me.Simulation(net)
         res_list = list()
         for __ in range(num_iter):
-            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
+            res_list.append(sim.simulate('gillespie', variables, theta_values, time_values,
+                                        initial_values_type, initial_gillespie=initial_values)[1])
 
         sims = np.array(res_list)
         sim_res_mean =  np.mean(sims, axis=0)
@@ -859,13 +897,16 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
-        initial_values = {'X_t': 1, 'Y_t': 0}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0,
+                        ('X_t','X_t'): 0.0, ('Y_t','Y_t'): 0.0, ('X_t','Y_t'): 0.0}
         theta_values = {'l': 0.06, 'd': 0.04}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
         variables = {'T_t': ('Y_t', 'X_t')}
 
         sim = me.Simulation(net)
-        res = sim.simulate('moments', variables, initial_values, theta_values, time_values)
+        res = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values)
 
         # NOTE that these solution can also be obtained with the X, Y
         # simuation variables from before and then calculate
@@ -898,6 +939,7 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
+        initial_values_type = 'synchronous'
         initial_values = {'X_t': 1, 'Y_t': 0}
         theta_values = {'l': 0.06, 'd': 0.04}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
@@ -907,7 +949,8 @@ class TestEstimationClass(object):
         sim = me.Simulation(net)
         res_list = list()
         for __ in range(num_iter):
-            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
+            res_list.append(sim.simulate('gillespie', variables, theta_values, time_values,
+                                        initial_values_type, initial_gillespie=initial_values)[1])
 
         sims = np.array(res_list)
         sim_res_mean =  np.mean(sims, axis=0)
@@ -940,14 +983,16 @@ class TestEstimationClass(object):
                         'rate_symbol': 'l',
                         'type': 'S -> S + S', 'reaction_steps': 2}])
 
-        initial_values = {'X_t': 1}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0}
         theta_values = {'l': 0.15}
         time_values = np.linspace(0.0, 10.0, endpoint=True, num=11)
         variables = {'X_t': ('X_t', )}
 
         sim = me.Simulation(net)
-        sim_res_mom = sim.simulate('moments', variables, initial_values,
-                                    theta_values, time_values, sim_mean_only=True)
+        sim_res_mom = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values,
+                                sim_mean_only=True)
 
         sim_sol_mean = np.array([[1.        , 1.03747108, 1.12877492, 1.25584829, 1.41121682,
                                  1.59270775, 1.80090981, 2.03796736, 2.30702475, 2.61198952,
@@ -965,14 +1010,16 @@ class TestEstimationClass(object):
                         'rate_symbol': 'l',
                         'type': 'S -> S + S', 'reaction_steps': 5}])
 
-        initial_values = {'X_t': 1}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0}
         theta_values = {'l': 0.22}
         time_values = np.linspace(0.0, 10.0, endpoint=True, num=11)
         variables = {'X_t': ('X_t', )}
 
         sim = me.Simulation(net)
-        sim_res_mom = sim.simulate('moments', variables, initial_values,
-                                    theta_values, time_values, sim_mean_only=True)
+        sim_res_mom = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values,
+                                sim_mean_only=True)
 
         sim_sol_mean = np.array([[1.        , 1.00543582, 1.07269814, 1.2418072 , 1.47882701,
                                  1.75244286, 2.06375747, 2.42784846, 2.85837618, 3.36664248,
@@ -990,14 +1037,16 @@ class TestEstimationClass(object):
                         'rate_symbol': 'l',
                         'type': 'S -> S + S', 'reaction_steps': 15}])
 
-        initial_values = {'X_t': 1}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0}
         theta_values = {'l': 0.23}
         time_values = np.linspace(0.0, 10.0, endpoint=True, num=11)
         variables = {'X_t': ('X_t', )}
 
         sim = me.Simulation(net)
-        sim_res_mom = sim.simulate('moments', variables, initial_values,
-                                    theta_values, time_values, sim_mean_only=True)
+        sim_res_mom = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values,
+                                sim_mean_only=True)
 
         sim_sol_mean = np.array([[1.        , 1.0000036 , 1.00504242, 1.1029673 , 1.40858873,
                                  1.74539991, 1.9836416 , 2.2599425 , 2.69956532, 3.24078993,
@@ -1016,14 +1065,16 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
-        initial_values = {'X_t': 1, 'Y_t': 0}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0}
         theta_values = {'l': 0.06, 'd': 0.04}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
         variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
 
         sim = me.Simulation(net)
-        sim_res_mom = sim.simulate('moments', variables, initial_values,
-                                    theta_values, time_values, sim_mean_only=True)
+        sim_res_mom = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values,
+                                sim_mean_only=True)
 
         sim_sol_mean = np.array([[1.00000000e+00, 9.99661300e-01, 9.95786822e-01, 9.83366954e-01,
                                  9.58874286e-01, 9.21186515e-01, 8.71262892e-01, 8.11430693e-01,
@@ -1059,14 +1110,16 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
-        initial_values = {'S_t': 1, 'Y_t': 0, 'P1_t': 0, 'P2_t': 0}
+        initial_values_type = 'synchronous'
+        initial_values = {('S_t',): 1.0, ('Y_t',): 0.0, ('P1_t',): 0.0, ('P2_t',): 0.0}
         theta_values = {'l': 0.06, 'd4': 0.06, 'd2': 0.08}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
         variables = {'X_t': ('S_t', 'P1_t', 'P2_t'), 'Y_t': ('Y_t', )}
 
         sim = me.Simulation(net)
-        sim_res_mom = sim.simulate('moments', variables, initial_values,
-                                    theta_values, time_values, sim_mean_only=True)
+        sim_res_mom = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values,
+                                sim_mean_only=True)
 
         sim_sol_mean = np.array([[1.        , 0.9892332 , 0.9628573 , 0.92641326, 0.88291527,
                                  0.83425905, 0.78189005, 0.72708038, 0.671013  , 0.61478239,
@@ -1095,15 +1148,17 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
-        initial_values = {'X_t': 1, 'Y_t': 0}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0}
         # differentiation theta values have to be half now
         theta_values = {'l': 0.06, 'd4': 0.03, 'd2': 0.04}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
         variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
 
         sim = me.Simulation(net)
-        sim_res_mom = sim.simulate('moments', variables, initial_values,
-                                    theta_values, time_values, sim_mean_only=True)
+        sim_res_mom = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values,
+                                sim_mean_only=True)
 
         sim_sol_mean = np.array([[1.        , 0.9892332 , 0.9628573 , 0.92641326, 0.88291527,
                                  0.83425905, 0.78189005, 0.72708038, 0.671013  , 0.61478239,
@@ -1133,14 +1188,16 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
-        initial_values = {'X_t': 1, 'Y_t': 0}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0}
         theta_values = {'l': 0.06, 'd': 0.04}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
         variables = {'X_t': ('X_t', )}
 
         sim = me.Simulation(net)
-        sim_res_mom = sim.simulate('moments', variables, initial_values,
-                                    theta_values, time_values, sim_mean_only=True)
+        sim_res_mom = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values,
+                                sim_mean_only=True)
 
         sim_sol_mean = np.array([[1.00000000e+00, 9.99661300e-01, 9.95786822e-01, 9.83366954e-01,
                                  9.58874286e-01, 9.21186515e-01, 8.71262892e-01, 8.11430693e-01,
@@ -1163,14 +1220,16 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
-        initial_values = {'X_t': 1, 'Y_t': 0}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0}
         theta_values = {'l': 0.06, 'd': 0.04}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
         variables = {'Y_t': ('Y_t', )}
 
         sim = me.Simulation(net)
-        sim_res_mom = sim.simulate('moments', variables, initial_values,
-                                    theta_values, time_values, sim_mean_only=True)
+        sim_res_mom = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values,
+                                sim_mean_only=True)
 
         sim_sol_mean = np.array([[0.00000000e+00, 3.38772857e-04, 4.22009262e-03, 1.67215423e-02,
                                  4.16241791e-02, 8.06083680e-02, 1.33617836e-01, 1.99525682e-01,
@@ -1193,14 +1252,16 @@ class TestEstimationClass(object):
             {'start': 'Y_t', 'end': 'Y_t', 'rate_symbol': 'l', 'type': 'S -> S + S', 'reaction_steps': 3}
             ])
 
-        initial_values = {'X_t': 1, 'Y_t': 0}
+        initial_values_type = 'synchronous'
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0}
         theta_values = {'l': 0.06, 'd': 0.04}
         time_values = np.linspace(0.0, 54.0, num=28, endpoint=True)
         variables = {'T_t': ('Y_t', 'X_t')}
 
         sim = me.Simulation(net)
-        sim_res_mom = sim.simulate('moments', variables, initial_values,
-                                    theta_values, time_values, sim_mean_only=True)
+        sim_res_mom = sim.simulate('moments', variables, theta_values, time_values,
+                                initial_values_type, initial_moments=initial_values,
+                                sim_mean_only=True)
 
         # NOTE that these solution can also be obtained with the X, Y
         # simuation variables from before and then calculate

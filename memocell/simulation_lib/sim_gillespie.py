@@ -28,6 +28,7 @@ class GillespieSim(object):
 
         # instantiate variables used in simulations
         self.sim_gill_theta_numeric_exec = None
+        self.sim_gill_initial_values_main = None
         self.sim_gill_initial_values = None
 
         # instantiate objects for summation indices from hidden network
@@ -66,7 +67,8 @@ class GillespieSim(object):
             # once this function has run preparations are done
             self.gillespie_preparation_exists = True
 
-    def gillespie_simulation(self, initial_values_dict, theta_values_order, time_values):
+    def gillespie_simulation(self, theta_values_order, time_values,
+                                    initial_values_main, initial_values_type):
         """docstring for ."""
 
         ### TODO: maybe use getter/setter attributes or similar to only rerun these
@@ -78,9 +80,9 @@ class GillespieSim(object):
             self.sim_gill_theta_numeric_exec = self.create_theta_numeric_exec(self.net.net_theta_symbolic, theta_values_order)
 
             # process user given initial values to hidden nodes
-            self.sim_gill_initial_values = self.process_initial_values_order(self.net_hidden_node_order_without_env,
-                                                                initial_values_dict,
-                                                                self.net.net_nodes_identifier)
+            self.sim_gill_initial_values = self.process_initial_values(
+                                                            initial_values_main,
+                                                            initial_values_type)
             ###
 
             # run the actual gillespie algorithm (first reaction method)
@@ -168,11 +170,31 @@ class GillespieSim(object):
         theta_numeric_exec = theta_numeric_exec[:-2] + ')'
         return theta_numeric_exec
 
-    @staticmethod
-    def process_initial_values_order(hidden_node_order, initial_values_dict, net_nodes_identifier):
+
+    def process_initial_values(self, initial_values_main, initial_values_type):
         """docstring for ."""
 
-        initial_values = [initial_values_dict[net_nodes_identifier[node.split('__')[0]]]
+        if initial_values_type=='synchronous':
+            initial_values_hidden = self.process_initial_values_synchronous(
+                                        self.net_hidden_node_order_without_env,
+                                        initial_values_main,
+                                        self.net.net_nodes_identifier)
+
+        elif initial_values_type=='uniform':
+            initial_values_hidden = self.process_initial_values_uniform(
+                                        self.net_main_node_order_without_env,
+                                        self.net_hidden_node_order_without_env,
+                                        initial_values_main,
+                                        self.net.net_nodes_identifier,
+                                        self.summation_indices_nodes)
+        return initial_values_hidden
+
+    @staticmethod
+    def process_initial_values_synchronous(hidden_node_order, initial_values_main,
+                                            net_nodes_identifier):
+        """docstring for ."""
+
+        initial_values = [initial_values_main[net_nodes_identifier[node.split('__')[0]]]
                                 if 'centric' in node else 0 for node in hidden_node_order]
         initial_values = np.array(initial_values).reshape((len(initial_values),1))
         # nodes_num = len(hidden_node_order)
@@ -181,6 +203,33 @@ class GillespieSim(object):
         # for node_ind in range(nodes_num):
         #     if '_' not in hidden_node_order[node_ind]:
         #         initial_values[node_ind, 0] = initial_values_order[int(hidden_node_order[node_ind])]
+
+        return initial_values
+
+    @staticmethod
+    def process_initial_values_uniform(main_node_order, hidden_node_order, initial_values_main,
+                                        net_nodes_identifier, summation_indices_nodes):
+        """docstring for ."""
+
+        # maybe use: self.summation_indices_nodes = self.create_node_summation_indices
+        # idea: loop over main nodes and extract the main initial value
+        # for each main initial value, draw a random hidden node for the main node
+        # and increment its index in initial_values by one
+        # -> use summary_indices_nodes which should contain these indices already
+
+        # instantiate initial values array
+        initial_values = np.zeros((len(hidden_node_order), 1), dtype=int)
+
+        # loop over main nodes via identifiers
+        # (corresponds to order in summary_indices_nodes)
+        for i, node in enumerate(main_node_order):
+            # get initial values of main node
+            init_val = initial_values_main[net_nodes_identifier[node]]
+            # create the random indices of hidden nodes for the main node
+            hidden_inds = np.random.choice(summation_indices_nodes[i], init_val)
+            # loop over the indices and increment the hidden nodes
+            for j in hidden_inds:
+                initial_values[j, 0] += 1
 
         return initial_values
 

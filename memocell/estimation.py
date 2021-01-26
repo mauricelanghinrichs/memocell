@@ -58,10 +58,12 @@ class Estimation(object):
     >>> # net.structure(...)
     >>> # an estimation can then look like this
     >>> variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
-    >>> initial_values = {'X_t': 1, 'Y_t': 0}
+    >>> init_val_type = 'synchronous'
+    >>> initial_values = {('X_t',): 1.0, ('Y_t',): 0.0,
+    >>>     ('X_t','X_t'): 0.0, ('Y_t','Y_t'): 0.0, ('X_t','Y_t'): 0.0}
     >>> theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
     >>> est = me.Estimation('my_est', net, data)
-    >>> est.estimate(variables, initial_values, theta_bounds)
+    >>> est.estimate(variables, init_val_type, initial_values, theta_bounds)
     """
 
     def __init__(self, est_name, network, data, est_iter=None):
@@ -168,8 +170,8 @@ class Estimation(object):
         # self.mcmc_sampler = None
         # ###
 
-    def estimate(self, variables, initial_values, theta_bounds,
-                            time_values=None,
+    def estimate(self, variables, initial_values_type, initial_values,
+                            theta_bounds, time_values=None,
                             sim_mean_only=False, fit_mean_only=False,
                             nlive=1000, tolerance=0.01,
                             bound='multi', sample='unif',):
@@ -202,9 +204,16 @@ class Estimation(object):
             dictionary pairs. The simulation variables have to correspond
             to the data variables. The tuple of network main nodes can be used to sum
             up multiple network nodes to one simulation variable.
+        initial_values_type : str
+            Initial value type to specify the multinomial distribution scheme
+            of observable variables to the hidden variables (`'synchronous'` or
+            `'uniform'`).
         initial_values : dict
-            Initial values of network main nodes for the simulations during the
-            estimation as `key:value=network main node:initial value (float or int)`
+            Initial values for the moments of network main nodes for the
+            simulations during the estimation. Means are specified as
+            `key:value=(node, ):initial value (float)`,
+            variances are specified as `key:value=(node, node):initial value (float)`
+            and covariances are specified as `key:value=(node1, node2):initial value (float)`
             dictionary pairs.
         theta_bounds : dict
             Uniform prior bounds of the parameters as
@@ -257,10 +266,12 @@ class Estimation(object):
         >>> # data is a memocell data object
         >>> # with this, an estimation can look like this
         >>> variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
-        >>> initial_values = {'X_t': 1, 'Y_t': 0}
+        >>> init_val_type = 'synchronous'
+        >>> initial_values = {('X_t',): 1.0, ('Y_t',): 0.0,
+        >>>     ('X_t','X_t'): 0.0, ('Y_t','Y_t'): 0.0, ('X_t','Y_t'): 0.0}
         >>> theta_bounds = {'d': (0.0, 0.15), 'l': (0.0, 0.15)}
         >>> est = me.Estimation('my_est', net, data)
-        >>> est.estimate(variables, initial_values, theta_bounds)
+        >>> est.estimate(variables, init_val_type, initial_values, theta_bounds)
         """
 
         # # for progress bar
@@ -269,8 +280,8 @@ class Estimation(object):
 
         # initialise estimation
         # (set up network, simulation and sampling properties)
-        self.initialise_estimation(variables, initial_values, theta_bounds,
-                                    time_values, sim_mean_only, fit_mean_only,
+        self.initialise_estimation(variables, initial_values_type, initial_values,
+                                    theta_bounds, time_values, sim_mean_only, fit_mean_only,
                                     nlive, tolerance, bound, sample)
         # self.initialise_estimation(network_setup, mcmc_setup)
 
@@ -287,8 +298,8 @@ class Estimation(object):
         # pbar.update(1)
 
 
-    def initialise_estimation(self, variables, initial_values, theta_bounds,
-                                time_values, sim_mean_only, fit_mean_only,
+    def initialise_estimation(self, variables, initial_values_type, initial_values,
+                                theta_bounds, time_values, sim_mean_only, fit_mean_only,
                                 nlive, tolerance, bound, sample):
         """Initialise and prepare an estimation.
 
@@ -302,7 +313,8 @@ class Estimation(object):
 
         # validate initial values user input and assign to self
         # (further processing is done in the called simulation class methods)
-        self._validate_initial_values_input(self.net.net_nodes_identifier, self.net_simulation_type, initial_values)
+        self._validate_initial_values_input(self.net_simulation_type,
+                                    initial_values_type, initial_values)
         self.net_initial_values = initial_values
 
         # set the sim (/moments) and fit mean only modes (True or False)
@@ -317,14 +329,13 @@ class Estimation(object):
 
         # prepare the simulation in 'moments' type
         self.net_simulation.prepare_simulation(self.net_simulation_type, variables,
+                                    initial_values_type, None,
                                     self.net_initial_values, sim_mean_only)
 
         # the initial values for the moments have to be computed explicitly
-        self.net_simulation.sim_moments.moment_initial_values = self.net_simulation.sim_moments.process_initial_values_order(
-                                        self.net_simulation.sim_moments.moment_order_hidden,
+        self.net_simulation.sim_moments.moment_initial_values = self.net_simulation.sim_moments.process_initial_values(
                                         self.net_initial_values,
-                                        self.net.net_nodes_identifier,
-                                        type='centric_mean_only')
+                                        initial_values_type)
 
         ### initialise time values (fitting and data)
         # read out time values of the data
@@ -1891,21 +1902,24 @@ class Estimation(object):
         return data
 
     @staticmethod
-    def _validate_initial_values_input(net_nodes_identifier, simulation_type, initial_values):
+    def _validate_initial_values_input(simulation_type, initial_values_type,
+                                    initial_moments):
         """Private validation method."""
+        # NOTE: further checks will be done via simulation classes
 
-        # check for correct user input for the initial values
-        if isinstance(initial_values, dict):
-            if set(net_nodes_identifier.values()) - set(['env']) == set(initial_values.keys()):
-                if ((simulation_type=='gillespie' and all(isinstance(val, int) for val in initial_values.values())) or
-                    (simulation_type=='moments' and all(isinstance(val, float) or isinstance(val, int) for val in initial_values.values()))):
-                    pass
-                else:
-                    raise ValueError('Initial values are expected to provide integer or float/integer values for Gillespie or Moment simulations, respectively.')
-            else:
-                raise ValueError('Initial values are expected to provide a set of keys identical to the nodes of the main network.')
+        # initial_values_type should be either 'synchronous' or 'uniform'
+        if initial_values_type=='synchronous' or initial_values_type=='uniform':
+            pass
+        elif not isinstance(initial_values_type, str):
+            raise TypeError('Initial values type is not a string.')
         else:
-            raise TypeError('Initial values are expected to be provided as a dictionary.')
+            raise ValueError('Unknown initial values type: \'synchronous\' or \'uniform\' are expected.')
+
+        # simulation_type has to be moments for estimation
+        if not simulation_type=='moments':
+            raise ValueError('Simulation type has to be \'moments\' for estimations.')
+        if not isinstance(initial_moments, dict):
+            raise TypeError('Dictionary expected for initial values (moments).')
 
     @staticmethod
     def _validate_theta_bounds_input(net_rates_identifier, theta_bounds):

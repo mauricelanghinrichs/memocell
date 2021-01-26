@@ -13,6 +13,7 @@ class TestSelectionDivisionModel(object):
                         'type': 'S -> S + S', 'reaction_steps': 5}])
 
         num_iter = 100
+        initial_values_type = 'synchronous'
         initial_values = {'X_t': 1}
         theta_values = {'l': 0.22}
         time_values = np.array([0.0, 10.0])
@@ -22,7 +23,8 @@ class TestSelectionDivisionModel(object):
         res_list = list()
 
         for __ in range(num_iter):
-            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
+            res_list.append(sim.simulate('gillespie', variables, theta_values, time_values,
+                                                initial_values_type, initial_gillespie=initial_values)[1])
 
         sims = np.array(res_list)
 
@@ -58,11 +60,13 @@ class TestSelectionDivisionModel(object):
         # prevent odeint warning at high steps
         networks = [net2, net5, net15]
         variables = [{'X_t': ('X_t', )}]*3
-        initial_values = [{'X_t': 1.0}]*3
+        initial_values_types = ['synchronous']*3
+        initial_values = [{('X_t',): 1.0, ('X_t', 'X_t'): 0.0}]*3
         theta_bounds = [{'l': (0.0, 0.5)}]*3
 
         ### run selection (sequentially)
-        est_res = me.selection.select_models(networks, variables, initial_values,
+        est_res = me.selection.select_models(networks, variables,
+                                            initial_values_types, initial_values,
                                             theta_bounds, data, parallel=False)
 
         ### assert log evidence values
@@ -110,6 +114,7 @@ class TestSelectionDivisionModel(object):
         net.structure(t)
 
         num_iter = 100
+        initial_values_type = 'synchronous'
         initial_values = {'X_t': 1}
         theta_values = {'l': 0.22}
         time_values = np.array([0.0, 10.0])
@@ -119,7 +124,8 @@ class TestSelectionDivisionModel(object):
         res_list = list()
 
         for __ in range(num_iter):
-            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
+            res_list.append(sim.simulate('gillespie', variables, theta_values, time_values,
+                                                initial_values_type, initial_gillespie=initial_values)[1])
 
         sims = np.array(res_list)
 
@@ -155,11 +161,13 @@ class TestSelectionDivisionModel(object):
         # prevent odeint warning at high steps
         networks = [net2, net5, net15]
         variables = [{'X_t': ('X_t', )}]*3
-        initial_values = [{'X_t': 1.0}]*3
+        initial_values_types = ['synchronous']*3
+        initial_values = [{('X_t',): 1.0, ('X_t', 'X_t'): 0.0}]*3
         theta_bounds = [{'l': (0.0, 0.5)}]*3
 
         ### run selection (in parallel)
-        est_res = me.selection.select_models(networks, variables, initial_values,
+        est_res = me.selection.select_models(networks, variables,
+                                            initial_values_types, initial_values,
                                             theta_bounds, data, parallel=True)
 
         ### assert log evidence values
@@ -230,11 +238,13 @@ class TestSelectionDivisionModel(object):
         # prevent odeint warning at high steps
         networks = [net2, net5, net15]
         variables = [{'X_t': ('X_t', )}]*3
-        initial_values = [{'X_t': 1.0}]*3
+        initial_values_types = ['synchronous']*3
+        initial_values = [{('X_t',): 1.0, ('X_t', 'X_t'): 0.0}]*3
         theta_bounds = [{'l': (0.0, 0.5)}]*3
 
         ### run selection (in parallel)
-        est_res = me.selection.select_models(networks, variables, initial_values,
+        est_res = me.selection.select_models(networks, variables,
+                                            initial_values_types, initial_values,
                                             theta_bounds, data, parallel=True)
 
         ### assert log evidence values
@@ -282,6 +292,7 @@ class TestSelectionDivisionModel(object):
         net.structure(t)
 
         num_iter = 100
+        initial_values_type = 'synchronous'
         initial_values = {'X_t': 1}
         theta_values = {'l': 0.22}
         time_values = np.array([0.0, 10.0])
@@ -291,7 +302,8 @@ class TestSelectionDivisionModel(object):
         res_list = list()
 
         for __ in range(num_iter):
-            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
+            res_list.append(sim.simulate('gillespie', variables, theta_values, time_values,
+                                                initial_values_type, initial_gillespie=initial_values)[1])
 
         sims = np.array(res_list)
 
@@ -327,11 +339,13 @@ class TestSelectionDivisionModel(object):
         # prevent odeint warning at high steps
         networks = [net2, net5, net15]
         variables = [{'X_t': ('X_t', )}]*3
-        initial_values = [{'X_t': 1.0}]*3
+        initial_values_types = ['synchronous']*3
+        initial_values = [{('X_t',): 1.0}]*3
         theta_bounds = [{'l': (0.0, 0.5)}]*3
 
         ### run selection (in parallel)
-        est_res = me.selection.select_models(networks, variables, initial_values,
+        est_res = me.selection.select_models(networks, variables,
+                                            initial_values_types, initial_values,
                                             theta_bounds, data, sim_mean_only=True,
                                             fit_mean_only=True, parallel=True)
 
@@ -425,6 +439,7 @@ class TestSelectionDivisionModel(object):
         net.structure(t)
 
         num_iter = 100
+        initial_values_type = 'synchronous'
         initial_values = {'X_t': 1}
         theta_values = {'l': 0.22}
         time_values = np.array([0.0, 10.0])
@@ -434,7 +449,8 @@ class TestSelectionDivisionModel(object):
         res_list = list()
 
         for __ in range(num_iter):
-            res_list.append(sim.simulate('gillespie', variables, initial_values, theta_values, time_values)[1])
+            res_list.append(sim.simulate('gillespie', variables, theta_values, time_values,
+                                                initial_values_type, initial_gillespie=initial_values)[1])
 
         sims = np.array(res_list)
 
@@ -470,11 +486,13 @@ class TestSelectionDivisionModel(object):
         # prevent odeint warning at high steps
         networks = [net2, net5, net15]
         variables = [{'X_t': ('X_t', )}]*3
-        initial_values = [{'X_t': 1.0}]*3
+        initial_values_types = ['synchronous']*3
+        initial_values = [{('X_t',): 1.0, ('X_t', 'X_t'): 0.0}]*3
         theta_bounds = [{'l': (0.0, 0.5)}]*3
 
         ### run selection (in parallel)
-        est_res = me.selection.select_models(networks, variables, initial_values,
+        est_res = me.selection.select_models(networks, variables,
+                                            initial_values_types, initial_values,
                                             theta_bounds, data, sim_mean_only=False,
                                             fit_mean_only=True, parallel=True)
 
@@ -589,11 +607,13 @@ class TestSelectionDivisionModel(object):
         # prevent odeint warning at high steps
         networks = [net2, net5, net15]
         variables = [{'X_t': ('X_t', )}]*3
-        initial_values = [{'X_t': 1.0}]*3
+        initial_values_types = ['synchronous']*3
+        initial_values = [{('X_t',): 1.0}]*3
         theta_bounds = [{'l': (0.0, 0.5)}]*3
 
         ### run selection (in parallel)
-        est_res = me.selection.select_models(networks, variables, initial_values,
+        est_res = me.selection.select_models(networks, variables,
+                                            initial_values_types, initial_values,
                                             theta_bounds, data, sim_mean_only=True,
                                             fit_mean_only=True, parallel=True)
 
@@ -708,11 +728,13 @@ class TestSelectionDivisionModel(object):
         # prevent odeint warning at high steps
         networks = [net2, net5, net15]
         variables = [{'X_t': ('X_t', )}]*3
-        initial_values = [{'X_t': 1.0}]*3
+        initial_values_types = ['synchronous']*3
+        initial_values = [{('X_t',): 1.0, ('X_t', 'X_t'): 0.0}]*3
         theta_bounds = [{'l': (0.0, 0.5)}]*3
 
         ### run selection (in parallel)
-        est_res = me.selection.select_models(networks, variables, initial_values,
+        est_res = me.selection.select_models(networks, variables,
+                                            initial_values_types, initial_values,
                                             theta_bounds, data, sim_mean_only=False,
                                             fit_mean_only=True, parallel=True)
 
