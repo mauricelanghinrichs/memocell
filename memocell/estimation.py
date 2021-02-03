@@ -138,6 +138,7 @@ class Estimation(object):
         self.bay_est_weights = None
         self.bay_est_params_cred = None
         self.bay_est_params_median = None
+        self.bay_est_params_log_likelihood_max = None
 
         # estimation results for model selection
         self.bay_est_log_evidence = None
@@ -424,6 +425,9 @@ class Estimation(object):
 
         # obtain posterior parameter samples from reweighting
         self.bay_est_samples, self.bay_est_samples_weighted, self.bay_est_weights = self.get_posterior_samples(self.bay_nested_sampler_res)
+
+        # set last theta values as maximal log likelihood parameters
+        self.bay_est_params_log_likelihood_max = self.bay_est_samples[-1, :]
 
         # assess median and credible bounds for parameters
         self.bay_est_params_cred = self.get_credible_interval(self.bay_est_samples_weighted)
