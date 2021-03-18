@@ -16,6 +16,7 @@ from .estimation import Estimation
 import numpy as np
 from multiprocessing import Pool
 from tqdm.autonotebook import tqdm
+import psutil
 
 import warnings
 
@@ -109,7 +110,7 @@ def select_models(networks, variables, initial_values_types, initial_values,
     processes : None or int, optional
         If `parallel=True`, the number of parallel processes used for multiprocessing
         can be specified here. If `parallel=True` and `processes=None` (default)
-        the available number of processes will be determined automatically.
+        the number of processes is set to the number of physical cores of the system.
         If `parallel=False`, the `processes` argument will be ignored.
 
     Returns
@@ -190,7 +191,12 @@ def select_models(networks, variables, initial_values_types, initial_values,
     # parallelised version
     if parallel:
         # read out number of processes (None if mp.cpu_count() should be used)
-        num_processes = processes
+        if processes is None:
+            # MemoCell is cpu-heavy, not input/output, hence set physical cores
+            # as default (logical=False)
+            num_processes = psutil.cpu_count(logical=False)
+        else:
+            num_processes = processes
 
         with Pool(processes=num_processes) as p:
 

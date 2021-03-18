@@ -34,7 +34,7 @@ setup(
                         'matplotlib>=2.1.2', 'seaborn>=0.9.0', 'cycler>=0.10.0',
                         'setuptools>=38.5.1', 'numba>=0.43.1',
                         # 'graphviz>=0.10.1', 'pygraphviz>=1.5', # should be installed separately before
-                        'pydot>=1.4.1',
+                        'pydot>=1.4.1', 'psutil>=5.0.0',
                         'IPython>=7.8.0', 'tqdm>=4.31.1'],
 
     # run pytest with "$ python setup.py pytest" in this directory
