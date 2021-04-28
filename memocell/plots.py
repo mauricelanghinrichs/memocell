@@ -24,7 +24,7 @@ __all__ = ["net_main_plot", "net_hidden_plot",
             "data_hist_variables_plot", "data_hist_waiting_times_plot", "data_variable_scatter_plot",
             "selection_plot", "est_runplot", "est_traceplot",
             "est_parameter_plot", "est_corner_plot", "est_corner_kernel_plot",
-            "est_corner_weight_plot", "est_corner_bounds_plot", "est_chains_plot",
+            "est_corner_weight_plot", "est_chains_plot", # "est_corner_bounds_plot",
             "est_bestfit_mean_plot", "est_bestfit_variance_plot", "est_bestfit_covariance_plot"]
 
 ###############################
@@ -52,7 +52,8 @@ def net_main_plot(net, node_settings=None, edge_settings=None,
 
     Returns
     -------
-    None
+    pdot : pydot.Dot
+        Pydot network main layer object.
     """
 
     # if not given, create some default node settings
@@ -84,6 +85,7 @@ def net_main_plot(net, node_settings=None, edge_settings=None,
 
     if show:
         display(Image(pdot.create_png(prog=layout_engine)))
+    return pdot
 
 
 def net_hidden_plot(net, node_settings=None, edge_settings=None,
@@ -107,7 +109,8 @@ def net_hidden_plot(net, node_settings=None, edge_settings=None,
 
     Returns
     -------
-    None
+    pdot : pydot.Dot
+        Pydot network hidden layer object.
     """
 
     # if not given, create some default node settings
@@ -139,11 +142,12 @@ def net_hidden_plot(net, node_settings=None, edge_settings=None,
 
     if show:
         display(Image(pdot.create_png(prog=layout_engine)))
+    return pdot
 
 
 def sim_counts_plot(sim, settings=None,
-                    x_label='Time', x_lim=None, x_log=False,
-                    y_label='Counts', y_lim=None, y_log=False,
+                    xlabel='Time', xlim=None, xlog=False,
+                    ylabel='Counts', ylim=None, ylog=False,
                     show=True, save=None):
     """Plot the variable count for a given simulation.
 
@@ -153,18 +157,18 @@ def sim_counts_plot(sim, settings=None,
         A memocell simulation object that contains a Gillespie simulation.
     settings : dict of dict, optional
         Optional label and color settings for the simulation variables.
-    x_label : str, optional
+    xlabel : str, optional
         Label for x-axis.
-    x_lim : None or tuple of floats, optional
+    xlim : None or tuple of floats, optional
         Specify x-axis limits.
-    x_log : bool, optional
-        Logarithmic x-axis if `x_log=True`.
-    y_label : str, optional
+    xlog : bool, optional
+        Logarithmic x-axis if `xlog=True`.
+    ylabel : str, optional
         Label for y-axis.
-    y_lim : None or tuple of floats, optional
+    ylim : None or tuple of floats, optional
         Specify y-axis limits.
-    y_log : bool, optional
-        Logarithmic y-axis if `y_log=True`.
+    ylog : bool, optional
+        Logarithmic y-axis if `ylog=True`.
     show : bool, optional
         Plot is shown if `show=True`.
     save : None or str, optional
@@ -172,8 +176,8 @@ def sim_counts_plot(sim, settings=None,
 
     Returns
     -------
-    None
-
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -189,15 +193,16 @@ def sim_counts_plot(sim, settings=None,
     x_arr, y_arr, attributes = sim._line_evolv_counts(settings)
 
     # plot by line_evolv utility plotting function
-    _line_evolv(x_arr, y_arr, attributes,
-                    x_label=x_label, x_lim=x_lim, x_log=x_log,
-                    y_label=y_label, y_lim=y_lim, y_log=y_log,
+    fig, axes = _line_evolv(x_arr, y_arr, attributes,
+                    xlabel=xlabel, xlim=xlim, xlog=xlog,
+                    ylabel=ylabel, ylim=ylim, ylog=ylog,
                     show=show, save=save)
+    return fig, axes
 
 
 def sim_mean_plot(sim, settings=None,
-                    x_label='Time', x_lim=None, x_log=False,
-                    y_label='Mean', y_lim=None, y_log=False,
+                    xlabel='Time', xlim=None, xlog=False,
+                    ylabel='Mean', ylim=None, ylog=False,
                     show=True, save=None):
     """Plot the mean (or expectation) dynamics of a given simulation.
 
@@ -207,18 +212,18 @@ def sim_mean_plot(sim, settings=None,
         A memocell simulation object that contains a moment simulation.
     settings : dict of dict, optional
         Optional label and color settings for the mean traces.
-    x_label : str, optional
+    xlabel : str, optional
         Label for x-axis.
-    x_lim : None or tuple of floats, optional
+    xlim : None or tuple of floats, optional
         Specify x-axis limits.
-    x_log : bool, optional
-        Logarithmic x-axis if `x_log=True`.
-    y_label : str, optional
+    xlog : bool, optional
+        Logarithmic x-axis if `xlog=True`.
+    ylabel : str, optional
         Label for y-axis.
-    y_lim : None or tuple of floats, optional
+    ylim : None or tuple of floats, optional
         Specify y-axis limits.
-    y_log : bool, optional
-        Logarithmic y-axis if `y_log=True`.
+    ylog : bool, optional
+        Logarithmic y-axis if `ylog=True`.
     show : bool, optional
         Plot is shown if `show=True`.
     save : None or str, optional
@@ -226,8 +231,8 @@ def sim_mean_plot(sim, settings=None,
 
     Returns
     -------
-    None
-
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -243,15 +248,16 @@ def sim_mean_plot(sim, settings=None,
     x_arr, y_arr, attributes = sim._line_evolv_mean(settings)
 
     # plot by line_evolv utility plotting function
-    _line_evolv(x_arr, y_arr, attributes,
-                    x_label=x_label, x_lim=x_lim, x_log=x_log,
-                    y_label=y_label, y_lim=y_lim, y_log=y_log,
+    fig, axes = _line_evolv(x_arr, y_arr, attributes,
+                    xlabel=xlabel, xlim=xlim, xlog=xlog,
+                    ylabel=ylabel, ylim=ylim, ylog=ylog,
                     show=show, save=save)
+    return fig, axes
 
 
 def sim_variance_plot(sim, settings=None,
-                    x_label='Time', x_lim=None, x_log=False,
-                    y_label='Variance', y_lim=None, y_log=False,
+                    xlabel='Time', xlim=None, xlog=False,
+                    ylabel='Variance', ylim=None, ylog=False,
                     show=True, save=None):
     """Plot the variance dynamics of a given simulation.
 
@@ -261,18 +267,18 @@ def sim_variance_plot(sim, settings=None,
         A memocell simulation object that contains a moment simulation.
     settings : dict of dict, optional
         Optional label and color settings for the variance traces.
-    x_label : str, optional
+    xlabel : str, optional
         Label for x-axis.
-    x_lim : None or tuple of floats, optional
+    xlim : None or tuple of floats, optional
         Specify x-axis limits.
-    x_log : bool, optional
-        Logarithmic x-axis if `x_log=True`.
-    y_label : str, optional
+    xlog : bool, optional
+        Logarithmic x-axis if `xlog=True`.
+    ylabel : str, optional
         Label for y-axis.
-    y_lim : None or tuple of floats, optional
+    ylim : None or tuple of floats, optional
         Specify y-axis limits.
-    y_log : bool, optional
-        Logarithmic y-axis if `y_log=True`.
+    ylog : bool, optional
+        Logarithmic y-axis if `ylog=True`.
     show : bool, optional
         Plot is shown if `show=True`.
     save : None or str, optional
@@ -280,8 +286,8 @@ def sim_variance_plot(sim, settings=None,
 
     Returns
     -------
-    None
-
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -298,15 +304,16 @@ def sim_variance_plot(sim, settings=None,
     x_arr, y_arr, attributes = sim._line_evolv_variance(settings)
 
     # plot by line_evolv utility plotting function
-    _line_evolv(x_arr, y_arr, attributes,
-                    x_label=x_label, x_lim=x_lim, x_log=x_log,
-                    y_label=y_label, y_lim=y_lim, y_log=y_log,
+    fig, axes = _line_evolv(x_arr, y_arr, attributes,
+                    xlabel=xlabel, xlim=xlim, xlog=xlog,
+                    ylabel=ylabel, ylim=ylim, ylog=ylog,
                     show=show, save=save)
+    return fig, axes
 
 
 def sim_covariance_plot(sim, settings=None,
-                    x_label='Time', x_lim=None, x_log=False,
-                    y_label='Covariance', y_lim=None, y_log=False,
+                    xlabel='Time', xlim=None, xlog=False,
+                    ylabel='Covariance', ylim=None, ylog=False,
                     show=True, save=None):
     """Plot the covariance dynamics of a given simulation.
 
@@ -316,18 +323,18 @@ def sim_covariance_plot(sim, settings=None,
         A memocell simulation object that contains a moment simulation.
     settings : dict of dict, optional
         Optional label and color settings for the covariance traces.
-    x_label : str, optional
+    xlabel : str, optional
         Label for x-axis.
-    x_lim : None or tuple of floats, optional
+    xlim : None or tuple of floats, optional
         Specify x-axis limits.
-    x_log : bool, optional
-        Logarithmic x-axis if `x_log=True`.
-    y_label : str, optional
+    xlog : bool, optional
+        Logarithmic x-axis if `xlog=True`.
+    ylabel : str, optional
         Label for y-axis.
-    y_lim : None or tuple of floats, optional
+    ylim : None or tuple of floats, optional
         Specify y-axis limits.
-    y_log : bool, optional
-        Logarithmic y-axis if `y_log=True`.
+    ylog : bool, optional
+        Logarithmic y-axis if `ylog=True`.
     show : bool, optional
         Plot is shown if `show=True`.
     save : None or str, optional
@@ -335,8 +342,8 @@ def sim_covariance_plot(sim, settings=None,
 
     Returns
     -------
-    None
-
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -353,15 +360,16 @@ def sim_covariance_plot(sim, settings=None,
     x_arr, y_arr, attributes = sim._line_evolv_covariance(settings)
 
     # plot by line_evolv utility plotting function
-    _line_evolv(x_arr, y_arr, attributes,
-                    x_label=x_label, x_lim=x_lim, x_log=x_log,
-                    y_label=y_label, y_lim=y_lim, y_log=y_log,
+    fig, axes = _line_evolv(x_arr, y_arr, attributes,
+                    xlabel=xlabel, xlim=xlim, xlog=xlog,
+                    ylabel=ylabel, ylim=ylim, ylog=ylog,
                     show=show, save=save)
+    return fig, axes
 
 
 def data_mean_plot(data, settings=None,
-                    x_label='Time', x_lim=None, x_log=False,
-                    y_label='Mean', y_lim=None, y_log=False,
+                    xlabel='Time', xlim=None, xlog=False,
+                    ylabel='Mean', ylim=None, ylog=False,
                     show=True, save=None):
     """Plot the mean statistics with standard errors of a data object.
 
@@ -371,18 +379,18 @@ def data_mean_plot(data, settings=None,
         A memocell data object.
     settings : dict of dict, optional
         Optional label and color settings for the mean traces.
-    x_label : str, optional
+    xlabel : str, optional
         Label for x-axis.
-    x_lim : None or tuple of floats, optional
+    xlim : None or tuple of floats, optional
         Specify x-axis limits.
-    x_log : bool, optional
-        Logarithmic x-axis if `x_log=True`.
-    y_label : str, optional
+    xlog : bool, optional
+        Logarithmic x-axis if `xlog=True`.
+    ylabel : str, optional
         Label for y-axis.
-    y_lim : None or tuple of floats, optional
+    ylim : None or tuple of floats, optional
         Specify y-axis limits.
-    y_log : bool, optional
-        Logarithmic y-axis if `y_log=True`.
+    ylog : bool, optional
+        Logarithmic y-axis if `ylog=True`.
     show : bool, optional
         Plot is shown if `show=True`.
     save : None or str, optional
@@ -390,7 +398,8 @@ def data_mean_plot(data, settings=None,
 
     Returns
     -------
-    None
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -406,15 +415,16 @@ def data_mean_plot(data, settings=None,
     x_arr, y_arr, attributes = data._dots_w_bars_evolv_mean(settings)
 
     # plot by dots_w_bars_evolv utility plotting function
-    _dots_w_bars_evolv(x_arr, y_arr, attributes,
-                    x_label=x_label, x_lim=x_lim, x_log=x_log,
-                    y_label=y_label, y_lim=y_lim, y_log=y_log,
+    fig, axes = _dots_w_bars_evolv(x_arr, y_arr, attributes,
+                    xlabel=xlabel, xlim=xlim, xlog=xlog,
+                    ylabel=ylabel, ylim=ylim, ylog=ylog,
                     show=show, save=save)
+    return fig, axes
 
 
 def data_variance_plot(data, settings=None,
-                    x_label='Time', x_lim=None, x_log=False,
-                    y_label='Variance', y_lim=None, y_log=False,
+                    xlabel='Time', xlim=None, xlog=False,
+                    ylabel='Variance', ylim=None, ylog=False,
                     show=True, save=None):
     """Plot the variance statistics with standard errors of a data object (if
     variance data are available).
@@ -425,18 +435,18 @@ def data_variance_plot(data, settings=None,
         A memocell data object.
     settings : dict of dict, optional
         Optional label and color settings for the variance traces.
-    x_label : str, optional
+    xlabel : str, optional
         Label for x-axis.
-    x_lim : None or tuple of floats, optional
+    xlim : None or tuple of floats, optional
         Specify x-axis limits.
-    x_log : bool, optional
-        Logarithmic x-axis if `x_log=True`.
-    y_label : str, optional
+    xlog : bool, optional
+        Logarithmic x-axis if `xlog=True`.
+    ylabel : str, optional
         Label for y-axis.
-    y_lim : None or tuple of floats, optional
+    ylim : None or tuple of floats, optional
         Specify y-axis limits.
-    y_log : bool, optional
-        Logarithmic y-axis if `y_log=True`.
+    ylog : bool, optional
+        Logarithmic y-axis if `ylog=True`.
     show : bool, optional
         Plot is shown if `show=True`.
     save : None or str, optional
@@ -444,7 +454,8 @@ def data_variance_plot(data, settings=None,
 
     Returns
     -------
-    None
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -460,15 +471,16 @@ def data_variance_plot(data, settings=None,
     x_arr, y_arr, attributes = data._dots_w_bars_evolv_variance(settings)
 
     # plot by dots_w_bars_evolv utility plotting function
-    _dots_w_bars_evolv(x_arr, y_arr, attributes,
-                    x_label=x_label, x_lim=x_lim, x_log=x_log,
-                    y_label=y_label, y_lim=y_lim, y_log=y_log,
+    fig, axes = _dots_w_bars_evolv(x_arr, y_arr, attributes,
+                    xlabel=xlabel, xlim=xlim, xlog=xlog,
+                    ylabel=ylabel, ylim=ylim, ylog=ylog,
                     show=show, save=save)
+    return fig, axes
 
 
 def data_covariance_plot(data, settings=None,
-                    x_label='Time', x_lim=None, x_log=False,
-                    y_label='Covariance', y_lim=None, y_log=False,
+                    xlabel='Time', xlim=None, xlog=False,
+                    ylabel='Covariance', ylim=None, ylog=False,
                     show=True, save=None):
     """Plot the covariance statistics with standard errors of a data object (if
     covariance data are available).
@@ -479,18 +491,18 @@ def data_covariance_plot(data, settings=None,
         A memocell data object.
     settings : dict of dict, optional
         Optional label and color settings for the covariance traces.
-    x_label : str, optional
+    xlabel : str, optional
         Label for x-axis.
-    x_lim : None or tuple of floats, optional
+    xlim : None or tuple of floats, optional
         Specify x-axis limits.
-    x_log : bool, optional
-        Logarithmic x-axis if `x_log=True`.
-    y_label : str, optional
+    xlog : bool, optional
+        Logarithmic x-axis if `xlog=True`.
+    ylabel : str, optional
         Label for y-axis.
-    y_lim : None or tuple of floats, optional
+    ylim : None or tuple of floats, optional
         Specify y-axis limits.
-    y_log : bool, optional
-        Logarithmic y-axis if `y_log=True`.
+    ylog : bool, optional
+        Logarithmic y-axis if `ylog=True`.
     show : bool, optional
         Plot is shown if `show=True`.
     save : None or str, optional
@@ -498,7 +510,8 @@ def data_covariance_plot(data, settings=None,
 
     Returns
     -------
-    None
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -514,15 +527,16 @@ def data_covariance_plot(data, settings=None,
     x_arr, y_arr, attributes = data._dots_w_bars_evolv_covariance(settings)
 
     # plot by dots_w_bars_evolv utility plotting function
-    _dots_w_bars_evolv(x_arr, y_arr, attributes,
-                    x_label=x_label, x_lim=x_lim, x_log=x_log,
-                    y_label=y_label, y_lim=y_lim, y_log=y_log,
+    fig, axes = _dots_w_bars_evolv(x_arr, y_arr, attributes,
+                    xlabel=xlabel, xlim=xlim, xlog=xlog,
+                    ylabel=ylabel, ylim=ylim, ylog=ylog,
                     show=show, save=save)
+    return fig, axes
 
 
 def data_hist_variables_plot(data, time_ind, normalised=False, settings=None,
-                            x_label='Variable counts', x_lim=None, x_log=False,
-                            y_label='Frequency', y_lim=None, y_log=False,
+                            xlabel='Variable counts', xlim=None, xlog=False,
+                            ylabel='Frequency', ylim=None, ylog=False,
                             show=True, save=None):
     """Histograms of variable counts of a data object at a given time point.
 
@@ -537,18 +551,18 @@ def data_hist_variables_plot(data, time_ind, normalised=False, settings=None,
         Histograms are normalised if `normalised=True`.
     settings : dict of dict, optional
         Optional label, color and opacity settings for histogram variables.
-    x_label : str, optional
+    xlabel : str, optional
         Label for x-axis.
-    x_lim : None or tuple of floats, optional
+    xlim : None or tuple of floats, optional
         Specify x-axis limits.
-    x_log : bool, optional
-        Logarithmic x-axis if `x_log=True`.
-    y_label : str, optional
+    xlog : bool, optional
+        Logarithmic x-axis if `xlog=True`.
+    ylabel : str, optional
         Label for y-axis.
-    y_lim : None or tuple of floats, optional
+    ylim : None or tuple of floats, optional
         Specify y-axis limits.
-    y_log : bool, optional
-        Logarithmic y-axis if `y_log=True`.
+    ylog : bool, optional
+        Logarithmic y-axis if `ylog=True`.
     show : bool, optional
         Plot is shown if `show=True`.
     save : None or str, optional
@@ -556,7 +570,8 @@ def data_hist_variables_plot(data, time_ind, normalised=False, settings=None,
 
     Returns
     -------
-    None
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -572,16 +587,17 @@ def data_hist_variables_plot(data, time_ind, normalised=False, settings=None,
     bar_arr, bar_attributes = data._histogram_discrete_cell_counts_at_time_point(time_ind, settings)
 
     # plot by histogram_discrete utility plotting function
-    _histogram_discrete(bar_arr, bar_attributes, normalised=normalised,
-                            x_label=x_label, x_lim=x_lim, x_log=x_log,
-                            y_label=y_label, y_lim=y_lim, y_log=y_log,
+    fig, axes = _histogram_discrete(bar_arr, bar_attributes, normalised=normalised,
+                            xlabel=xlabel, xlim=xlim, xlog=xlog,
+                            ylabel=ylabel, ylim=ylim, ylog=ylog,
                             show=show, save=save)
+    return fig, axes
 
 
 def data_hist_waiting_times_plot(data, data_events, normalised=True,
                             gamma_fit=True, settings=None,
-                            x_label='Waiting time', x_lim=None, x_log=False,
-                            y_label='Frequency', y_lim=None, y_log=False,
+                            xlabel='Waiting time', xlim=None, xlog=False,
+                            ylabel='Frequency', ylim=None, ylog=False,
                             show=True, save=None):
     """Histogram of waiting times of a data object for a given event.
 
@@ -602,18 +618,18 @@ def data_hist_waiting_times_plot(data, data_events, normalised=True,
         are shown in the legend label.
     settings : dict of dict, optional
         Optional label, color, opacity and gamma_color settings for the histogram.
-    x_label : str, optional
+    xlabel : str, optional
         Label for x-axis.
-    x_lim : None or tuple of floats, optional
+    xlim : None or tuple of floats, optional
         Specify x-axis limits.
-    x_log : bool, optional
-        Logarithmic x-axis if `x_log=True`.
-    y_label : str, optional
+    xlog : bool, optional
+        Logarithmic x-axis if `xlog=True`.
+    ylabel : str, optional
         Label for y-axis.
-    y_lim : None or tuple of floats, optional
+    ylim : None or tuple of floats, optional
         Specify y-axis limits.
-    y_log : bool, optional
-        Logarithmic y-axis if `y_log=True`.
+    ylog : bool, optional
+        Logarithmic y-axis if `ylog=True`.
     show : bool, optional
         Plot is shown if `show=True`.
     save : None or str, optional
@@ -621,7 +637,8 @@ def data_hist_waiting_times_plot(data, data_events, normalised=True,
 
     Returns
     -------
-    None
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -634,21 +651,22 @@ def data_hist_waiting_times_plot(data, data_events, normalised=True,
     if gamma_fit:
         normalised = True # overwrite normalised, gamma fit currently only as pdf
         bar_arr, bar_attributes, gamma_fit_func = data._histogram_continuous_event_waiting_times_w_gamma_fit(data_events, settings)
-        _histogram_continuous_w_line(bar_arr, bar_attributes, gamma_fit_func, normalised=normalised,
-                                x_label=x_label, x_lim=x_lim, x_log=x_log,
-                                y_label=y_label, y_lim=y_lim, y_log=y_log,
+        fig, axes = _histogram_continuous_w_line(bar_arr, bar_attributes, gamma_fit_func, normalised=normalised,
+                                xlabel=xlabel, xlim=xlim, xlog=xlog,
+                                ylabel=ylabel, ylim=ylim, ylog=ylog,
                                 show=show, save=save)
     else:
         bar_arr, bar_attributes = data._histogram_continuous_event_waiting_times(data_events, settings)
-        _histogram_continuous(bar_arr, bar_attributes, normalised=normalised,
-                                x_label=x_label, x_lim=x_lim, x_log=x_log,
-                                y_label=y_label, y_lim=y_lim, y_log=y_log,
+        fig, axes = _histogram_continuous(bar_arr, bar_attributes, normalised=normalised,
+                                xlabel=xlabel, xlim=xlim, xlog=xlog,
+                                ylabel=ylabel, ylim=ylim, ylog=ylog,
                                 show=show, save=save)
+    return fig, axes
 
 
 def data_variable_scatter_plot(data, time_ind, variable1, variable2, settings=None,
-                                x_label=None, x_lim=None, x_log=False,
-                                y_label=None, y_lim=None, y_log=False,
+                                xlabel=None, xlim=None, xlog=False,
+                                ylabel=None, ylim=None, ylog=False,
                                 show=True, save=None):
     """Scatter plot between counts of two variables of a data object at a given time point.
 
@@ -665,18 +683,18 @@ def data_variable_scatter_plot(data, time_ind, variable1, variable2, settings=No
         Second variable of the scatter plot (y-axis).
     settings : dict, optional
         Optional label, color and opacity settings for the scatter plot.
-    x_label : str, optional
+    xlabel : str, optional
         Label for x-axis.
-    x_lim : None or tuple of floats, optional
+    xlim : None or tuple of floats, optional
         Specify x-axis limits.
-    x_log : bool, optional
-        Logarithmic x-axis if `x_log=True`.
-    y_label : str, optional
+    xlog : bool, optional
+        Logarithmic x-axis if `xlog=True`.
+    ylabel : str, optional
         Label for y-axis.
-    y_lim : None or tuple of floats, optional
+    ylim : None or tuple of floats, optional
         Specify y-axis limits.
-    y_log : bool, optional
-        Logarithmic y-axis if `y_log=True`.
+    ylog : bool, optional
+        Logarithmic y-axis if `ylog=True`.
     show : bool, optional
         Plot is shown if `show=True`.
     save : None or str, optional
@@ -684,7 +702,8 @@ def data_variable_scatter_plot(data, time_ind, variable1, variable2, settings=No
 
     Returns
     -------
-    None
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -695,16 +714,17 @@ def data_variable_scatter_plot(data, time_ind, variable1, variable2, settings=No
     x_arr, y_arr, attributes = data._scatter_at_time_point(variable1, variable2, time_ind, settings)
 
     # plot by scatter utility plotting function
-    _scatter(x_arr, y_arr, attributes,
-                                x_label=x_label, x_lim=x_lim, x_log=x_log,
-                                y_label=y_label, y_lim=y_lim, y_log=y_log,
+    fig, axes = _scatter(x_arr, y_arr, attributes,
+                                xlabel=xlabel, xlim=xlim, xlog=xlog,
+                                ylabel=ylabel, ylim=ylim, ylog=ylog,
                                 show=show, save=save)
+    return fig, axes
 
 
 def selection_plot(estimation_instances, est_type='evidence',
                     settings=None, show_errorbar=True,
-                    x_label=None, x_lim=None, x_log=False,
-                    y_label=None, y_lim=None, y_log=False,
+                    xlabel=None, xlim=None, xlog=False,
+                    ylabel=None, ylim=None, ylog=False,
                     show=True, save=None):
     """Scatter plot between counts of two variables of a data object at a given time point.
 
@@ -725,18 +745,18 @@ def selection_plot(estimation_instances, est_type='evidence',
     show_errorbar : bool, optional
         Error bars are shown if `show_errorbar=True` (default). Only available for
         `est_type='evidence'`.
-    x_label : str, optional
+    xlabel : str, optional
         Label for x-axis.
-    x_lim : None or tuple of floats, optional
+    xlim : None or tuple of floats, optional
         Specify x-axis limits.
-    x_log : bool, optional
-        Logarithmic x-axis if `x_log=True`.
-    y_label : str, optional
+    xlog : bool, optional
+        Logarithmic x-axis if `xlog=True`.
+    ylabel : str, optional
         Label for y-axis.
-    y_lim : None or tuple of floats, optional
+    ylim : None or tuple of floats, optional
         Specify y-axis limits.
-    y_log : bool, optional
-        Logarithmic y-axis if `y_log=True`.
+    ylog : bool, optional
+        Logarithmic y-axis if `ylog=True`.
     show : bool, optional
         Plot is shown if `show=True`.
     save : None or str, optional
@@ -744,7 +764,8 @@ def selection_plot(estimation_instances, est_type='evidence',
 
     Returns
     -------
-    None
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -757,27 +778,28 @@ def selection_plot(estimation_instances, est_type='evidence',
 
     # create plotting information from estimation_instances
     if est_type=='evidence':
-        y_label = 'Log(Evidence)'
+        ylabel = 'Log(Evidence)'
         y_arr_err, x_ticks, attributes = _dots_w_bars_evidence(estimation_instances, settings)
     elif est_type=='likelihood':
-        y_label = 'Max. Log(Likelihood)'
+        ylabel = 'Max. Log(Likelihood)'
         y_arr_err, x_ticks, attributes = _dots_wo_bars_likelihood_max(estimation_instances, settings)
     elif est_type=='bic':
-        y_label = 'BIC'
+        ylabel = 'BIC'
         y_arr_err, x_ticks, attributes = _dots_wo_bars_bic(estimation_instances, settings)
     elif est_type=='evidence_from_bic':
-        y_label = 'Log(Evidence) [approx. from BIC]'
+        ylabel = 'Log(Evidence) [approx. from BIC]'
         y_arr_err, x_ticks, attributes = _dots_wo_bars_evidence_from_bic(estimation_instances, settings)
     else:
         warnings.warn('Unknown est_type for model selection plot; default est_type will be used')
-        y_label = 'Log(Evidence)'
+        ylabel = 'Log(Evidence)'
         y_arr_err, x_ticks, attributes = _dots_w_bars_evidence(estimation_instances, settings)
 
     # plot by dots_w_bars utility plotting function
-    _dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=show_errorbar,
-                x_label=x_label, x_lim=x_lim, x_log=x_log,
-                y_label=y_label, y_lim=y_lim, y_log=y_log,
+    fig, axes = _dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=show_errorbar,
+                xlabel=xlabel, xlim=xlim, xlog=xlog,
+                ylabel=ylabel, ylim=ylim, ylog=ylog,
                 show=show, save=save)
+    return fig, axes
 
 
 def est_runplot(estimation, color='limegreen', show=True, save=None):
@@ -797,20 +819,22 @@ def est_runplot(estimation, color='limegreen', show=True, save=None):
 
     Returns
     -------
-    None
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # get plotting information from estimation instance
     sampler_result = estimation.bay_nested_sampler_res
 
     # generate plot by dynesty plotting methods
-    fig, ax = dyplot.runplot(sampler_result, color=color)
+    fig, axes = dyplot.runplot(sampler_result, color=color)
 
     # save/show figure
     if save!=None:
         plt.savefig(save, bbox_inches='tight')
     if show:
         plt.show(fig, block=False)
+    return fig, axes
 
 
 def est_traceplot(estimation, settings=None, show=True, save=None):
@@ -830,7 +854,8 @@ def est_traceplot(estimation, settings=None, show=True, save=None):
 
     Returns
     -------
-    None
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -859,11 +884,12 @@ def est_traceplot(estimation, settings=None, show=True, save=None):
         plt.savefig(save, bbox_inches='tight')
     if show:
         plt.show(fig, block=False)
+    return fig, axes
 
 
 def est_parameter_plot(estimation, settings=None, show_errorbar=True,
-            x_label=None, x_lim=None,
-            y_label="Parameter values", y_lim=None, y_log=False,
+            xlabel=None, xlim=None,
+            ylabel="Parameter values", ylim=None, ylog=False,
             show=True, save=None):
     """Plot summary of 1-dimensional marginal parameter posteriors as median and
     95% credible interval (2.5th and 97.5th percentiles; error bars).
@@ -878,16 +904,16 @@ def est_parameter_plot(estimation, settings=None, show_errorbar=True,
         Error bars are shown if `show_errorbar=True` (default). Error bars show
         95% credible intervals based on 2.5th and 97.5th percentiles for each
         parameter's 1-dimensional marginal posterior distribution.
-    x_label : str, optional
+    xlabel : str, optional
         Label for x-axis.
-    x_lim : None or tuple of floats, optional
+    xlim : None or tuple of floats, optional
         Specify x-axis limits.
-    y_label : str, optional
+    ylabel : str, optional
         Label for y-axis.
-    y_lim : None or tuple of floats, optional
+    ylim : None or tuple of floats, optional
         Specify y-axis limits.
-    y_log : bool, optional
-        Logarithmic y-axis if `y_log=True`.
+    ylog : bool, optional
+        Logarithmic y-axis if `ylog=True`.
     show : bool, optional
         Plot is shown if `show=True`.
     save : None or str, optional
@@ -895,7 +921,8 @@ def est_parameter_plot(estimation, settings=None, show_errorbar=True,
 
     Returns
     -------
-    None
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -909,10 +936,11 @@ def est_parameter_plot(estimation, settings=None, show_errorbar=True,
     y_arr_err, x_ticks, attributes = estimation._dots_w_bars_parameters(settings)
 
     # plot by dots_w_bars utility plotting function
-    _dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=show_errorbar,
-                x_label=x_label, x_lim=x_lim, x_log=False,
-                y_label=y_label, y_lim=y_lim, y_log=y_log,
+    fig, axes = _dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=show_errorbar,
+                xlabel=xlabel, xlim=xlim, xlog=False,
+                ylabel=ylabel, ylim=ylim, ylog=ylog,
                 show=show, save=save)
+    return fig, axes
 
 
 def est_corner_plot(estimation, settings=None, show=True, save=None):
@@ -933,7 +961,8 @@ def est_corner_plot(estimation, settings=None, show=True, save=None):
 
     Returns
     -------
-    None
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -954,6 +983,7 @@ def est_corner_plot(estimation, settings=None, show=True, save=None):
         plt.savefig(save, bbox_inches='tight')
     if show:
         plt.show(fig, block=False)
+    return fig, fig.axes
 
 
 def est_corner_kernel_plot(estimation, settings=None, show=True, save=None):
@@ -974,7 +1004,8 @@ def est_corner_kernel_plot(estimation, settings=None, show=True, save=None):
 
     Returns
     -------
-    None
+    fig : matplotlib.figure.Figure
+    axes : (list or array of) matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -1000,6 +1031,7 @@ def est_corner_kernel_plot(estimation, settings=None, show=True, save=None):
         plt.savefig(save, bbox_inches='tight')
     if show:
         plt.show(fig, block=False)
+    return fig, axes
 
 
 def est_corner_weight_plot(estimation, settings=None, show=True, save=None):
@@ -1019,8 +1051,10 @@ def est_corner_weight_plot(estimation, settings=None, show=True, save=None):
 
     Returns
     -------
-    None
+    fig : matplotlib.figure.Figure
+    axes : (list or array of) matplotlib.axes
     """
+    # NOTE: this plot does not seem to work in 1d (dynesty issue, not memocell)
 
     # if not given, create some default settings
     if settings==None:
@@ -1042,81 +1076,84 @@ def est_corner_weight_plot(estimation, settings=None, show=True, save=None):
         plt.savefig(save, bbox_inches='tight')
     if show:
         plt.show(fig, block=False)
+    return fig, axes
 
-
-def est_corner_bounds_plot(estimation, num_iter=14, settings=None, show=True, save=None):
-    """Wrapper to cornerbound plots of `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_
-    nested sampling module.
-
-    Parameters
-    ----------
-    estimation : memocell.estimation.Estimation
-        A memocell estimation object.
-    num_iter : int, optional
-        Number of iterations/subplots (iterations that are selected for plotting
-        lie uniformly between first and last iteration of the nested sampling run).
-    settings : dict of dict, optional
-        Optional labels for parameters.
-    show : bool, optional
-        Plot is shown if `show=True`.
-    save : None or str, optional
-        Provide a path to save the plot.
-
-    Returns
-    -------
-    None
-    """
-
-    # if not given, create some default settings
-    if settings==None:
-        settings = dict()
-        for theta_id in estimation.net.net_theta_symbolic:
-            param = estimation.net.net_rates_identifier[theta_id]
-            settings[param] = {'label': param}
-
-    # get plotting information from estimation instance
-    sampler_result, params_labels, prior_transform = estimation._sampling_res_and_labels_and_priortransform(settings)
-
-    # create subplots
-    num_it_segs = num_iter
-    num_it_total = sampler_result.niter
-    num_subplot_rows = int(np.ceil(num_it_segs/3.0))
-    fig, axes = plt.subplots(num_subplot_rows, 3, figsize=(num_subplot_rows*3, 3*3))
-
-    # make square
-    for ax in axes.flatten():
-        ax.set(aspect='equal')
-
-    # turn excess subplots off
-    for i in range(num_it_segs, num_subplot_rows*3):
-        axes.flatten()[i].set_axis_off()
-
-    # actual plotting
-    for it_plot in range(num_it_segs):
-        it_num = int(it_plot * num_it_total / float(num_it_segs - 1))
-        it_num = min(num_it_total, it_num)
-
-        dyplot.cornerbound(sampler_result,
-                    it=it_num,
-                    prior_transform=prior_transform,
-                    color='lightgrey',
-                    show_live=True,
-                    live_color='darkorange',
-                    labels=params_labels,
-                    fig=(fig, axes.flatten()[it_plot]))
-
-    plt.tight_layout()
-
-    # save/show figure
-    if save!=None:
-        plt.savefig(save, bbox_inches='tight')
-    if show:
-        plt.show(fig)
+# NOTE: is a bit buggy, maybe reactivate at some later time point
+# def est_corner_bounds_plot(estimation, num_iter=14, settings=None, show=True, save=None):
+#     """Wrapper to cornerbound plots of `dynesty <https://dynesty.readthedocs.io/en/latest/quickstart.html>`_
+#     nested sampling module.
+#
+#     Parameters
+#     ----------
+#     estimation : memocell.estimation.Estimation
+#         A memocell estimation object.
+#     num_iter : int, optional
+#         Number of iterations/subplots (iterations that are selected for plotting
+#         lie uniformly between first and last iteration of the nested sampling run).
+#     settings : dict of dict, optional
+#         Optional labels for parameters.
+#     show : bool, optional
+#         Plot is shown if `show=True`.
+#     save : None or str, optional
+#         Provide a path to save the plot.
+#
+#     Returns
+#     -------
+#     fig : matplotlib.figure.Figure
+#     axes : list or array of matplotlib.axes
+#     """
+#
+#     # if not given, create some default settings
+#     if settings==None:
+#         settings = dict()
+#         for theta_id in estimation.net.net_theta_symbolic:
+#             param = estimation.net.net_rates_identifier[theta_id]
+#             settings[param] = {'label': param}
+#
+#     # get plotting information from estimation instance
+#     sampler_result, params_labels, prior_transform = estimation._sampling_res_and_labels_and_priortransform(settings)
+#
+#     # create subplots
+#     num_it_segs = num_iter
+#     num_it_total = sampler_result.niter
+#     num_subplot_rows = int(np.ceil(num_it_segs/3.0))
+#     fig, axes = plt.subplots(num_subplot_rows, 3, figsize=(num_subplot_rows*3, 3*3))
+#
+#     # make square
+#     for ax in axes.flatten():
+#         ax.set(aspect='equal')
+#
+#     # turn excess subplots off
+#     for i in range(num_it_segs, num_subplot_rows*3):
+#         axes.flatten()[i].set_axis_off()
+#
+#     # actual plotting
+#     for it_plot in range(num_it_segs):
+#         it_num = int(it_plot * num_it_total / float(num_it_segs - 1))
+#         it_num = min(num_it_total, it_num)
+#
+#         dyplot.cornerbound(sampler_result,
+#                     it=it_num,
+#                     prior_transform=prior_transform,
+#                     color='lightgrey',
+#                     show_live=True,
+#                     live_color='darkorange',
+#                     labels=params_labels,
+#                     fig=(fig, axes.flatten()[it_plot]))
+#
+#     plt.tight_layout()
+#
+#     # save/show figure
+#     if save!=None:
+#         plt.savefig(save, bbox_inches='tight')
+#     if show:
+#         plt.show(fig)
+#     return fig, axes
 
 
 def est_chains_plot(estimation, weighted=True,
-                    x_label='Sample iteration', x_lim=None, x_log=False,
-                    y_label='Parameter values', y_lim=None, y_log=False,
+                    xlabel='Sample iteration', xlim=None, xlog=False,
+                    ylabel='Parameter values', ylim=None, ylog=False,
                     show=True, save=None):
     """Plot (weighted) parameter samples over the iterations of the nested sampling
     run.
@@ -1129,18 +1166,18 @@ def est_chains_plot(estimation, weighted=True,
         Plot parameter samples of the nested sampling run weighted (default)
         or unweighted. Samples need to be weighted to correspond to the actual
         parameter posterior.
-    x_label : str, optional
+    xlabel : str, optional
         Label for x-axis.
-    x_lim : None or tuple of floats, optional
+    xlim : None or tuple of floats, optional
         Specify x-axis limits.
-    x_log : bool, optional
-        Logarithmic x-axis if `x_log=True`.
-    y_label : str, optional
+    xlog : bool, optional
+        Logarithmic x-axis if `xlog=True`.
+    ylabel : str, optional
         Label for y-axis.
-    y_lim : None or tuple of floats, optional
+    ylim : None or tuple of floats, optional
         Specify y-axis limits.
-    y_log : bool, optional
-        Logarithmic y-axis if `y_log=True`.
+    ylog : bool, optional
+        Logarithmic y-axis if `ylog=True`.
     show : bool, optional
         Plot is shown if `show=True`.
     save : None or str, optional
@@ -1148,8 +1185,8 @@ def est_chains_plot(estimation, weighted=True,
 
     Returns
     -------
-    None
-
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # get plotting information from estimation instance
@@ -1173,26 +1210,27 @@ def est_chains_plot(estimation, weighted=True,
     plt.plot(samples, alpha=0.75)
 
     # final axis setting
-    ax.set_xlim(x_lim)
-    ax.set_xlabel(x_label, color="black")
-    ax.set_xscale('log' if x_log==True else 'linear')
-    ax.set_ylim(y_lim)
-    ax.set_ylabel(y_label, color="black")
-    ax.set_yscale('log' if y_log==True else 'linear')
+    ax.set_xlim(xlim)
+    ax.set_xlabel(xlabel, color="black")
+    ax.set_xscale('log' if xlog==True else 'linear')
+    ax.set_ylim(ylim)
+    ax.set_ylabel(ylabel, color="black")
+    ax.set_yscale('log' if ylog==True else 'linear')
 
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
 
     # save/show figure
     if save!=None:
         plt.savefig(save, bbox_inches='tight')
     if show:
         plt.show(fig, block=False)
+    return fig, fig.axes
 
 
 def est_bestfit_mean_plot(estimation, settings=None, data=True, cred=True,
-                            x_label='Time', x_lim=None, x_log=False,
-                            y_label='Mean', y_lim=None, y_log=False,
+                            xlabel='Time', xlim=None, xlog=False,
+                            ylabel='Mean', ylim=None, ylog=False,
                             show=True, save=None):
     """Plot the model mean trajectories based on the estimated parameter posterior
     distribution. `Note:` A summary model trajectory is shown based on the median of the individual
@@ -1219,18 +1257,18 @@ def est_bestfit_mean_plot(estimation, settings=None, data=True, cred=True,
         models; in this case you might want to start plotting with `cred=False`.
         If `cred=False`, no band is shown and the summary trajectory is computed
         by taking median parameters of the individual 1-dimensional posterior marginals.
-    x_label : str, optional
+    xlabel : str, optional
         Label for x-axis.
-    x_lim : None or tuple of floats, optional
+    xlim : None or tuple of floats, optional
         Specify x-axis limits.
-    x_log : bool, optional
-        Logarithmic x-axis if `x_log=True`.
-    y_label : str, optional
+    xlog : bool, optional
+        Logarithmic x-axis if `xlog=True`.
+    ylabel : str, optional
         Label for y-axis.
-    y_lim : None or tuple of floats, optional
+    ylim : None or tuple of floats, optional
         Specify y-axis limits.
-    y_log : bool, optional
-        Logarithmic y-axis if `y_log=True`.
+    ylog : bool, optional
+        Logarithmic y-axis if `ylog=True`.
     show : bool, optional
         Plot is shown if `show=True`.
     save : None or str, optional
@@ -1238,7 +1276,8 @@ def est_bestfit_mean_plot(estimation, settings=None, data=True, cred=True,
 
     Returns
     -------
-    None
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -1256,39 +1295,39 @@ def est_bestfit_mean_plot(estimation, settings=None, data=True, cred=True,
         if cred:
             x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes = estimation._dots_w_bars_and_line_w_band_evolv_mean_credible(settings)
 
-            _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err,
+            fig, axes = _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err,
                                             y_line, y_lower, y_upper, attributes,
-                                            x_label=x_label, x_lim=x_lim, x_log=x_log,
-                                            y_label=y_label, y_lim=y_lim, y_log=y_log,
+                                            xlabel=xlabel, xlim=xlim, xlog=xlog,
+                                            ylabel=ylabel, ylim=ylim, ylog=ylog,
                                             show=show, save=save)
         else:
             x_arr_dots, x_arr_line, y_dots_err, y_line, attributes = estimation._dots_w_bars_and_line_evolv_bestfit_mean_data(settings)
 
-            _dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line, y_dots_err, y_line, attributes,
-                                            x_label=x_label, x_lim=x_lim, x_log=x_log,
-                                            y_label=y_label, y_lim=y_lim, y_log=y_log,
+            fig, axes = _dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line, y_dots_err, y_line, attributes,
+                                            xlabel=xlabel, xlim=xlim, xlog=xlog,
+                                            ylabel=ylabel, ylim=ylim, ylog=ylog,
                                             show=show, save=save)
 
     else:
         if cred:
             x_arr, y_line, y_lower, y_upper, attributes = estimation._line_w_band_evolv_mean_credible(settings)
 
-            _line_w_band_evolv(x_arr, y_line, y_lower, y_upper, attributes,
-                                            x_label=x_label, x_lim=x_lim, x_log=x_log,
-                                            y_label=y_label, y_lim=y_lim, y_log=y_log,
+            fig, axes = _line_w_band_evolv(x_arr, y_line, y_lower, y_upper, attributes,
+                                            xlabel=xlabel, xlim=xlim, xlog=xlog,
+                                            ylabel=ylabel, ylim=ylim, ylog=ylog,
                                             show=show, save=save)
         else:
             x_arr, y_arr, attributes = estimation._line_evolv_bestfit_mean(settings)
 
-            _line_evolv(x_arr, y_arr, attributes,
-                                            x_label=x_label, x_lim=x_lim, x_log=x_log,
-                                            y_label=y_label, y_lim=y_lim, y_log=y_log,
+            fig, axes = _line_evolv(x_arr, y_arr, attributes,
+                                            xlabel=xlabel, xlim=xlim, xlog=xlog,
+                                            ylabel=ylabel, ylim=ylim, ylog=ylog,
                                             show=show, save=save)
-
+    return fig, axes
 
 def est_bestfit_variance_plot(estimation, settings=None, data=True, cred=True,
-                            x_label='Time', x_lim=None, x_log=False,
-                            y_label='Variance', y_lim=None, y_log=False,
+                            xlabel='Time', xlim=None, xlog=False,
+                            ylabel='Variance', ylim=None, ylog=False,
                             show=True, save=None):
     """Plot the model variance trajectories based on the estimated parameter posterior
     distribution. `Note:` A summary model trajectory is shown based on the median of the individual
@@ -1315,18 +1354,18 @@ def est_bestfit_variance_plot(estimation, settings=None, data=True, cred=True,
         models; in this case you might want to start plotting with `cred=False`.
         If `cred=False`, no band is shown and the summary trajectory is computed
         by taking median parameters of the individual 1-dimensional posterior marginals.
-    x_label : str, optional
+    xlabel : str, optional
         Label for x-axis.
-    x_lim : None or tuple of floats, optional
+    xlim : None or tuple of floats, optional
         Specify x-axis limits.
-    x_log : bool, optional
-        Logarithmic x-axis if `x_log=True`.
-    y_label : str, optional
+    xlog : bool, optional
+        Logarithmic x-axis if `xlog=True`.
+    ylabel : str, optional
         Label for y-axis.
-    y_lim : None or tuple of floats, optional
+    ylim : None or tuple of floats, optional
         Specify y-axis limits.
-    y_log : bool, optional
-        Logarithmic y-axis if `y_log=True`.
+    ylog : bool, optional
+        Logarithmic y-axis if `ylog=True`.
     show : bool, optional
         Plot is shown if `show=True`.
     save : None or str, optional
@@ -1334,7 +1373,8 @@ def est_bestfit_variance_plot(estimation, settings=None, data=True, cred=True,
 
     Returns
     -------
-    None
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -1353,39 +1393,40 @@ def est_bestfit_variance_plot(estimation, settings=None, data=True, cred=True,
         if cred:
             x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes = estimation._dots_w_bars_and_line_w_band_evolv_variance_credible(settings)
 
-            _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err,
+            fig, axes = _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err,
                                             y_line, y_lower, y_upper, attributes,
-                                            x_label=x_label, x_lim=x_lim, x_log=x_log,
-                                            y_label=y_label, y_lim=y_lim, y_log=y_log,
+                                            xlabel=xlabel, xlim=xlim, xlog=xlog,
+                                            ylabel=ylabel, ylim=ylim, ylog=ylog,
                                             show=show, save=save)
         else:
             x_arr_dots, x_arr_line, y_dots_err, y_line, attributes = estimation._dots_w_bars_and_line_evolv_bestfit_variance_data(settings)
 
-            _dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line, y_dots_err, y_line, attributes,
-                                            x_label=x_label, x_lim=x_lim, x_log=x_log,
-                                            y_label=y_label, y_lim=y_lim, y_log=y_log,
+            fig, axes = _dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line, y_dots_err, y_line, attributes,
+                                            xlabel=xlabel, xlim=xlim, xlog=xlog,
+                                            ylabel=ylabel, ylim=ylim, ylog=ylog,
                                             show=show, save=save)
 
     else:
         if cred:
             x_arr, y_line, y_lower, y_upper, attributes = estimation._line_w_band_evolv_variance_credible(settings)
 
-            _line_w_band_evolv(x_arr, y_line, y_lower, y_upper, attributes,
-                                            x_label=x_label, x_lim=x_lim, x_log=x_log,
-                                            y_label=y_label, y_lim=y_lim, y_log=y_log,
+            fig, axes = _line_w_band_evolv(x_arr, y_line, y_lower, y_upper, attributes,
+                                            xlabel=xlabel, xlim=xlim, xlog=xlog,
+                                            ylabel=ylabel, ylim=ylim, ylog=ylog,
                                             show=show, save=save)
         else:
             x_arr, y_arr, attributes = estimation._line_evolv_bestfit_variance(settings)
 
-            _line_evolv(x_arr, y_arr, attributes,
-                                            x_label=x_label, x_lim=x_lim, x_log=x_log,
-                                            y_label=y_label, y_lim=y_lim, y_log=y_log,
+            fig, axes = _line_evolv(x_arr, y_arr, attributes,
+                                            xlabel=xlabel, xlim=xlim, xlog=xlog,
+                                            ylabel=ylabel, ylim=ylim, ylog=ylog,
                                             show=show, save=save)
+    return fig, axes
 
 
 def est_bestfit_covariance_plot(estimation, settings=None, data=True, cred=True,
-                            x_label='Time', x_lim=None, x_log=False,
-                            y_label='Covariance', y_lim=None, y_log=False,
+                            xlabel='Time', xlim=None, xlog=False,
+                            ylabel='Covariance', ylim=None, ylog=False,
                             show=True, save=None):
     """Plot the model covariance trajectories based on the estimated parameter posterior
     distribution. `Note:` A summary model trajectory is shown based on the median of the individual
@@ -1412,18 +1453,18 @@ def est_bestfit_covariance_plot(estimation, settings=None, data=True, cred=True,
         models; in this case you might want to start plotting with `cred=False`.
         If `cred=False`, no band is shown and the summary trajectory is computed
         by taking median parameters of the individual 1-dimensional posterior marginals.
-    x_label : str, optional
+    xlabel : str, optional
         Label for x-axis.
-    x_lim : None or tuple of floats, optional
+    xlim : None or tuple of floats, optional
         Specify x-axis limits.
-    x_log : bool, optional
-        Logarithmic x-axis if `x_log=True`.
-    y_label : str, optional
+    xlog : bool, optional
+        Logarithmic x-axis if `xlog=True`.
+    ylabel : str, optional
         Label for y-axis.
-    y_lim : None or tuple of floats, optional
+    ylim : None or tuple of floats, optional
         Specify y-axis limits.
-    y_log : bool, optional
-        Logarithmic y-axis if `y_log=True`.
+    ylog : bool, optional
+        Logarithmic y-axis if `ylog=True`.
     show : bool, optional
         Plot is shown if `show=True`.
     save : None or str, optional
@@ -1431,7 +1472,8 @@ def est_bestfit_covariance_plot(estimation, settings=None, data=True, cred=True,
 
     Returns
     -------
-    None
+    fig : matplotlib.figure.Figure
+    axes : list or array of matplotlib.axes
     """
 
     # if not given, create some default settings
@@ -1450,43 +1492,43 @@ def est_bestfit_covariance_plot(estimation, settings=None, data=True, cred=True,
         if cred:
             x_arr_dots, x_arr_line, y_dots_err, y_line, y_lower, y_upper, attributes = estimation._dots_w_bars_and_line_w_band_evolv_covariance_credible(settings)
 
-            _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err,
+            fig, axes = _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err,
                                             y_line, y_lower, y_upper, attributes,
-                                            x_label=x_label, x_lim=x_lim, x_log=x_log,
-                                            y_label=y_label, y_lim=y_lim, y_log=y_log,
+                                            xlabel=xlabel, xlim=xlim, xlog=xlog,
+                                            ylabel=ylabel, ylim=ylim, ylog=ylog,
                                             show=show, save=save)
         else:
             x_arr_dots, x_arr_line, y_dots_err, y_line, attributes = estimation._dots_w_bars_and_line_evolv_bestfit_covariance_data(settings)
 
-            _dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line, y_dots_err, y_line, attributes,
-                                            x_label=x_label, x_lim=x_lim, x_log=x_log,
-                                            y_label=y_label, y_lim=y_lim, y_log=y_log,
+            fig, axes = _dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line, y_dots_err, y_line, attributes,
+                                            xlabel=xlabel, xlim=xlim, xlog=xlog,
+                                            ylabel=ylabel, ylim=ylim, ylog=ylog,
                                             show=show, save=save)
 
     else:
         if cred:
             x_arr, y_line, y_lower, y_upper, attributes = estimation._line_w_band_evolv_covariance_credible(settings)
 
-            _line_w_band_evolv(x_arr, y_line, y_lower, y_upper, attributes,
-                                            x_label=x_label, x_lim=x_lim, x_log=x_log,
-                                            y_label=y_label, y_lim=y_lim, y_log=y_log,
+            fig, axes = _line_w_band_evolv(x_arr, y_line, y_lower, y_upper, attributes,
+                                            xlabel=xlabel, xlim=xlim, xlog=xlog,
+                                            ylabel=ylabel, ylim=ylim, ylog=ylog,
                                             show=show, save=save)
         else:
             x_arr, y_arr, attributes = estimation._line_evolv_bestfit_covariance(settings)
 
-            _line_evolv(x_arr, y_arr, attributes,
-                                            x_label=x_label, x_lim=x_lim, x_log=x_log,
-                                            y_label=y_label, y_lim=y_lim, y_log=y_log,
+            fig, axes = _line_evolv(x_arr, y_arr, attributes,
+                                            xlabel=xlabel, xlim=xlim, xlog=xlog,
+                                            ylabel=ylabel, ylim=ylim, ylog=ylog,
                                             show=show, save=save)
-
+    return fig, axes
 
 ##################################
 ### PLOTTING UTILITY FUNCTIONS ###
 ##################################
 
 def _dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=True,
-                x_label=None, x_lim=None, x_log=False,
-                y_label=None, y_lim=None, y_log=False,
+                xlabel=None, xlim=None, xlog=False,
+                ylabel=None, ylim=None, ylog=False,
                 show=True, save=None):
     """Private plotting utility function."""
 
@@ -1541,12 +1583,12 @@ def _dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=True,
                     color=attributes[dot_ind][1], ecolor='lightgrey')
 
     # final axis setting
-    ax.set_xlim(x_lim)
-    ax.set_xlabel(x_label, color="black")
-    ax.set_xscale('log' if x_log==True else 'linear')
-    ax.set_ylim(y_lim)
-    ax.set_ylabel(y_label, color="black")
-    ax.set_yscale('log' if y_log==True else 'linear')
+    ax.set_xlim(xlim)
+    ax.set_xlabel(xlabel, color="black")
+    ax.set_xscale('log' if xlog==True else 'linear')
+    ax.set_ylim(ylim)
+    ax.set_ylabel(ylabel, color="black")
+    ax.set_yscale('log' if ylog==True else 'linear')
 
     if x_ticks != None:
         plt.xticks([i + 1 for i in range(y_arr_err.shape[0])],
@@ -1557,11 +1599,12 @@ def _dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=True,
         plt.savefig(save, bbox_inches='tight')
     if show:
         plt.show(fig, block=False)
+    return fig, fig.axes
 
 
 def _dots_w_bars_evolv(x_arr, y_arr_err, var_attributes,
-                        x_label=None, x_lim=None, x_log=False,
-                        y_label=None, y_lim=None, y_log=False,
+                        xlabel=None, xlim=None, xlog=False,
+                        ylabel=None, ylim=None, ylog=False,
                         show=True, save=None):
     """Private plotting utility function."""
 
@@ -1598,7 +1641,7 @@ def _dots_w_bars_evolv(x_arr, y_arr_err, var_attributes,
     # """
 
     # internal setting to switch between paper figures and normal
-    normal_mode = False # for paper, set False
+    normal_mode = True # for paper, set False
 
     # initialise figure and axis settings
     fig = plt.figure()
@@ -1620,12 +1663,12 @@ def _dots_w_bars_evolv(x_arr, y_arr_err, var_attributes,
                     markeredgewidth=2.5 if normal_mode else 0.5, markersize=4.5 if normal_mode else 1.0)
 
     # final axis setting
-    ax.set_xlim(x_lim)
-    ax.set_xlabel(x_label, color="black")
-    ax.set_xscale('log' if x_log==True else 'linear')
-    ax.set_ylim(y_lim)
-    ax.set_ylabel(y_label, color="black")
-    ax.set_yscale('log' if y_log==True else 'linear')
+    ax.set_xlim(xlim)
+    ax.set_xlabel(xlabel, color="black")
+    ax.set_xscale('log' if xlog==True else 'linear')
+    ax.set_ylim(ylim)
+    ax.set_ylabel(ylabel, color="black")
+    ax.set_yscale('log' if ylog==True else 'linear')
 
     # add legend
     legend = ax.legend(loc=0)
@@ -1637,11 +1680,12 @@ def _dots_w_bars_evolv(x_arr, y_arr_err, var_attributes,
         plt.savefig(save, bbox_inches='tight')
     if show:
         plt.show(fig, block=False)
+    return fig, fig.axes
 
 
 def _line_evolv(x_arr, y_line, var_attributes,
-                x_label=None, x_lim=None, x_log=False,
-                y_label=None, y_lim=None, y_log=False,
+                xlabel=None, xlim=None, xlog=False,
+                ylabel=None, ylim=None, ylog=False,
                 show=True, save=None):
     """Private plotting utility function."""
 
@@ -1694,12 +1738,12 @@ def _line_evolv(x_arr, y_line, var_attributes,
                         color=var_color, linewidth=2.5, zorder=2000)
 
     # final axis setting
-    ax.set_xlim(x_lim)
-    ax.set_xlabel(x_label, color="black")
-    ax.set_xscale('log' if x_log==True else 'linear')
-    ax.set_ylim(y_lim)
-    ax.set_ylabel(y_label, color="black")
-    ax.set_yscale('log' if y_log==True else 'linear')
+    ax.set_xlim(xlim)
+    ax.set_xlabel(xlabel, color="black")
+    ax.set_xscale('log' if xlog==True else 'linear')
+    ax.set_ylim(ylim)
+    ax.set_ylabel(ylabel, color="black")
+    ax.set_yscale('log' if ylog==True else 'linear')
 
     # add legend
     legend = ax.legend(loc=0)
@@ -1711,11 +1755,12 @@ def _line_evolv(x_arr, y_line, var_attributes,
         plt.savefig(save, bbox_inches='tight')
     if show:
         plt.show(fig, block=False)
+    return fig, fig.axes
 
 
 def _line_w_band_evolv(x_arr, y_line, y_lower, y_upper, var_attributes,
-                                    x_label=None, x_lim=None, x_log=False,
-                                    y_label=None, y_lim=None, y_log=False,
+                                    xlabel=None, xlim=None, xlog=False,
+                                    ylabel=None, ylim=None, ylog=False,
                                     show=True, save=None):
     """Private plotting utility function."""
 
@@ -1786,12 +1831,12 @@ def _line_w_band_evolv(x_arr, y_line, y_lower, y_upper, var_attributes,
                         color=var_color, linewidth=2.5, zorder=2000)
 
     # final axis setting
-    ax.set_xlim(x_lim)
-    ax.set_xlabel(x_label, color="black")
-    ax.set_xscale('log' if x_log==True else 'linear')
-    ax.set_ylim(y_lim)
-    ax.set_ylabel(y_label, color="black")
-    ax.set_yscale('log' if y_log==True else 'linear')
+    ax.set_xlim(xlim)
+    ax.set_xlabel(xlabel, color="black")
+    ax.set_xscale('log' if xlog==True else 'linear')
+    ax.set_ylim(ylim)
+    ax.set_ylabel(ylabel, color="black")
+    ax.set_yscale('log' if ylog==True else 'linear')
 
     # add legend
     legend = ax.legend(loc=0)
@@ -1803,12 +1848,13 @@ def _line_w_band_evolv(x_arr, y_line, y_lower, y_upper, var_attributes,
         plt.savefig(save, bbox_inches='tight')
     if show:
         plt.show(fig, block=False)
+    return fig, fig.axes
 
 
 def _dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line,
                                             y_dots_err, y_line, var_attributes,
-                                            x_label=None, x_lim=None, x_log=False,
-                                            y_label=None, y_lim=None, y_log=False,
+                                            xlabel=None, xlim=None, xlog=False,
+                                            ylabel=None, ylim=None, ylog=False,
                                             show=True, save=None):
     """Private plotting utility function."""
 
@@ -1891,12 +1937,12 @@ def _dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line,
                         markeredgewidth=2.5, markersize=4.5, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
 
     # final axis setting
-    ax.set_xlim(x_lim)
-    ax.set_xlabel(x_label, color="black")
-    ax.set_xscale('log' if x_log==True else 'linear')
-    ax.set_ylim(y_lim)
-    ax.set_ylabel(y_label, color="black")
-    ax.set_yscale('log' if y_log==True else 'linear')
+    ax.set_xlim(xlim)
+    ax.set_xlabel(xlabel, color="black")
+    ax.set_xscale('log' if xlog==True else 'linear')
+    ax.set_ylim(ylim)
+    ax.set_ylabel(ylabel, color="black")
+    ax.set_yscale('log' if ylog==True else 'linear')
 
     # add legend
     legend = ax.legend(loc=0)
@@ -1909,12 +1955,13 @@ def _dots_w_bars_and_line_evolv(x_arr_dots, x_arr_line,
         plt.savefig(save, bbox_inches='tight')
     if show:
         plt.show(fig, block=False)
+    return fig, fig.axes
 
 
 def _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err, y_line,
                                         y_lower, y_upper, var_attributes,
-                                        x_label=None, x_lim=None, x_log=False,
-                                        y_label=None, y_lim=None, y_log=False,
+                                        xlabel=None, xlim=None, xlog=False,
+                                        ylabel=None, ylim=None, ylog=False,
                                         show=True, save=None):
     """Private plotting utility function."""
 
@@ -1974,7 +2021,7 @@ def _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err, y_lin
     # """
 
     # internal setting to switch between paper figures and normal
-    normal_mode = False # for paper, set False
+    normal_mode = True # for paper, set False
 
     # initialise figure and axis settings
     fig = plt.figure()
@@ -2000,12 +2047,12 @@ def _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err, y_lin
                         markeredgewidth=2.5 if normal_mode else 0.5, markersize=4.5 if normal_mode else 1.0, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
 
     # final axis setting
-    ax.set_xlim(x_lim)
-    ax.set_xlabel(x_label, color="black")
-    ax.set_xscale('log' if x_log==True else 'linear')
-    ax.set_ylim(y_lim)
-    ax.set_ylabel(y_label, color="black")
-    ax.set_yscale('log' if y_log==True else 'linear')
+    ax.set_xlim(xlim)
+    ax.set_xlabel(xlabel, color="black")
+    ax.set_xscale('log' if xlog==True else 'linear')
+    ax.set_ylim(ylim)
+    ax.set_ylabel(ylabel, color="black")
+    ax.set_yscale('log' if ylog==True else 'linear')
 
     # add legend
     legend = ax.legend(loc=0)
@@ -2017,11 +2064,12 @@ def _dots_w_bars_and_line_w_band_evolv(x_arr_dots, x_arr_line, y_dots_err, y_lin
         plt.savefig(save, bbox_inches='tight')
     if show:
         plt.show(fig, block=False)
+    return fig, fig.axes
 
 
 def _histogram_discrete(bar_arr, bar_attributes, normalised=False,
-                        x_label=None, x_lim=None, x_log=False,
-                        y_label=None, y_lim=None, y_log=False,
+                        xlabel=None, xlim=None, xlog=False,
+                        ylabel=None, ylim=None, ylog=False,
                         show=True, save=None):
     """Private plotting utility function."""
 
@@ -2061,12 +2109,12 @@ def _histogram_discrete(bar_arr, bar_attributes, normalised=False,
 
     # plotting of a histogram
     try:
-        bar_min = min(np.amin(bar_arr), x_lim[0])
+        bar_min = min(np.amin(bar_arr), xlim[0])
     except:
         bar_min = np.amin(bar_arr)
 
     try:
-        bar_max = max(np.amax(bar_arr), x_lim[1])
+        bar_max = max(np.amax(bar_arr), xlim[1])
     except:
         bar_max = np.amax(bar_arr)
 
@@ -2084,12 +2132,12 @@ def _histogram_discrete(bar_arr, bar_attributes, normalised=False,
     # ax.set_xticks(bins + 0.5)
 
     # final axis setting
-    ax.set_xlim(x_lim)
-    ax.set_xlabel(x_label, color="black")
-    ax.set_xscale('log' if x_log==True else 'linear')
-    ax.set_ylim(y_lim)
-    ax.set_ylabel(y_label, color="black")
-    ax.set_yscale('log' if y_log==True else 'linear')
+    ax.set_xlim(xlim)
+    ax.set_xlabel(xlabel, color="black")
+    ax.set_xscale('log' if xlog==True else 'linear')
+    ax.set_ylim(ylim)
+    ax.set_ylabel(ylabel, color="black")
+    ax.set_yscale('log' if ylog==True else 'linear')
 
     # add legend
     legend = ax.legend(loc=0)
@@ -2102,11 +2150,12 @@ def _histogram_discrete(bar_arr, bar_attributes, normalised=False,
         plt.savefig(save, bbox_inches='tight')
     if show:
         plt.show(fig, block=False)
+    return fig, fig.axes
 
 
 def _histogram_discrete_w_line(bar_arr, bar_attributes, line_function, normalised=False,
-                            x_label=None, x_lim=None, x_log=False,
-                            y_label=None, y_lim=None, y_log=False,
+                            xlabel=None, xlim=None, xlog=False,
+                            ylabel=None, ylim=None, ylog=False,
                             show=True, save=None):
     """Private plotting utility function."""
 
@@ -2146,12 +2195,12 @@ def _histogram_discrete_w_line(bar_arr, bar_attributes, line_function, normalise
 
     # plotting of a histogram
     try:
-        bar_min = min(np.amin(bar_arr), x_lim[0])
+        bar_min = min(np.amin(bar_arr), xlim[0])
     except:
         bar_min = np.amin(bar_arr)
 
     try:
-        bar_max = max(np.amax(bar_arr), x_lim[1])
+        bar_max = max(np.amax(bar_arr), xlim[1])
     except:
         bar_max = np.amax(bar_arr)
 
@@ -2173,12 +2222,12 @@ def _histogram_discrete_w_line(bar_arr, bar_attributes, line_function, normalise
     # ax.set_xticks(bins + 0.5)
 
     # final axis setting
-    ax.set_xlim(x_lim)
-    ax.set_xlabel(x_label, color="black")
-    ax.set_xscale('log' if x_log==True else 'linear')
-    ax.set_ylim(y_lim)
-    ax.set_ylabel(y_label, color="black")
-    ax.set_yscale('log' if y_log==True else 'linear')
+    ax.set_xlim(xlim)
+    ax.set_xlabel(xlabel, color="black")
+    ax.set_xscale('log' if xlog==True else 'linear')
+    ax.set_ylim(ylim)
+    ax.set_ylabel(ylabel, color="black")
+    ax.set_yscale('log' if ylog==True else 'linear')
 
     # add legend
     legend = ax.legend(loc=0)
@@ -2190,11 +2239,12 @@ def _histogram_discrete_w_line(bar_arr, bar_attributes, line_function, normalise
         plt.savefig(save, bbox_inches='tight')
     if show:
         plt.show(fig, block=False)
+    return fig, fig.axes
 
 
 def _histogram_continuous(bar_arr, bar_attributes, normalised=False,
-                        x_label=None, x_lim=None, x_log=False,
-                        y_label=None, y_lim=None, y_log=False,
+                        xlabel=None, xlim=None, xlog=False,
+                        ylabel=None, ylim=None, ylog=False,
                         show=True, save=None):
     """Private plotting utility function."""
 
@@ -2258,12 +2308,12 @@ def _histogram_continuous(bar_arr, bar_attributes, normalised=False,
             alpha=bar_attributes[var_ind]['opacity'])
 
     # final axis setting
-    ax.set_xlim(x_lim)
-    ax.set_xlabel(x_label, color="black")
-    ax.set_xscale('log' if x_log==True else 'linear')
-    ax.set_ylim(y_lim)
-    ax.set_ylabel(y_label, color="black")
-    ax.set_yscale('log' if y_log==True else 'linear')
+    ax.set_xlim(xlim)
+    ax.set_xlabel(xlabel, color="black")
+    ax.set_xscale('log' if xlog==True else 'linear')
+    ax.set_ylim(ylim)
+    ax.set_ylabel(ylabel, color="black")
+    ax.set_yscale('log' if ylog==True else 'linear')
 
     # add legend
     legend = ax.legend(loc=0)
@@ -2275,11 +2325,12 @@ def _histogram_continuous(bar_arr, bar_attributes, normalised=False,
         plt.savefig(save, bbox_inches='tight')
     if show:
         plt.show(fig, block=False)
+    return fig, fig.axes
 
 
 def _histogram_continuous_w_line(bar_arr, bar_attributes, line_function, normalised=False,
-                                x_label=None, x_lim=None, x_log=False,
-                                y_label=None, y_lim=None, y_log=False,
+                                xlabel=None, xlim=None, xlog=False,
+                                ylabel=None, ylim=None, ylog=False,
                                 show=True, save=None):
     """Private plotting utility function."""
 
@@ -2349,12 +2400,12 @@ def _histogram_continuous_w_line(bar_arr, bar_attributes, line_function, normali
         plt.plot(x_line, y_line, label=line_label, color=line_color, linewidth=2.5)
 
     # final axis setting
-    ax.set_xlim(x_lim)
-    ax.set_xlabel(x_label, color="black")
-    ax.set_xscale('log' if x_log==True else 'linear')
-    ax.set_ylim(y_lim)
-    ax.set_ylabel(y_label, color="black")
-    ax.set_yscale('log' if y_log==True else 'linear')
+    ax.set_xlim(xlim)
+    ax.set_xlabel(xlabel, color="black")
+    ax.set_xscale('log' if xlog==True else 'linear')
+    ax.set_ylim(ylim)
+    ax.set_ylabel(ylabel, color="black")
+    ax.set_yscale('log' if ylog==True else 'linear')
 
     # add legend
     legend = ax.legend(loc=0)
@@ -2366,10 +2417,11 @@ def _histogram_continuous_w_line(bar_arr, bar_attributes, line_function, normali
         plt.savefig(save, bbox_inches='tight')
     if show:
         plt.show(fig, block=False)
+    return fig, fig.axes
 
 
-def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
-                                    y_label=None, y_lim=None, y_log=False,
+def _scatter(x_arr, y_arr, attributes, xlabel=None, xlim=None, xlog=False,
+                                    ylabel=None, ylim=None, ylog=False,
                                     show=True, save=None):
     """Private plotting utility function."""
 
@@ -2391,12 +2443,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
     # ax.set_xticks(bins + 0.5)
 
     # final axis setting
-    ax.set_xlim(x_lim)
-    ax.set_xlabel(x_label, color="black")
-    ax.set_xscale('log' if x_log==True else 'linear')
-    ax.set_ylim(y_lim)
-    ax.set_ylabel(y_label, color="black")
-    ax.set_yscale('log' if y_log==True else 'linear')
+    ax.set_xlim(xlim)
+    ax.set_xlabel(xlabel, color="black")
+    ax.set_xscale('log' if xlog==True else 'linear')
+    ax.set_ylim(ylim)
+    ax.set_ylabel(ylabel, color="black")
+    ax.set_yscale('log' if ylog==True else 'linear')
 
     # add legend
     if not attributes['label']==None:
@@ -2409,6 +2461,7 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
         plt.savefig(save, bbox_inches='tight')
     if show:
         plt.show(fig, block=False)
+    return fig, fig.axes
 
 
 ### class version (for reference) uncommented June 2020
@@ -2454,21 +2507,21 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #     def __init__(self, x_axis, y_axis, show=True, save=False):
 #         # initialise basic information
 #         try:
-#             self.x_label = x_axis['label']
-#             self.x_lim = x_axis['limits']
-#             self.x_log = x_axis['log']
+#             self.xlabel = x_axis['label']
+#             self.xlim = x_axis['limits']
+#             self.xlog = x_axis['log']
 #
-#             self.y_label = y_axis['label']
-#             self.y_lim = y_axis['limits']
-#             self.y_log = y_axis['log']
+#             self.ylabel = y_axis['label']
+#             self.ylim = y_axis['limits']
+#             self.ylog = y_axis['log']
 #         except:
-#             self.x_label = None
-#             self.x_lim = None
-#             self.x_log = None
+#             self.xlabel = None
+#             self.xlim = None
+#             self.xlog = None
 #
-#             self.y_label = None
-#             self.y_lim = None
-#             self.y_log = None
+#             self.ylabel = None
+#             self.ylim = None
+#             self.ylog = None
 #
 #         self.plot_show = show
 #         self.plot_save = save
@@ -2505,7 +2558,7 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #         # nx.draw_networkx_nodes(net_graphviz, pos, node_color=node_colors,
 #         #                     node_size=node_sizes)
 #         #
-#         # nx.draw_networkx_labels(net_graphviz, pos,
+#         # nx.draw_networkxlabels(net_graphviz, pos,
 #         #               labels=node_labels, font_color='black') # , font_size=0.5
 #         #
 #         # # draw network edges
@@ -2758,12 +2811,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #         plt.plot(samples, alpha=0.75)
 #
 #         # final axis setting
-#         ax.set_xlim(self.x_lim)
-#         ax.set_xlabel(self.x_label, color="black")
-#         ax.set_xscale('log' if self.x_log==True else 'linear')
-#         ax.set_ylim(self.y_lim)
-#         ax.set_ylabel(self.y_label, color="black")
-#         ax.set_yscale('log' if self.y_log==True else 'linear')
+#         ax.set_xlim(self.xlim)
+#         ax.set_xlabel(self.xlabel, color="black")
+#         ax.set_xscale('log' if self.xlog==True else 'linear')
+#         ax.set_ylim(self.ylim)
+#         ax.set_ylabel(self.ylabel, color="black")
+#         ax.set_yscale('log' if self.ylog==True else 'linear')
 #
 #         plt.xlabel('sample iteration')
 #         plt.ylabel('parameter value')
@@ -2827,12 +2880,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #     #         #                     color=var_color, alpha=0.75)
 #     #
 #     #     # final axis setting
-#     #     ax.set_xlim(self.x_lim)
-#     #     ax.set_xlabel(self.x_label, color="black")
-#     #     ax.set_xscale('log' if self.x_log==True else 'linear')
-#     #     ax.set_ylim(self.y_lim)
-#     #     ax.set_ylabel(self.y_label, color="black")
-#     #     ax.set_yscale('log' if self.y_log==True else 'linear')
+#     #     ax.set_xlim(self.xlim)
+#     #     ax.set_xlabel(self.xlabel, color="black")
+#     #     ax.set_xscale('log' if self.xlog==True else 'linear')
+#     #     ax.set_ylim(self.ylim)
+#     #     ax.set_ylabel(self.ylabel, color="black")
+#     #     ax.set_yscale('log' if self.ylog==True else 'linear')
 #     #
 #     #     # add legend
 #     #     legend = ax.legend(loc=0)
@@ -2846,8 +2899,8 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #     #     plt.close()
 #
 #     def line_evolv(self, x_arr, y_line, var_attributes,
-#                     x_label=None, x_lim=None, x_log=False,
-#                     y_label=None, y_lim=None, y_log=False,
+#                     xlabel=None, xlim=None, xlog=False,
+#                     ylabel=None, ylim=None, ylog=False,
 #                     show=True, save=None):
 #         """
 #         Plot multiple evolving (e.g. over time) lines.
@@ -2896,12 +2949,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #                             color=var_color, linewidth=2.5, zorder=2000)
 #
 #         # final axis setting
-#         ax.set_xlim(x_lim)
-#         ax.set_xlabel(x_label, color="black")
-#         ax.set_xscale('log' if x_log==True else 'linear')
-#         ax.set_ylim(y_lim)
-#         ax.set_ylabel(y_label, color="black")
-#         ax.set_yscale('log' if y_log==True else 'linear')
+#         ax.set_xlim(xlim)
+#         ax.set_xlabel(xlabel, color="black")
+#         ax.set_xscale('log' if xlog==True else 'linear')
+#         ax.set_ylim(ylim)
+#         ax.set_ylabel(ylabel, color="black")
+#         ax.set_yscale('log' if ylog==True else 'linear')
 #
 #         # add legend
 #         legend = ax.legend(loc=0)
@@ -2965,12 +3018,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #                         capsize=4.0, elinewidth=2.5, markeredgewidth=2.5, markersize=4.5)
 #
 #         # final axis setting
-#         ax.set_xlim(self.x_lim)
-#         ax.set_xlabel(self.x_label, color="black")
-#         ax.set_xscale('log' if self.x_log==True else 'linear')
-#         ax.set_ylim(self.y_lim)
-#         ax.set_ylabel(self.y_label, color="black")
-#         ax.set_yscale('log' if self.y_log==True else 'linear')
+#         ax.set_xlim(self.xlim)
+#         ax.set_xlabel(self.xlabel, color="black")
+#         ax.set_xscale('log' if self.xlog==True else 'linear')
+#         ax.set_ylim(self.ylim)
+#         ax.set_ylabel(self.ylabel, color="black")
+#         ax.set_yscale('log' if self.ylog==True else 'linear')
 #
 #         # add legend
 #         legend = ax.legend(loc=0)
@@ -3053,12 +3106,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #                             color=var_color, linewidth=2.5, zorder=2000)
 #
 #         # final axis setting
-#         ax.set_xlim(self.x_lim)
-#         ax.set_xlabel(self.x_label, color="black")
-#         ax.set_xscale('log' if self.x_log==True else 'linear')
-#         ax.set_ylim(self.y_lim)
-#         ax.set_ylabel(self.y_label, color="black")
-#         ax.set_yscale('log' if self.y_log==True else 'linear')
+#         ax.set_xlim(self.xlim)
+#         ax.set_xlabel(self.xlabel, color="black")
+#         ax.set_xscale('log' if self.xlog==True else 'linear')
+#         ax.set_ylim(self.ylim)
+#         ax.set_ylabel(self.ylabel, color="black")
+#         ax.set_yscale('log' if self.ylog==True else 'linear')
 #
 #         # add legend
 #         legend = ax.legend(loc=0)
@@ -3151,12 +3204,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #                         markeredgewidth=2.5, markersize=4.5, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
 #
 #         # final axis setting
-#         ax.set_xlim(self.x_lim)
-#         ax.set_xlabel(self.x_label, color="black")
-#         ax.set_xscale('log' if self.x_log==True else 'linear')
-#         ax.set_ylim(self.y_lim)
-#         ax.set_ylabel(self.y_label, color="black")
-#         ax.set_yscale('log' if self.y_log==True else 'linear')
+#         ax.set_xlim(self.xlim)
+#         ax.set_xlabel(self.xlabel, color="black")
+#         ax.set_xscale('log' if self.xlog==True else 'linear')
+#         ax.set_ylim(self.ylim)
+#         ax.set_ylabel(self.ylabel, color="black")
+#         ax.set_yscale('log' if self.ylog==True else 'linear')
 #
 #         # add legend
 #         legend = ax.legend(loc=0)
@@ -3250,12 +3303,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #                         markeredgewidth=2.5, markersize=4.5, markeredgecolor='lightgrey', color='lightgrey', zorder=2000)
 #
 #         # final axis setting
-#         ax.set_xlim(self.x_lim)
-#         ax.set_xlabel(self.x_label, color="black")
-#         ax.set_xscale('log' if self.x_log==True else 'linear')
-#         ax.set_ylim(self.y_lim)
-#         ax.set_ylabel(self.y_label, color="black")
-#         ax.set_yscale('log' if self.y_log==True else 'linear')
+#         ax.set_xlim(self.xlim)
+#         ax.set_xlabel(self.xlabel, color="black")
+#         ax.set_xscale('log' if self.xlog==True else 'linear')
+#         ax.set_ylim(self.ylim)
+#         ax.set_ylabel(self.ylabel, color="black")
+#         ax.set_yscale('log' if self.ylog==True else 'linear')
 #
 #         # add legend
 #         legend = ax.legend(loc=0)
@@ -3320,12 +3373,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #     #                     markersize=5, markeredgecolor=dot_color, color=dot_color, ecolor='lightgrey')
 #     #
 #     #     # final axis setting
-#     #     ax.set_xlim(self.x_lim)
-#     #     ax.set_xlabel(self.x_label, color="black")
-#     #     ax.set_xscale('log' if self.x_log==True else 'linear')
-#     #     ax.set_ylim(self.y_lim)
-#     #     ax.set_ylabel(self.y_label, color="black")
-#     #     ax.set_yscale('log' if self.y_log==True else 'linear')
+#     #     ax.set_xlim(self.xlim)
+#     #     ax.set_xlabel(self.xlabel, color="black")
+#     #     ax.set_xscale('log' if self.xlog==True else 'linear')
+#     #     ax.set_ylim(self.ylim)
+#     #     ax.set_ylabel(self.ylabel, color="black")
+#     #     ax.set_yscale('log' if self.ylog==True else 'linear')
 #     #
 #     #     if x_ticks != None:
 #     #         plt.xticks([i + 1 for i in range(y_arr_err.shape[0])],
@@ -3389,12 +3442,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #                         color=attributes[dot_ind][1], ecolor='lightgrey')
 #
 #         # final axis setting
-#         ax.set_xlim(self.x_lim)
-#         ax.set_xlabel(self.x_label, color="black")
-#         ax.set_xscale('log' if self.x_log==True else 'linear')
-#         ax.set_ylim(self.y_lim)
-#         ax.set_ylabel(self.y_label, color="black")
-#         ax.set_yscale('log' if self.y_log==True else 'linear')
+#         ax.set_xlim(self.xlim)
+#         ax.set_xlabel(self.xlabel, color="black")
+#         ax.set_xscale('log' if self.xlog==True else 'linear')
+#         ax.set_ylim(self.ylim)
+#         ax.set_ylabel(self.ylabel, color="black")
+#         ax.set_yscale('log' if self.ylog==True else 'linear')
 #
 #         if x_ticks != None:
 #             plt.xticks([i + 1 for i in range(y_arr_err.shape[0])],
@@ -3445,12 +3498,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #
 #         # plotting of a histogram
 #         try:
-#             bar_min = min(np.amin(bar_arr), self.x_lim[0])
+#             bar_min = min(np.amin(bar_arr), self.xlim[0])
 #         except:
 #             bar_min = np.amin(bar_arr)
 #
 #         try:
-#             bar_max = max(np.amax(bar_arr), self.x_lim[1])
+#             bar_max = max(np.amax(bar_arr), self.xlim[1])
 #         except:
 #             bar_max = np.amax(bar_arr)
 #
@@ -3468,12 +3521,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #         # ax.set_xticks(bins + 0.5)
 #
 #         # final axis setting
-#         ax.set_xlim(self.x_lim)
-#         ax.set_xlabel(self.x_label, color="black")
-#         ax.set_xscale('log' if self.x_log==True else 'linear')
-#         ax.set_ylim(self.y_lim)
-#         ax.set_ylabel(self.y_label, color="black")
-#         ax.set_yscale('log' if self.y_log==True else 'linear')
+#         ax.set_xlim(self.xlim)
+#         ax.set_xlabel(self.xlabel, color="black")
+#         ax.set_xscale('log' if self.xlog==True else 'linear')
+#         ax.set_ylim(self.ylim)
+#         ax.set_ylabel(self.ylabel, color="black")
+#         ax.set_yscale('log' if self.ylog==True else 'linear')
 #
 #         # add legend
 #         legend = ax.legend(loc=0)
@@ -3526,12 +3579,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #
 #         # plotting of a histogram
 #         try:
-#             bar_min = min(np.amin(bar_arr), self.x_lim[0])
+#             bar_min = min(np.amin(bar_arr), self.xlim[0])
 #         except:
 #             bar_min = np.amin(bar_arr)
 #
 #         try:
-#             bar_max = max(np.amax(bar_arr), self.x_lim[1])
+#             bar_max = max(np.amax(bar_arr), self.xlim[1])
 #         except:
 #             bar_max = np.amax(bar_arr)
 #
@@ -3553,12 +3606,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #         # ax.set_xticks(bins + 0.5)
 #
 #         # final axis setting
-#         ax.set_xlim(self.x_lim)
-#         ax.set_xlabel(self.x_label, color="black")
-#         ax.set_xscale('log' if self.x_log==True else 'linear')
-#         ax.set_ylim(self.y_lim)
-#         ax.set_ylabel(self.y_label, color="black")
-#         ax.set_yscale('log' if self.y_log==True else 'linear')
+#         ax.set_xlim(self.xlim)
+#         ax.set_xlabel(self.xlabel, color="black")
+#         ax.set_xscale('log' if self.xlog==True else 'linear')
+#         ax.set_ylim(self.ylim)
+#         ax.set_ylabel(self.ylabel, color="black")
+#         ax.set_yscale('log' if self.ylog==True else 'linear')
 #
 #         # add legend
 #         legend = ax.legend(loc=0)
@@ -3634,12 +3687,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #                 alpha=bar_attributes[var_ind]['opacity'])
 #
 #         # final axis setting
-#         ax.set_xlim(self.x_lim)
-#         ax.set_xlabel(self.x_label, color="black")
-#         ax.set_xscale('log' if self.x_log==True else 'linear')
-#         ax.set_ylim(self.y_lim)
-#         ax.set_ylabel(self.y_label, color="black")
-#         ax.set_yscale('log' if self.y_log==True else 'linear')
+#         ax.set_xlim(self.xlim)
+#         ax.set_xlabel(self.xlabel, color="black")
+#         ax.set_xscale('log' if self.xlog==True else 'linear')
+#         ax.set_ylim(self.ylim)
+#         ax.set_ylabel(self.ylabel, color="black")
+#         ax.set_yscale('log' if self.ylog==True else 'linear')
 #
 #         # add legend
 #         legend = ax.legend(loc=0)
@@ -3721,12 +3774,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #             plt.plot(x_line, y_line, label=line_label, color=line_color, linewidth=2.5)
 #
 #         # final axis setting
-#         ax.set_xlim(self.x_lim)
-#         ax.set_xlabel(self.x_label, color="black")
-#         ax.set_xscale('log' if self.x_log==True else 'linear')
-#         ax.set_ylim(self.y_lim)
-#         ax.set_ylabel(self.y_label, color="black")
-#         ax.set_yscale('log' if self.y_log==True else 'linear')
+#         ax.set_xlim(self.xlim)
+#         ax.set_xlabel(self.xlabel, color="black")
+#         ax.set_xscale('log' if self.xlog==True else 'linear')
+#         ax.set_ylim(self.ylim)
+#         ax.set_ylabel(self.ylabel, color="black")
+#         ax.set_yscale('log' if self.ylog==True else 'linear')
 #
 #         # add legend
 #         legend = ax.legend(loc=0)
@@ -3762,12 +3815,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #         # ax.set_xticks(bins + 0.5)
 #
 #         # final axis setting
-#         ax.set_xlim(self.x_lim)
-#         ax.set_xlabel(self.x_label, color="black")
-#         ax.set_xscale('log' if self.x_log==True else 'linear')
-#         ax.set_ylim(self.y_lim)
-#         ax.set_ylabel(self.y_label, color="black")
-#         ax.set_yscale('log' if self.y_log==True else 'linear')
+#         ax.set_xlim(self.xlim)
+#         ax.set_xlabel(self.xlabel, color="black")
+#         ax.set_xscale('log' if self.xlog==True else 'linear')
+#         ax.set_ylim(self.ylim)
+#         ax.set_ylabel(self.ylabel, color="black")
+#         ax.set_yscale('log' if self.ylog==True else 'linear')
 #
 #         # add legend
 #         if not attributes['label']==None:
@@ -3849,12 +3902,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #     #     # plt.axhline(0, color='grey')
 #     #
 #     #     # final axis setting
-#     #     ax.set_xlim(self.x_lim)
-#     #     ax.set_xlabel(self.x_label, color="black")
-#     #     ax.set_xscale('log' if self.x_log==True else 'linear')
-#     #     ax.set_ylim(self.y_lim)
-#     #     ax.set_ylabel(self.y_label, color="black")
-#     #     ax.set_yscale('log' if self.y_log==True else 'linear')
+#     #     ax.set_xlim(self.xlim)
+#     #     ax.set_xlabel(self.xlabel, color="black")
+#     #     ax.set_xscale('log' if self.xlog==True else 'linear')
+#     #     ax.set_ylim(self.ylim)
+#     #     ax.set_ylabel(self.ylabel, color="black")
+#     #     ax.set_yscale('log' if self.ylog==True else 'linear')
 #     #
 #     #     # add x axis ticks
 #     #     plt.xticks([val_ind + 1 for val_ind in range(val_obj.shape[0])],
@@ -3914,12 +3967,12 @@ def _scatter(x_arr, y_arr, attributes, x_label=None, x_lim=None, x_log=False,
 #     #         label=bar_attributes['label'])
 #     #
 #     #     # final axis setting
-#     #     ax.set_xlim(self.x_lim)
-#     #     ax.set_xlabel(self.x_label, color="black")
-#     #     ax.set_xscale('log' if self.x_log==True else 'linear')
-#     #     ax.set_ylim(self.y_lim)
-#     #     ax.set_ylabel(self.y_label, color="black")
-#     #     ax.set_yscale('log' if self.y_log==True else 'linear')
+#     #     ax.set_xlim(self.xlim)
+#     #     ax.set_xlabel(self.xlabel, color="black")
+#     #     ax.set_xscale('log' if self.xlog==True else 'linear')
+#     #     ax.set_ylim(self.ylim)
+#     #     ax.set_ylabel(self.ylabel, color="black")
+#     #     ax.set_yscale('log' if self.ylog==True else 'linear')
 #     #
 #     #     # add legend
 #     #     legend = ax.legend(loc=0)
