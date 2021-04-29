@@ -1,10 +1,46 @@
 
+"""
+The network module contains the Network class for the symbolic handling of
+network topologies and waiting time structures, to be used for downstream
+simulation and estimation/selection methods.
+"""
+
 import networkx as nx
 from copy import deepcopy
 import warnings
 
 class Network(object):
-    """docstring for ."""
+    """Class for defining a symbolic network with main and hidden layer.
+
+    Main method is `structure` which requires a specific `net_structure` input.
+    For a typical use case, the `structure` method is the only method to call;
+    `structure` is a wrapper method
+    for the other class methods, see there for more documentation.
+
+    Parameters
+    ----------
+    net_name : str
+        A name for the network object.
+
+    Returns
+    -------
+    net : memocell.network.Network
+        Initialised memocell network object. Typically, continue with the
+        `net.structure` method to further specify the network.
+
+    Examples
+    --------
+    >>> import memocell as me
+    >>> import numpy as np
+    >>> # network with symmetric division reaction
+    >>> # of a 5-step Erlang waiting time and mean
+    >>> # division time 1/l
+    >>> t = [{'start': 'X_t', 'end': 'X_t',
+    >>>  'rate_symbol': 'l',
+    >>>  'type': 'S -> S + S', 'reaction_steps': 5}]
+    >>> net = me.Network('net_div_erl5')
+    >>> net.structure(t)
+    """
 
     def __init__(self, net_name):
         # set a name for a Network class instance
@@ -39,7 +75,77 @@ class Network(object):
 
     # validate user input and define the network structure
     def structure(self, net_structure):
-        """docstring for ."""
+        """Main method of the network class to define the network structure
+        with main and hidden layer. Updates a network object in place,
+        that can then be passed on to simulation or estimation methods.
+
+        `Note`: The basic reaction module specifies an Erlang-type waiting time (`reaction_steps`
+        as shape parameter and `1/rate_symbol` as mean waiting time).
+        The standard Markov model is obtained when `reaction_steps` is
+        set to `1` for all reactions of the network.
+        More advanced phase-type waiting times can be generated
+        by specifying two or more Erlang-type channels in parallel (define two or more
+        reactions of the same `type` between the same `start` and `end` main nodes).
+        Alternatively/in addition, one can use simulation variables
+        (in `simulate` and `estimate` methods) to sum up a set of main nodes to
+        a quantity of interest; this allows to specify arbitrary transition schemes.
+
+        `Note`: `net.structure` fills many attributes of a `net` instance that can be
+        accessed afterwards. A lot of information is also contained in the edges of the
+        networkx MultiDiGraph objects (main and hidden layer), accessible via
+        `net.net_main.edges(data=True)` and `net.net_hidden.edges(data=True)`.
+
+        `Note`: The reaction types below are interpreted in the context of cell
+        differentiation pathways; of course, these reactions (and MemoCell as a whole)
+        can be equally applied to molecular reactions etc.
+
+        Parameters
+        ----------
+        net_structure : list of dict
+            Network structure specifying the topology of interlinked reaction modules of
+            different `types` and their waiting times.
+            Each reaction is specified as a `dict` in the `list`, connecting main nodes
+            with `start` and `end`, and identified with a symbolic `rate_symbol`
+            and the `reaction_steps` on the hidden Markov layer
+            (where `reaction_steps` is the shape parameter and `1/rate` is the
+            mean waiting time for isolated Erlang-type reactions).
+            Available reaction types are
+
+            - `'S -> E'` (cell differentiation),
+
+            - `'S -> S + S'` (symmetric self-renewing division),
+
+            - `'S -> S + E'` (asymmetric division),
+
+            - `'S -> E + E'` (symmetric differentiating division),
+
+            - `'S ->'` (efflux or cell death) and
+
+            - `'-> E'` (influx or birth),
+
+            where `S` corresponds to the `start` node and `E` corresponds to the
+            `end` node. If a reaction does not have `S` or `E` (influx and efflux reactions),
+            use `'env'` (the general environment node) for `start` and `end` node, respectively.
+            If multiple reactions shall share the same reaction rate,
+            use the same `rate_symbol`.
+
+        Returns
+        -------
+        None
+
+        Examples
+        --------
+        >>> import memocell as me
+        >>> import numpy as np
+        >>> # network with symmetric division reaction
+        >>> # of a 5-step Erlang waiting time and mean
+        >>> # division time 1/l
+        >>> t = [{'start': 'X_t', 'end': 'X_t',
+        >>>  'rate_symbol': 'l',
+        >>>  'type': 'S -> S + S', 'reaction_steps': 5}]
+        >>> net = me.Network('net_div_erl5')
+        >>> net.structure(t)
+        """
 
         # validate the user input
         self._validate_net_structure(net_structure)
@@ -66,7 +172,49 @@ class Network(object):
 
 
     def create_net_modules_and_identifiers(self, net_structure):
-        """docstring for ."""
+        """Creates network modules and identifiers for nodes and rates.
+
+        `Note`: After defining a network via the `net.structure` method,
+        one can simply access the output at `net.net_modules`,
+        `net.net_nodes_identifier` and `net.net_rates_identifier`
+        for the network instance `net`.
+
+        Parameters
+        ----------
+        net_structure : list of dict
+            Network structure specifying the topology and waiting times on the hidden
+            Markov layer. See `structure` method for more information.
+
+        Returns
+        -------
+        net_modules : list of dict
+            Reaction modules of a network with identifier.
+        net_nodes_identifier : dict
+            `Z`-Identifier for the main nodes.
+        net_rates_identifier : dict
+            `theta`-Identifier for the symbolic rate parameters.
+
+        Examples
+        --------
+        >>> import memocell as me
+        >>> # network with symmetric division reaction
+        >>> # of a 5-step Erlang waiting time and mean
+        >>> # division time 1/l
+        >>> t = [{'start': 'X_t', 'end': 'X_t',
+        >>>  'rate_symbol': 'l',
+        >>>  'type': 'S -> S + S', 'reaction_steps': 5}]
+        >>> net = me.Network('net_div_erl5')
+        >>> net.create_net_modules_and_identifiers(t)
+        ([{'module': 'module_0',
+           'start-end': ('X_t', 'X_t'),
+           'start-end_ident': ('Z_0', 'Z_0'),
+           'sym_rate': 'l',
+           'sym_rate_ident': 'theta_0',
+           'type': 'S -> S + S',
+           'module_steps': 5}],
+         {'Z_0': 'X_t'},
+         {'theta_0': 'l'})
+         """
 
         # create neutral identifiers for rate_symbol's and nodes
         ident_rates = self.create_rate_identifiers(net_structure)
@@ -96,7 +244,28 @@ class Network(object):
 
 
     def structure_net_main(self, net, net_modules):
-        """docstring for ."""
+        """Updates a networkx MultiDiGraph for the main (observable) layer
+        of a memocell network.
+
+        `Note`: After defining a network via the `net.structure` method,
+        there is no need to run this. One can simply access the output at
+        `net.net_main` for the network instance `net`.
+
+        Parameters
+        ----------
+        net : networkx.classes.multidigraph.MultiDiGraph
+            An (empty) initialised networkx MultiDiGraph object.
+        net_modules : list of dict
+            Reaction modules of a network with identifier. As generated by the
+            `create_net_modules_and_identifiers` method and available at
+            `net.net_modules`.
+
+        Returns
+        -------
+        net_main : networkx.classes.multidigraph.MultiDiGraph
+            The main (observable) layer of a memocell network.
+            Typically available at `net.net_main`.
+        """
 
         # copy net to create net_main
         net_main = net.copy()
@@ -117,7 +286,28 @@ class Network(object):
         return net_main
 
     def structure_net_hidden(self, net, net_modules):
-        """docstring for ."""
+        """Updates a networkx MultiDiGraph for the hidden (Markov) layer
+        of a memocell network.
+
+        `Note`: After defining a network via the `net.structure` method,
+        there is no need to run this. One can simply access the output at
+        `net.net_hidden` for the network instance `net`.
+
+        Parameters
+        ----------
+        net : networkx.classes.multidigraph.MultiDiGraph
+            An (empty) initialised networkx MultiDiGraph object.
+        net_modules : list of dict
+            Reaction modules of a network with identifier. As generated by the
+            `create_net_modules_and_identifiers` method and available at
+            `net.net_modules`.
+
+        Returns
+        -------
+        net_hidden : networkx.classes.multidigraph.MultiDiGraph
+            The hidden (Markov) layer of a memocell network.
+            Typically available at `net.net_hidden`.
+        """
 
         # copy net to create net_hidden
         net_hidden = net.copy()
@@ -166,7 +356,19 @@ class Network(object):
 
     @staticmethod
     def create_theta_order(net_modules):
-        """docstring for ."""
+        """Creates an order of the symbolic rate parameters in their `theta`-identifier form.
+
+        `Note`: After defining a network via the `net.structure` method,
+        there is no need to run this. One can simply access the output at
+        `net.net_theta_symbolic`.
+
+        Examples
+        --------
+        >>> # after defining some network by
+        >>> # net.structure(...)
+        >>> net.net_theta_symbolic
+        ['theta_0', 'theta_1']
+        """
 
         # read out all symbolic rates of network modules (their theta identifier),
         # return sorted list without duplicates
@@ -175,7 +377,30 @@ class Network(object):
 
     @staticmethod
     def create_node_order(network_nodes):
-        """docstring for ."""
+        """Creates an order of the symbolic nodes in the main or hidden layer
+        in their `Z`-identifier form; includes univariate order and order of pairs.
+
+        `Note`: After defining a network via the `net.structure` method,
+        there is no need to run this. One can simply access the output at
+        `net.net_main_node_order` and `net.net_hidden_node_order`.
+        These attributes are later used to define the moment and variable order
+        for moment and Gillespie simulations, respectively.
+
+        Examples
+        --------
+        >>> # after defining some network by
+        >>> # net.structure(...)
+        >>> net.net_main_node_order
+        [[('Z_0',), ('Z_1',)], [('Z_0', 'Z_0'), ('Z_0', 'Z_1'), ('Z_1', 'Z_1')]]
+        >>> net.net_hidden_node_order
+        [[('Z_0__centric',), ('Z_0__module_0__0',), ('Z_1__centric',)],
+         [('Z_0__centric', 'Z_0__centric'),
+          ('Z_0__centric', 'Z_0__module_0__0'),
+          ('Z_0__centric', 'Z_1__centric'),
+          ('Z_0__module_0__0', 'Z_0__module_0__0'),
+          ('Z_0__module_0__0', 'Z_1__centric'),
+          ('Z_1__centric', 'Z_1__centric')]]
+        """
 
         net_node_order = list()
 
@@ -199,7 +424,20 @@ class Network(object):
 
     @staticmethod
     def count_net_main_nodes(net_main_nodes):
-        """docstring for ."""
+        """Counts the number of main nodes for all main node identifiers;
+        identifier for the environment node is always included.
+
+        `Note`: After defining a network via the `net.structure` method,
+        there is no need to run this. One can simply access the output at
+        `net.net_main_node_numbers`.
+
+        Examples
+        --------
+        >>> # after defining some network by
+        >>> # net.structure(...)
+        >>> net.net_main_node_numbers
+        {'Z_env': 0, 'Z_0': 1, 'Z_1': 1}
+        """
 
         # initialise and add Z_env in any case with zero counts
         net_main_node_numbers = dict()
@@ -215,7 +453,20 @@ class Network(object):
 
     @staticmethod
     def count_net_hidden_nodes(net_hidden_nodes):
-        """docstring for ."""
+        """Counts the number of hidden nodes for all main node identifiers;
+        identifier for the environment node is always included.
+
+        `Note`: After defining a network via the `net.structure` method,
+        there is no need to run this. One can simply access the output at
+        `net.net_hidden_node_numbers`.
+
+        Examples
+        --------
+        >>> # after defining some network by
+        >>> # net.structure(...)
+        >>> net.net_hidden_node_numbers
+        {'Z_env': 0, 'Z_0': 2, 'Z_1': 1}
+        """
 
         # initialise and add Z_env in any case with zero counts
         net_hidden_node_numbers = dict()
@@ -233,7 +484,23 @@ class Network(object):
 
     @staticmethod
     def create_module_nodes(start_main_node, end_main_node, module_ident, module_steps):
-        """docstring for ."""
+        """Creates the hidden layer nodes in `Z`-identifier form for an
+        Erlang-type reaction/module channel (with `module_steps` as shape parameter).
+
+        `Note`: There is no need to run this manually, this method is run automatically
+        during the main method `structure` (as part of `structure_net_hidden`).
+
+        Examples
+        --------
+        >>> net = me.Network('my_net')
+        >>> net.create_module_nodes('Z_1', 'Z_2', 'module_2', 5)
+        ['Z_1__centric',
+         'Z_1__module_2__0',
+         'Z_1__module_2__1',
+         'Z_1__module_2__2',
+         'Z_1__module_2__3',
+         'Z_2__centric']
+        """
 
         # create the intermediate_nodes if they exist (i.e. if steps > 1)
         intermediate_nodes = list()
@@ -250,7 +517,26 @@ class Network(object):
 
     @staticmethod
     def create_module_reaction_types(module_type, module_steps):
-        """docstring for ."""
+        """Creates the hidden layer reaction types (Markovian reaction with
+        exponential waiting times) for an Erlang-type reaction/module channel
+        of type `module_type` (on the non-Markovian observable layer;
+        `module_steps` as Erlang shape parameter).
+
+        `Note`: For Erlang-type reactions typically all but the last transition are
+        unobservable transitions, as they do not affect the variable state
+        on the observable layer; only the last
+        transition into the absorbing state realises the desired state change
+        on the observable layer.
+
+        `Note`: There is no need to run this manually, this method is run automatically
+        during the main method `structure` (as part of `structure_net_hidden`).
+
+        Examples
+        --------
+        >>> net = me.Network('my_net')
+        >>> net.create_module_reaction_types('S -> S + S', 5)
+        ['S -> E', 'S -> E', 'S -> E', 'S -> E', 'S -> E + E']
+        """
 
         # ask for the supported module reaction type and set the list of the
         # reac_types for net_hidden
@@ -284,7 +570,19 @@ class Network(object):
 
     @staticmethod
     def create_rate_identifiers(net_structure):
-        """docstring for ."""
+        """Creates the unique `theta`-identifiers and mapping for the rate parameters.
+
+        `Note`: After defining a network via the `net.structure` method,
+        there is no need to run this. One can simply access the output at
+        `net.net_rates_identifier`.
+
+        Examples
+        --------
+        >>> # after defining some network by
+        >>> # net.structure(...)
+        >>> net.net_rates_identifier
+        {'theta_0': 'd_xy', 'theta_1': 'l_y'}
+        """
 
         # get all rate_symbol's from a network, remove duplicates and sort strings
         rates_sorted = sorted(set([module['rate_symbol'] for module in net_structure]))
@@ -297,7 +595,19 @@ class Network(object):
 
     @staticmethod
     def create_node_identifiers(net_structure):
-        """docstring for ."""
+        """Creates the unique `Z`-identifiers and mapping for the main nodes.
+
+        `Note`: After defining a network via the `net.structure` method,
+        there is no need to run this. One can simply access the output at
+        `net.net_nodes_identifier`.
+
+        Examples
+        --------
+        >>> # after defining some network by
+        >>> # net.structure(...)
+        >>> net.net_nodes_identifier
+        {'Z_0': 'X_t', 'Z_1': 'Y_t'}
+        """
 
         # get all nodes from a network and sort strings
         nodes_sorted = sorted(set([module['start'] for module in net_structure] +
