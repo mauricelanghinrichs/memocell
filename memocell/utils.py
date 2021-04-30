@@ -22,10 +22,10 @@ def phase_type_pdf(alpha, A, x):
 
     Parameters
     ----------
-    alpha : 1d numpy.matrix
+    alpha : 1d numpy.ndarray
         The initial probability vector of the phase-type
         distribution (with shape `(1,m)`).
-    A : 2d numpy.matrix
+    A : 2d numpy.ndarray
         The transient generator matrix of the phase-type
         distribution (with shape `(m,m)`).
     x : 1d numpy.ndarray or array-like
@@ -40,7 +40,8 @@ def phase_type_pdf(alpha, A, x):
     ### adapted from butools "PdfFromME" and "PdfFromPH" methods
     _validate_phase_type(alpha, A)
 
-    ph_pdf = np.array([np.sum(alpha*expm(A*xv)*(-A)) for xv in x])
+    # @ is matrix mult between np.array (instead of deprecated np.matrix)
+    ph_pdf = np.array([np.sum(alpha @ expm(A*xv) @ (-A)) for xv in x])
     return ph_pdf
 
 def phase_type_from_erlang(theta, n):
@@ -70,10 +71,10 @@ def phase_type_from_erlang(theta, n):
 
     Returns
     -------
-    alpha : 1d numpy.matrix
+    alpha : 1d numpy.ndarray
         The initial probability vector of the phase-type
         distribution (with shape `(1,n)`).
-    A : 2d numpy.matrix
+    A : 2d numpy.ndarray
         The transient generator matrix of the phase-type
         distribution (with shape `(n,n)`).
     """
@@ -112,7 +113,7 @@ def phase_type_from_erlang(theta, n):
         A[i-1, i] = r
         A[i, i] = -r
 
-    return np.matrix(alpha), np.matrix(A)
+    return alpha, A
 
 def phase_type_from_parallel_erlang2(theta1, theta2, n1, n2):
     """Returns initial probabilities :math:`\\alpha` and generator matrix :math:`A`
@@ -142,10 +143,10 @@ def phase_type_from_parallel_erlang2(theta1, theta2, n1, n2):
 
     Returns
     -------
-    alpha : 1d numpy.matrix
+    alpha : 1d numpy.ndarray
         The initial probability vector of the phase-type
         distribution (with shape `(1,m)` where :math:`m=n_1+n_2-1`).
-    A : 2d numpy.matrix
+    A : 2d numpy.ndarray
         The transient generator matrix of the phase-type
         distribution (with shape `(m,m)` where :math:`m=n_1+n_2-1`).
     """
@@ -195,7 +196,7 @@ def phase_type_from_parallel_erlang2(theta1, theta2, n1, n2):
         A[i, inext] = r2
         A[inext, inext] = -r2
 
-    return np.matrix(alpha), np.matrix(A)
+    return alpha, A
 
 def phase_type_from_parallel_erlang3(theta1, theta2, theta3, n1, n2, n3):
     """Returns initial probabilities :math:`\\alpha` and generator matrix :math:`A`
@@ -230,10 +231,10 @@ def phase_type_from_parallel_erlang3(theta1, theta2, theta3, n1, n2, n3):
 
     Returns
     -------
-    alpha : 1d numpy.matrix
+    alpha : 1d numpy.ndarray
         The initial probability vector of the phase-type
         distribution (with shape `(1,m)` where :math:`m=n_1+n_2+n_3-2`).
-    A : 2d numpy.matrix
+    A : 2d numpy.ndarray
         The transient generator matrix of the phase-type
         distribution (with shape `(m,m)` where :math:`m=n_1+n_2+n_3-2`).
     """
@@ -290,7 +291,7 @@ def phase_type_from_parallel_erlang3(theta1, theta2, theta3, n1, n2, n3):
         A[i, inext] = r3
         A[inext, inext] = -r3
 
-    return np.matrix(alpha), np.matrix(A)
+    return alpha, A
 
 def _validate_phase_type(alpha, A, prec=1e-6):
     """Private validation method. Adapted from butools."""
@@ -302,8 +303,8 @@ def _validate_phase_type(alpha, A, prec=1e-6):
     #     raise Exception("PdfFromME: Input is not a valid ME representation!")
 
     ### check initial probability vector
-    if not isinstance(alpha, np.matrix):
-        raise TypeError('Numpy matrix expected for alpha.')
+    if not isinstance(alpha, np.ndarray):
+        raise TypeError('Numpy array expected for alpha.')
 
     if len(alpha.shape)<2:
         raise ValueError('Shape of (1,m) expected for alpha.')
@@ -317,8 +318,8 @@ def _validate_phase_type(alpha, A, prec=1e-6):
         raise ValueError('Alpha has a negative element.')
 
     ### check generator matrix
-    if not isinstance(A, np.matrix):
-        raise TypeError('Numpy matrix expected for A.')
+    if not isinstance(A, np.ndarray):
+        raise TypeError('Numpy array expected for A.')
 
     if A.shape[0]!=A.shape[1]:
         raise ValueError('A is not a square matrix.')
@@ -333,7 +334,7 @@ def _validate_phase_type(alpha, A, prec=1e-6):
     if np.sum(np.any(odQ))>0:
         raise ValueError('The generator A has negative off-diagonal element.')
 
-    if np.max(np.sum(A,1))>prec:
+    if np.max(np.sum(A, axis=1))>prec:
         raise ValueError('The rowsum of the transient generator A is greater than 0.')
 
     ev = la.eigvals(A)
