@@ -777,28 +777,38 @@ def selection_plot(estimation_instances, est_type='evidence',
             settings[est_name] = {'label': est_name, 'color': 'orange'}
 
     # create plotting information from estimation_instances
+    # afterwards plot by dots_w_bars utility plotting function
     if est_type=='evidence':
         ylabel = 'Log(Evidence)'
         y_arr_err, x_ticks, attributes = _dots_w_bars_evidence(estimation_instances, settings)
+        fig, axes = _dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=show_errorbar,
+                    xlabel=xlabel, xlim=xlim, xlog=xlog,
+                    ylabel=ylabel, ylim=ylim, ylog=ylog,
+                    show=show, save=save)
     elif est_type=='likelihood':
         ylabel = 'Max. Log(Likelihood)'
         y_arr_err, x_ticks, attributes = _dots_wo_bars_likelihood_max(estimation_instances, settings)
+        fig, axes = _dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=False,
+                    xlabel=xlabel, xlim=xlim, xlog=xlog,
+                    ylabel=ylabel, ylim=ylim, ylog=ylog,
+                    show=show, save=save)
     elif est_type=='bic':
         ylabel = 'BIC'
         y_arr_err, x_ticks, attributes = _dots_wo_bars_bic(estimation_instances, settings)
+        fig, axes = _dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=False,
+                    xlabel=xlabel, xlim=xlim, xlog=xlog,
+                    ylabel=ylabel, ylim=ylim, ylog=ylog,
+                    show=show, save=save)
     elif est_type=='evidence_from_bic':
         ylabel = 'Log(Evidence) [approx. from BIC]'
         y_arr_err, x_ticks, attributes = _dots_wo_bars_evidence_from_bic(estimation_instances, settings)
+        fig, axes = _dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=False,
+                    xlabel=xlabel, xlim=xlim, xlog=xlog,
+                    ylabel=ylabel, ylim=ylim, ylog=ylog,
+                    show=show, save=save)
     else:
-        warnings.warn('Unknown est_type for model selection plot; default est_type will be used')
-        ylabel = 'Log(Evidence)'
-        y_arr_err, x_ticks, attributes = _dots_w_bars_evidence(estimation_instances, settings)
+        warnings.warn('Unknown est_type for model selection plot.')
 
-    # plot by dots_w_bars utility plotting function
-    fig, axes = _dots_w_bars(y_arr_err, x_ticks, attributes, show_errorbar=show_errorbar,
-                xlabel=xlabel, xlim=xlim, xlog=xlog,
-                ylabel=ylabel, ylim=ylim, ylog=ylog,
-                show=show, save=save)
     return fig, axes
 
 

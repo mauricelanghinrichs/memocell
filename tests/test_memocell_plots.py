@@ -73,6 +73,11 @@ class TestPlotsModule(object):
         me.plots.data_hist_waiting_times_plot(data_setup, data_setup.event_all_first_cell_type_conversion, show=False)
         plt.close('all')
 
+    def test_plots_data_waiting_time_hist_no_gamma(self, data_setup):
+        data_setup.events_find_all()
+        me.plots.data_hist_waiting_times_plot(data_setup, data_setup.event_all_first_cell_type_conversion, gamma_fit=False, show=False)
+        plt.close('all')
+
     ### plot methods for moment and gillespie simulations
     @pytest.fixture()
     def sim_l2_moments_setup(self):
@@ -183,8 +188,23 @@ class TestPlotsModule(object):
         return est_res
 
     @pytest.mark.slow
-    def test_plots_sel_plot(self, est_sel_setup):
-        me.plots.selection_plot(est_sel_setup, show=False)
+    def test_plots_sel_plot_evidence(self, est_sel_setup):
+        me.plots.selection_plot(est_sel_setup, est_type='evidence', show=False)
+        plt.close('all')
+
+    @pytest.mark.slow
+    def test_plots_sel_plot_likelihood(self, est_sel_setup):
+        me.plots.selection_plot(est_sel_setup, est_type='likelihood', show=False)
+        plt.close('all')
+
+    @pytest.mark.slow
+    def test_plots_sel_plot_bic(self, est_sel_setup):
+        me.plots.selection_plot(est_sel_setup, est_type='bic', show=False)
+        plt.close('all')
+
+    @pytest.mark.slow
+    def test_plots_sel_plot_evidence_from_bic(self, est_sel_setup):
+        me.plots.selection_plot(est_sel_setup, est_type='evidence_from_bic', show=False)
         plt.close('all')
 
     @pytest.mark.slow
@@ -200,6 +220,51 @@ class TestPlotsModule(object):
     @pytest.mark.slow
     def test_plots_est_cov_plot(self, est_sel_setup):
         me.plots.est_bestfit_covariance_plot(est_sel_setup[0], show=False)
+        plt.close('all')
+
+    @pytest.mark.slow
+    def test_plots_est_mean_plot_no_band(self, est_sel_setup):
+        me.plots.est_bestfit_mean_plot(est_sel_setup[0], cred=False, show=False)
+        plt.close('all')
+
+    @pytest.mark.slow
+    def test_plots_est_var_plot_no_band(self, est_sel_setup):
+        me.plots.est_bestfit_variance_plot(est_sel_setup[0], cred=False, show=False)
+        plt.close('all')
+
+    @pytest.mark.slow
+    def test_plots_est_cov_plot_no_band(self, est_sel_setup):
+        me.plots.est_bestfit_covariance_plot(est_sel_setup[0], cred=False, show=False)
+        plt.close('all')
+
+    @pytest.mark.slow
+    def test_plots_est_mean_plot_no_data(self, est_sel_setup):
+        me.plots.est_bestfit_mean_plot(est_sel_setup[0], data=False, show=False)
+        plt.close('all')
+
+    @pytest.mark.slow
+    def test_plots_est_var_plot_no_data(self, est_sel_setup):
+        me.plots.est_bestfit_variance_plot(est_sel_setup[0], data=False, show=False)
+        plt.close('all')
+
+    @pytest.mark.slow
+    def test_plots_est_cov_plot_no_data(self, est_sel_setup):
+        me.plots.est_bestfit_covariance_plot(est_sel_setup[0], data=False, show=False)
+        plt.close('all')
+
+    @pytest.mark.slow
+    def test_plots_est_mean_plot_no_band_no_data(self, est_sel_setup):
+        me.plots.est_bestfit_mean_plot(est_sel_setup[0], data=False, cred=False, show=False)
+        plt.close('all')
+
+    @pytest.mark.slow
+    def test_plots_est_var_plot_no_band_no_data(self, est_sel_setup):
+        me.plots.est_bestfit_variance_plot(est_sel_setup[0], data=False, cred=False, show=False)
+        plt.close('all')
+
+    @pytest.mark.slow
+    def test_plots_est_cov_plot_no_band_no_data(self, est_sel_setup):
+        me.plots.est_bestfit_covariance_plot(est_sel_setup[0], data=False, cred=False, show=False)
         plt.close('all')
 
     @pytest.mark.slow
