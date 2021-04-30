@@ -14,9 +14,9 @@
 
 MemoCell - Bayesian inference of stochastic cellular processes with and without memory in Python.
 
-`` ⚠️ IMPORTANT NOTE: MemoCell is in the final stage before
+⚠️ ``IMPORTANT NOTE: MemoCell is in the final stage before
 the first official release. A biorxiv paper presenting MemoCell will also be
-released soon. Once we remove this note you are ready to go. Stay tuned❗ ⚠️ ``
+released soon. Once we remove this note you are ready to go. Stay tuned``❗ ⚠️
 
 Getting Started
 ---------------
