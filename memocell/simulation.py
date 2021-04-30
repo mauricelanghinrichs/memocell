@@ -1,8 +1,7 @@
 
 """
-copied here from estimation docs (still to check):
-think about sparse simulation variabesl of a network (does this work already?
-do I have to check for something?)
+The simulation module contains the Simulation class for moment (mean, variance,
+covariance) and stochastic simulations of any MemoCell network.
 """
 
 from .network import Network
@@ -11,7 +10,25 @@ from .simulation_lib.sim_moments import MomentsSim
 import numpy as np
 
 class Simulation(object):
-    """docstring for ."""
+    """Class for moment (mean, variance, covariance) or stochastic simulations of
+    a given network.
+
+    Main method is `simulate` which requires a network input and additional
+    simulation parameters. For a typical use case, the `simulate` method is the
+    only method to call; it is a wrapper for the other class methods,
+    see there for more documentation.
+
+    Parameters
+    ----------
+    network : memocell.network.Network
+        A memocell network object.
+
+    Returns
+    -------
+    sim : memocell.simulation.Simulation
+        Initialised memocell simulation object. Typically, continue with the
+        `sim.simulate` method to compute moment or stochastic simulations.
+    """
     def __init__(self, network):
 
         # validate network input (has to be instance of Network class) and instantiate
@@ -58,11 +75,136 @@ class Simulation(object):
                         theta_values, time_values,
                         initial_values_type, initial_gillespie=None,
                         initial_moments=None, sim_mean_only=False):
-        """docstring for .
+        """Main method of the simulation class. Computes moment (mean, variance,
+        covariance) or stochastic simulations of a given simulation object.
 
-        sim_mean_only=False
-        is only relevant for moments, will be set to true for gilespie to have
-        only simple variables list
+        `Note`: `simulation_type` specifies whether moment or stochastic; one can
+        also compute mean solutions only (use `sim_mean_only=True`). Downstream this method
+        uses objects of `MomentsSim` and `GillespieSim` classes; available at
+        `sim.sim_moments` and `sim.sim_gillespie`, respectively. Results of the simulations are
+        returned and also available at `sim.sim_moments_res` and `sim.sim_gillespie_res`.
+        Results can be plotted by `sim_mean_plot`, `sim_variance_plot`, `sim_covariance_plot` and
+        `sim_counts_plot` plotting methods.
+
+        `Note`: For a given model (network + parameters) moment and stochastic
+        simulations directly correspond to each other (of course, for consistent/identical
+        parameter choices), i.e. the mean, variance and covariance statistics
+        for a set of :math:`N` stochastic simulations converge to the exact moment
+        simulations with :math:`N → ∞`.
+
+        Parameters
+        ----------
+        simulation_type : str
+            Type of the simulation; use `'moments'` for moment and `'gillespie'`
+            for stochastic simulations, respectively.
+        simulation_variables : dict
+            Information for simulation variables with
+            `key:value=simulation variable:tuple of network main nodes`
+            dictionary pairs. The tuple of network main nodes can be used to sum
+            up multiple network nodes to one simulation variable.
+        theta_values : dict
+            Numerical values for the symbolic rate parameters as
+            `key:value=parameter:value` dictionary pairs.
+        time_values : 1d numpy.ndarray
+            Time values to simulate the model with. Moment and stochastic simulations
+            will be returned at these time values. Note that too coarse time values
+            might make some stochastic simulation events invisible; so use a dense
+            array if all events should be seen.
+        initial_values_type : str
+            Initial value type to specify the multinomial distribution scheme
+            of observable variables to the hidden variables (`'synchronous'` or
+            `'uniform'`).
+        initial_gillespie : dict, optional
+            Initial distribution specifying the counts of the main nodes for the
+            stochastic simuation (as one concrete realisation). One might want to change
+            this input, drawing from a distribution, over many successive simulation runs.
+        initial_moments : dict, optional
+            Initial values for the moments of network main nodes for the
+            moment simulation. Means are specified as
+            `key:value=(node, ):initial value (float)`,
+            variances are specified as `key:value=(node, node):initial value (float)`
+            and covariances are specified as `key:value=(node1, node2):initial value (float)`
+            dictionary pairs.
+        sim_mean_only : bool, optional
+            Only relevant for the moment simulations (is automatically set to `True`
+            for stochastic simulations). Specify `sim_mean_only=True`, if the moment
+            simulations shall be computed for the first moment (means)
+            only. If the moment simulations shall be computed for the first and
+            second moments, specify `sim_mean_only=False` (default).
+
+        Returns
+        -------
+        sim_moments_res : tuple of numpy.ndarray
+            Returned when `simulation_type='moments'`. First, second and third tuple
+            indices contain the results for mean, variance and covariance values,
+            respectively, each with shape `(#moments, #time_values)`. The moment
+            order for the variables corresponds to `sim.sim_variables_order`
+            with identifier mapping as in `sim.sim_variables_identifier`.
+            Also available at `sim.sim_moments_res`.
+        sim_gillespie_res : list of numpy.ndarray
+            Returned when `simulation_type='gillespie'`. First element of the list
+            contains the time values with shape `(#time_values, )`.
+            Second element are the simulated counts with shape
+            `(#simulation_variables, #time_values)`; the order of the variables
+            corresponds to `sim.sim_variables_identifier`. Also available
+            at `sim.sim_gillespie_res`.
+
+        Examples
+        --------
+        >>> ### moment simulation
+        >>> import memocell as me
+        >>> import numpy as np
+        >>> # network with symmetric division reaction
+        >>> # of a 5-step Erlang waiting time and mean
+        >>> # division time 1/l
+        >>> net = me.Network('net_div_erl5')
+        >>> net.structure([{'start': 'X_t', 'end': 'X_t',
+        >>>                 'rate_symbol': 'l',
+        >>>                 'type': 'S -> S + S', 'reaction_steps': 5}])
+        >>>
+        >>> # all cells start in the first node on the hidden layer
+        >>> initial_values_type = 'synchronous'
+        >>> # mean and variance at t=0 (initial_moments)
+        >>> # (consistent with the distribution for stochastic simulations below)
+        >>> initial_values = {('X_t',): 1.0, ('X_t','X_t'): 0.0}
+        >>> # rate of 0.2 implies 1/0.2=5 mean Erlang waiting time
+        >>> theta_values = {'l': 0.2}
+        >>> time_values = np.linspace(0.0, 10.0, endpoint=True, num=11)
+        >>> # our main node is also our output simulation variable
+        >>> variables = {'X_t': ('X_t', )}
+        >>>
+        >>> sim = me.Simulation(net)
+        >>> sim.simulate('moments', variables, theta_values, time_values,
+        >>>               initial_values_type, initial_moments=initial_values)
+        >>> # plots
+        >>> me.plots.sim_mean_plot(sim)
+        >>> me.plots.sim_variance_plot(sim)
+
+
+        >>> ### stochastic simulation
+        >>> import memocell as me
+        >>> import numpy as np
+        >>> # network with symmetric division reaction
+        >>> # of a 5-step Erlang waiting time and mean
+        >>> # division time 1/l
+        >>> net = me.Network('net_div_erl5')
+        >>> net.structure([{'start': 'X_t', 'end': 'X_t',
+        >>>                 'rate_symbol': 'l',
+        >>>                 'type': 'S -> S + S', 'reaction_steps': 5}])
+        >>>
+        >>> initial_values_type = 'synchronous'
+        >>> # we draw from a deterministic initial distribution of cells
+        >>> # (consistent with mean and variances from above)
+        >>> initial_values = {'X_t': 1}
+        >>> theta_values = {'l': 0.2}
+        >>> time_values = np.linspace(0.0, 10.0, endpoint=True, num=11)
+        >>> variables = {'X_t': ('X_t', )}
+        >>>
+        >>> sim = me.Simulation(net)
+        >>> sim.simulate('gillespie', variables, theta_values, time_values,
+        >>>                initial_values_type, initial_gillespie=initial_values)
+        >>> # plot (one stochastic realisation)
+        >>> me.plots.sim_counts_plot(sim)
         """
 
         # prepare simulation with some validation and setting symbolic
@@ -98,7 +240,11 @@ class Simulation(object):
     def prepare_simulation(self, simulation_type, simulation_variables,
                                 initial_values_type, initial_gillespie,
                                 initial_moments, sim_mean_only):
-        """docstring for ."""
+        """Validates user provided input and triggers preparation steps for
+        moment or stochastic simulations.
+
+        `Note`: This method is automatically run during `sim.simulate`.
+        """
         ### user input is checked and theta values (dict) are ordered
         # check user input for the simulation_type
         self._validate_simulation_type_input(simulation_type)
@@ -142,13 +288,21 @@ class Simulation(object):
                                                             self.sim_variables_identifier)
 
     def prepare_time_values(self, time_values):
-        """docstring for ."""
+        """Validates user provided `time_values` input and assigns it to
+        `sim.sim_time_values`.
+
+        `Note`: This method is automatically run during `sim.simulate`.
+        """
         # check user input for the time values
         self._validate_time_values_input(time_values)
         self.sim_time_values = time_values
 
     def prepare_theta_values(self, theta_values_dict):
-        """docstring for ."""
+        """Validates the user input for the dict of `theta_values` and returns
+        the ordered array of `theta_values` (output of `process_theta_values`, see there).
+
+        `Note`: This method is automatically run during `sim.simulate`.
+        """
         # check user input for the rate parameters (theta)
         self._validate_theta_values_input(self.net.net_rates_identifier, theta_values_dict)
 
@@ -158,7 +312,20 @@ class Simulation(object):
 
     @staticmethod
     def process_theta_values(theta_values_dict, net_rates_identifier, net_theta_symbolic):
-        """docstring for ."""
+        """Processes user provided dictionary-type `theta_values` to an ordered array
+        given the ordering of the symbolic theta parameters in the network.
+
+        `Note`: This method is automatically run during `sim.simulate`.
+
+        Examples
+        --------
+        >>> import memocell as me
+        >>> theta_values_dict = {'l': 0.06, 'd': 0.04}
+        >>> net_rates_identifier = {'theta_0': 'd', 'theta_1': 'l'}
+        >>> net_theta_symbolic = ['theta_0', 'theta_1']
+        >>> me.simulation.Simulation.process_theta_values(theta_values_dict, net_rates_identifier, net_theta_symbolic)
+        array([0.04, 0.06])
+        """
         # read out theta_values_dict (dictionary) to an ordered array of
         # parameter value according to order in net_theta_symbolic
         return np.array([theta_values_dict[net_rates_identifier[rate_id]]
@@ -166,7 +333,14 @@ class Simulation(object):
 
     @staticmethod
     def process_sim_mean_only(simulation_type, mean_only):
-        """docstring for ."""
+        """Updates the `mean_only` mode (whether simulation only requires univariate
+        variable identifiers and order) depending on the `simulation_type`; i.e. for
+        stochastic simulations (`'gillespie'`) this returns `True` by
+        construction.
+
+        `Note`: This method is automatically run during `sim.simulate`.
+        Afterwards one can simply access the output at `sim.sim_mean_only`.
+        """
         # is only relevant for moment simulation;
         # for gillespie only variables_order[0] is used thus
         # sim_mean_only has no effect but just for aesthetics we set
@@ -175,7 +349,14 @@ class Simulation(object):
         return True if simulation_type=='gillespie' else mean_only
 
     def prepare_simulation_variables(self, simulation_variables):
-        """docstring for ."""
+        """Validates the user input for the `simulation_variables` and is a wrapper
+        for `create_variables_identifiers` and `create_variables_order` methods
+        (see there).
+
+        `Note`: This method is automatically run during `sim.simulate`.
+        Afterwards one can simply access the output at `sim.sim_variables`,
+        `sim.sim_variables_identifier` and `sim.sim_variables_order`.
+        """
         # upon change of simulation output variables, or when provided for the first time,
         # set up object for the order and identification of the simulation variables
         if self.sim_variables!=simulation_variables:
@@ -197,7 +378,19 @@ class Simulation(object):
 
     @staticmethod
     def create_variables_identifiers(variables):
-        """docstring for ."""
+        """Creates `V`-identifiers for the (sorted) user provided simuation
+        `variables`.
+
+        `Note`: This method is automatically run during `sim.simulate`.
+        Afterwards one can simply access the output at `sim.sim_variables_identifier`.
+
+        Examples
+        --------
+        >>> import memocell as me
+        >>> variables = {'X_t': ('X_t', ), 'Y_t': ('Y_t', )}
+        >>> me.simulation.Simulation.create_variables_identifiers(variables)
+        {'V_0': ('X_t', ('X_t',)), 'V_1': ('Y_t', ('Y_t',))}
+        """
 
         # get all user provided output simulation variables as (key, value) tuples
         # remove duplicates and sort tuples
@@ -211,7 +404,23 @@ class Simulation(object):
 
     @staticmethod
     def create_variables_order(variables_identifier, mean_only):
-        """docstring for ."""
+        """Creates a (sorted) order of the simulation variables in their
+        `V`-identifier form; univariate only
+        (for first moments, stochastic simulation variables) or
+        with pairs (for second moments) depending on `mean_only`.
+
+        `Note`: This method is automatically run during `sim.simulate`.
+        Afterwards one can simply access the output at `sim.sim_variables_order`.
+
+        Examples
+        --------
+        >>> import memocell as me
+        >>> variables_identifier = {'V_0': ('X_t', ('X_t',)), 'V_1': ('Y_t', ('Y_t',))}
+        >>> me.simulation.Simulation.create_variables_order(variables_identifier, mean_only=True)
+        [[('V_0',), ('V_1',)], []]
+        >>> me.simulation.Simulation.create_variables_order(variables_identifier, mean_only=False)
+        [[('V_0',), ('V_1',)], [('V_0', 'V_0'), ('V_0', 'V_1'), ('V_1', 'V_1')]]
+        """
 
         variable_order = list()
 
