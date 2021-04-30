@@ -1373,24 +1373,26 @@ class Data(object):
     ###
 
     ### plotting helper functions
-    def _event_percentages(self, settings):
-        """Private plotting helper method."""
-
-        y_list_err = list()
-        x_ticks = list()
-        attributes = dict()
-
-        for i, event_dict in enumerate(settings):
-            event_results = event_dict['event']
-            event_perc = 100.0 * (sum([event_bool for event_bool, __ in event_results])/float(len(event_results)))
-            y_list_err.append([event_perc])
-
-            x_ticks.append(event_dict['label'])
-
-            attributes[i] = (None, event_dict['color'])
-
-        y_arr_err = np.array(y_list_err)
-        return y_arr_err, x_ticks, attributes
+    
+    # NOTE: maybe reactivate later
+    # def _event_percentages(self, settings):
+    #     """Private plotting helper method."""
+    #
+    #     y_list_err = list()
+    #     x_ticks = list()
+    #     attributes = dict()
+    #
+    #     for i, event_dict in enumerate(settings):
+    #         event_results = event_dict['event']
+    #         event_perc = 100.0 * (sum([event_bool for event_bool, __ in event_results])/float(len(event_results)))
+    #         y_list_err.append([event_perc])
+    #
+    #         x_ticks.append(event_dict['label'])
+    #
+    #         attributes[i] = (None, event_dict['color'])
+    #
+    #     y_arr_err = np.array(y_list_err)
+    #     return y_arr_err, x_ticks, attributes
 
     def _scatter_at_time_point(self, variable1, variable2, time_ind, settings):
         """Private plotting helper method."""
