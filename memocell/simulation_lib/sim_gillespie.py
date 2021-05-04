@@ -385,15 +385,32 @@ class GillespieSim(object):
 
     @staticmethod
     def exact_interpolation(simulation, time_array_explicit):
-        """docstring for ."""
-        # NOTE: the Gillespie simulation provides a time array of random numbers
-        # at which a certain reaction happened; this function reads out the
-        # state of the system for a explicitly given time array of fixed values
-        # NOTE: if time_array_explicit is too coarse, one might of course miss
-        # some reaction events and/or a reaction is seen much later than when it
-        # actually occured; this behavior might be desired, when the natural process
-        # under investigation is also observed at certain time points only
+        """Reads out a stochastic `simulation` at explicitly
+        given time values (`time_array_explicit`).
 
+        `Note`: The Gillespie simulation provides a time array of random numbers
+        at which the reactions happened; this method reads out the
+        state of the system for an explicitly given time array of fixed values.
+        This means: If `time_array_explicit` is too coarse, one might miss
+        some reaction events and/or a reaction is seen much later than it
+        actually occured; this behavior is desired, when the biological
+        experiments are also restricted to read-outs at certain time points only.
+        In contrast, one can choose a very dense time array to report all reaction
+        events.
+
+        Examples
+        --------
+        >>> import memocell as me
+        >>> import numpy as np
+        >>> # made-up stochastic simulation times and numbers
+        >>> time_array_gill = np.array([0.00, 0.12, 4.67, 8.01, 10.00])
+        >>> nodes_array_gill = np.array([[1.0, 2.0, 3.0, 4.0, 5.0]])
+        >>> simulation = [time_array_gill, nodes_array_gill]
+        >>> # explicit times to read-out the simulation
+        >>> time_array_explicit = np.array([0.0, 2.0, 4.0, 6.0, 8.0, 10.0])
+        >>> me.simulation_lib.sim_gillespie.GillespieSim.exact_interpolation(simulation, time_array_explicit)
+        [array([ 0.,  2.,  4.,  6.,  8., 10.]), array([[1., 2., 2., 3., 3., 5.]])]
+        """
         # read out the simulation results
         time_array_gill = simulation[0]
         nodes_array_gill = simulation[1]
@@ -407,7 +424,25 @@ class GillespieSim(object):
 
     @staticmethod
     def create_node_summation_indices(main_node_order, hidden_node_order):
-        """docstring for ."""
+        """
+        Creates a list of tuples with hidden node indices that are needed to
+        sum up each main node; index ordering as in
+        `sim.sim_gillespie.net_main_node_order_without_env` and
+        `sim.sim_gillespie.net_hidden_node_order_without_env` with
+        `Z`-identifier `sim.net.net_nodes_identifier`.
+
+        `Note`: This method is automatically run during `sim.simulate` in
+        `simulation_type='gillespie'`.
+        Afterwards one can simply access the output at
+        `sim.sim_gillespie.summation_indices_nodes`.
+
+        Examples
+        --------
+        >>> # with a memocell simulation instance sim
+        >>> # e.g., the first four hidden nodes provide the first main node
+        >>> sim.sim_gillespie.summation_indices_nodes
+        [(0, 1, 2, 3), (4, 5, 6)]
+        """
 
         # for each main node, find indices of corresponding hidden nodes
         sum_tuple_main = list()
@@ -424,7 +459,15 @@ class GillespieSim(object):
 
     @staticmethod
     def summation_main_nodes(sum_tuple_main, sim_sol_expl_time):
-        """docstring for ."""
+        """Computes the stochastic simulation numbers for the main nodes
+        from the Gillespie-simulated numbers of the hidden nodes; returns list of time values
+        and simulated number of the main nodes (with order as in
+        `sim.sim_gillespie.net_main_node_order_without_env`
+        and `sim.net.net_nodes_identifier`).
+
+        `Note`: This method is automatically run during `sim.simulate` in
+        `simulation_type='gillespie'`.
+        """
 
         # pre allocate results array (sim_sol_expl_time_main_nodes)
         num_time_points = sim_sol_expl_time[0].shape[0]
@@ -442,7 +485,25 @@ class GillespieSim(object):
                                             variables_identifier,
                                             net_main_node_order_without_env,
                                             net_nodes_identifier):
-        """docstring for ."""
+        """Creates a list of tuples with main node indices that are needed to
+        sum up each simulation variable; index ordering as in
+        `sim.sim.sim_variables_order` and
+        `sim.sim_gillespie.net_main_node_order_without_env` with
+        `V`-identifier `sim.sim.sim_variables_identifier` and
+        `Z`-identifier `sim.net.net_nodes_identifier`, respectively.
+
+        `Note`: This method is automatically run during `sim.simulate` in
+        `simulation_type='gillespie'`.
+        Afterwards one can simply access the output at
+        `sim.sim_gillespie.summation_indices_variables`.
+
+        Examples
+        --------
+        >>> # with a memocell simulation instance sim
+        >>> # e.g., main nodes and simulation variables are the same
+        >>> sim.sim_gillespie.summation_indices_variables
+        [(0,), (1,)]
+        """
 
         # inverse the node identifier dictionary
         net_nodes_identifier_inv = {val: key for key, val in net_nodes_identifier.items()}
@@ -476,7 +537,14 @@ class GillespieSim(object):
 
     @staticmethod
     def summation_simulation_variables(sum_tuple_variables, sim_sol_expl_time_main_nodes):
-        """docstring for ."""
+        """Computes the stochastic simulation numbers for the simulation variables
+        from the simulated numbers of the main nodes; returns list of time values
+        and simulated number of the variables (with order as in
+        `sim.sim.sim_variables_order` and `sim.sim.sim_variables_identifier`).
+
+        `Note`: This method is automatically run during `sim.simulate` in
+        `simulation_type='gillespie'`.
+        """
 
         # pre allocate results array (sim_sol_expl_time_sim_variables)
         num_time_points = sim_sol_expl_time_main_nodes[0].shape[0]
