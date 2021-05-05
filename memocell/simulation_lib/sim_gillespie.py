@@ -1,8 +1,23 @@
 
+"""
+The simulation library contains the GillespieSim and MomentsSim helper classes
+for stochastic and moment (mean, variance, covariance) simulations, respectively.
+"""
+
 import numpy as np
 
 class GillespieSim(object):
-    """docstring for ."""
+    """Helper class for stochastic simulations.
+
+    In the typical situation, use the top-level `Simulation` class with its
+    main method `simulate` (`simulation_type='gillespie'`).
+    The `GillespieSim` class and its methods are then called automatically.
+
+    `Note`: The stochastic simulations in MemoCell are based on a
+    Gillespie simulation (first-reaction method) on the hidden layer
+    and produce correct stochastic realisations of the (possibly non-Markovian)
+    stochastic process on the observable/main layer.
+    """
 
     def __init__(self, net):
 
@@ -24,6 +39,7 @@ class GillespieSim(object):
         # instantiate variable for preparation of the simulations
         self.sim_gill_propensities_eval = None
         self.sim_gill_reaction_update_exec = None
+        self.sim_gill_reaction_update_str = None
         self.sim_gill_reaction_number = None
 
         # instantiate variables used in simulations
@@ -41,7 +57,12 @@ class GillespieSim(object):
         self.gillespie_preparation_exists = False
 
     def prepare_gillespie_simulation(self, variables_order, variables_identifier):
-        """docstring for ."""
+        """Prepares Gillespie simulation by creating symbolic attributes for the
+        propensity and node state update schemes and the summation indices.
+        Specifically `define_gill_fct`, `create_node_summation_indices` and
+        `create_variables_summation_indices` downstream methods are called, see
+        there for more info.
+        """
 
         # trigger the preparation if it does not exist already
         if not self.gillespie_preparation_exists:
@@ -51,6 +72,7 @@ class GillespieSim(object):
             # 3) number of possible reactions (sim_gill_reaction_number)
             (self.sim_gill_propensities_eval,
                 self.sim_gill_reaction_update_exec,
+                self.sim_gill_reaction_update_str,
                 self.sim_gill_reaction_number) = self.define_gill_fct(
                                 self.net_hidden_node_order_without_env, self.net_hidden_edges,
                                 self.create_propensities_update_str, self.create_node_state_update_str)
@@ -69,7 +91,17 @@ class GillespieSim(object):
 
     def gillespie_simulation(self, theta_values_order, time_values,
                                     initial_values_main, initial_values_type):
-        """docstring for ."""
+        """Top-level method in the GillespieSim class to produce one
+        stochastic simulation for a memocell model.
+
+        This method wraps downstream methods to update the user provided
+        `theta` rate parameters and initial values, compute a stochastic
+        simulation on the hidden layer (by `run_gillespie_first_reaction_method`),
+        and sum up the hidden layer numbers to obtain observable/main node
+        and simulation variable numbers.
+
+        `Note`: In the typical situation, use the top-level `Simulation` class
+        with its main method `simulate`; this method is then run automatically."""
 
         ### TODO: maybe use getter/setter attributes or similar to only rerun these
         ### lines when initial_values_order or theta_values_order have changed
@@ -109,7 +141,15 @@ class GillespieSim(object):
     @staticmethod
     def run_gillespie_first_reaction_method(time_arr_expl, initial_values,
                     reac_rates_exec, prop_arr_eval, num_reacs, reac_event_fct):
-        """docstring for ."""
+        """Runs the Gillespie first-reaction method on the hidden
+        Markov layer. Makes use of metaprogramming to be applicaple
+        for any memocell network, see also `define_gill_fct` and related methods.
+
+        `Note`: The current implementation is not yet designed for performance.
+        Current main purpose is to obtain correct stochastic realisations of the
+        process, in match with the exact moment simulations. Faster Gillespie
+        methods exists and might be integrated in the future.
+        """
 
         # initialise solution arrays
         t_current = time_arr_expl[0]
@@ -151,7 +191,21 @@ class GillespieSim(object):
 
     @staticmethod
     def create_theta_numeric_exec(net_theta_symbolic, theta_values_order):
-        """docstring for ."""
+        """Creates an executable string to assign numerical values for
+        `theta` rate parameters; used in `run_gillespie_first_reaction_method`
+        and top-level `gillespie_simulation`.
+
+        `Note`: This method is automatically run during `sim.simulate` in
+        `simulation_type='gillespie'`.
+        Afterwards one can access the output at
+        `sim.sim_gillespie.sim_gill_theta_numeric_exec`.
+
+        Examples
+        --------
+        >>> # with a memocell simulation instance sim
+        >>> sim.sim_gillespie.sim_gill_theta_numeric_exec
+        'theta_0, theta_1 = (0.04, 0.06)'
+        """
 
         # create an executable string to set symbolic theta rates to
         # their respective numerical values
@@ -172,7 +226,22 @@ class GillespieSim(object):
 
 
     def process_initial_values(self, initial_values_main, initial_values_type):
-        """docstring for ."""
+        """Processes the user provided initial distribution (for the main
+        node numbers) to obtain an initial distribution on the hidden layer,
+        depending on the multinomial schemes `initial_values_type='synchronous'` or
+        `initial_values_type='uniform'`.
+
+        `Note`: `Synchronous` initial distribution type means that main node
+        numbers are placed into the each main node's `'centric'` hidden layer node.
+        `Uniform` initial distribution types means that main node numbers
+        are distributed randomly (uniform) among all its hidden layer nodes.
+        For this the respective helper methods `process_initial_values_synchronous`
+        or `process_initial_values_uniform` are called.
+
+        `Note`: The distribution types have their moment simulation equivalents,
+        see there also for background theory on the employed multinomial
+        sampling scheme.
+        """
 
         if initial_values_type=='synchronous':
             initial_values_hidden = self.process_initial_values_synchronous(
@@ -192,7 +261,9 @@ class GillespieSim(object):
     @staticmethod
     def process_initial_values_synchronous(hidden_node_order, initial_values_main,
                                             net_nodes_identifier):
-        """docstring for ."""
+        """Helper method for `process_initial_values`; returns the hidden layer
+        initial distribution under `'synchronous'` `initial_values_type`.
+        """
 
         initial_values = [initial_values_main[net_nodes_identifier[node.split('__')[0]]]
                                 if 'centric' in node else 0 for node in hidden_node_order]
@@ -209,7 +280,9 @@ class GillespieSim(object):
     @staticmethod
     def process_initial_values_uniform(main_node_order, hidden_node_order, initial_values_main,
                                         net_nodes_identifier, summation_indices_nodes):
-        """docstring for ."""
+        """Helper method for `process_initial_values`; returns the hidden layer
+        initial distribution under `'uniform'` `initial_values_type`.
+        """
 
         # maybe use: self.summation_indices_nodes = self.create_node_summation_indices
         # idea: loop over main nodes and extract the main initial value
@@ -236,7 +309,21 @@ class GillespieSim(object):
     @staticmethod
     def define_gill_fct(node_order, net_hidden_edges,
                     create_propensities_update_str, create_node_state_update_str):
-        """docstring for ."""
+        """Defines update schemes for the propensities and node states for the
+        Gillespie simulation on the hidden layer.
+
+        `Note`: Based on metaprogramming to construct schemes for any
+        user provided network, using `eval()` and `exec()` methods. Uses
+        `create_propensities_update_str` and `create_node_state_update_str`
+        downstream methods; outputs are then used in `run_gillespie_first_reaction_method`
+        and top-level `gillespie_simulation`.
+
+        `Note`: This method is automatically run during `sim.simulate` in
+        `simulation_type='gillespie'`.
+        Afterwards one can access the outputs at
+        `sim_gill_propensities_eval`, `sim_gill_reaction_update_exec`,
+        `sim_gill_reaction_update_str` and `sim_gill_reaction_number`.
+        """
 
         # propensities function; this array can be used to compute propensities
         # and thus helps to determine the next reaction that takes place
@@ -305,13 +392,14 @@ class GillespieSim(object):
         # print(prop_arr_str)
         # print(reac_event_fct_str)
 
-        # execute function to return it afterwards
+        # execute function to return it afterwards (and also return the string)
         exec(reac_event_fct_str)
-        return prop_arr_str, eval('reac_event_fct'), reac_ind_count + 1
+        return prop_arr_str, eval('reac_event_fct'), reac_event_fct_str, reac_ind_count + 1
 
     @staticmethod
     def create_propensities_update_str(reaction_rate_symbolic, start_node_ind):
-        """docstring for ."""
+        """Helper method for `define_gill_fct`; returns propensity update scheme
+        for a single hidden layer reaction."""
 
         if start_node_ind!='env':
             # standard first order reaction propensities
@@ -324,7 +412,8 @@ class GillespieSim(object):
     def create_node_state_update_str(reac_ind_count,
                                 start_node_ind, end_node_ind, reaction_type,
                                 start_module_centric_node_ind, end_module_centric_node_ind):
-        """docstring for ."""
+        """Helper method for `define_gill_fct`; returns node update scheme
+        for a single hidden layer reaction."""
 
         # each reaction has its unique index
         add_to_reac_event_fct_str = '\tif reac_ind=={0}:\n'.format(reac_ind_count)
@@ -433,7 +522,7 @@ class GillespieSim(object):
 
         `Note`: This method is automatically run during `sim.simulate` in
         `simulation_type='gillespie'`.
-        Afterwards one can simply access the output at
+        Afterwards one can access the output at
         `sim.sim_gillespie.summation_indices_nodes`.
 
         Examples
@@ -494,7 +583,7 @@ class GillespieSim(object):
 
         `Note`: This method is automatically run during `sim.simulate` in
         `simulation_type='gillespie'`.
-        Afterwards one can simply access the output at
+        Afterwards one can access the output at
         `sim.sim_gillespie.summation_indices_variables`.
 
         Examples

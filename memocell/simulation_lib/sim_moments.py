@@ -1,4 +1,9 @@
 
+"""
+The simulation library contains the GillespieSim and MomentsSim class
+for stochastic and moment (mean, variance, covariance) simulations, respectively.
+"""
+
 from sympy import var
 from sympy import sympify
 from sympy import Function

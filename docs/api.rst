@@ -46,8 +46,8 @@ Model Selection
     :undoc-members:
     :show-inheritance:
 
-Simulation Libraries
-====================
+Simulation Library
+==================
 
 .. automodule:: memocell.simulation_lib.sim_gillespie
     :members:
