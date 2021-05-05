@@ -1085,7 +1085,7 @@ class Estimation(object):
 
         # if time_values is not None but equal to data_time_values,
         # we catch this case to set net_time_ind = slice(None)
-        # (for performence issues since tuple of all elements is slower)
+        # (for performance issues since tuple of all elements is slower)
         elif np.array_equal(time_values, data_time_values):
             net_time_values = time_values
             net_time_ind = slice(None)
