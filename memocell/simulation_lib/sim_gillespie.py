@@ -513,8 +513,7 @@ class GillespieSim(object):
 
     @staticmethod
     def create_node_summation_indices(main_node_order, hidden_node_order):
-        """
-        Creates a list of tuples with hidden node indices that are needed to
+        """Creates a list of tuples with hidden node indices that are needed to
         sum up each main node; index ordering as in
         `sim.sim_gillespie.net_main_node_order_without_env` and
         `sim.sim_gillespie.net_hidden_node_order_without_env` with

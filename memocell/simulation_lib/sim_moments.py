@@ -77,6 +77,14 @@ class MomentsSim(object):
         self.moment_num_vars = None
         self.moment_num_covs = None
 
+        # instantiate also the simulation variables (indices and numbers)
+        self.variables_mean_ind = None
+        self.variables_var_ind = None
+        self.variables_cov_ind = None
+        self.variables_num_means = None
+        self.variables_num_vars = None
+        self.variables_num_covs  = None
+
     def prepare_moment_simulation(self, variables_order, variables_identifier, mean_only):
         """docstring for ."""
 
@@ -116,7 +124,7 @@ class MomentsSim(object):
             # setup an executable string for the simuation of the moment equations
             self.moment_system = self.setup_executable_moment_eqs_template(self.moment_eqs)
 
-            # TODO: variables feature
+            # variables feature
             (self.variables_num_means, self.variables_mean_ind,
             self.variables_num_vars, self.variables_var_ind,
             self.variables_num_covs, self.variables_cov_ind) = self.get_indices_for_moment_readout(
@@ -130,7 +138,11 @@ class MomentsSim(object):
 
     def moment_simulation(self, theta_values_order, time_values,
                                 initial_values_main, initial_values_type):
-        """docstring for ."""
+        """docstring for .
+
+        mention the exact moments on the hidden layer somewhere
+        (maybe in moment order?), i.e. write in terms of E(), particulary that
+        our second X_X moment means E(X(X-1))"""
 
         ### TODO: maybe use getter/setter attributes or similar to only rerun these
         ### lines when initial_values_order or theta_values_order have changed
@@ -460,7 +472,16 @@ class MomentsSim(object):
 
     @staticmethod
     def derive_moment_order_main(node_order, mean_only):
-        """docstring for ."""
+        """docstring for .
+
+        mention `Z`-identifier form and the net lookup
+
+        sensitive to mean_only mode and also important because downstream
+        methods react to this (?)
+
+        this order of the moment here applies to all outputs on the main node
+        / observable layer level (summation indices? what else?)
+        """
 
         # initialise moment_order, first index for mean moments, second index for second order moments
         moment_order = list(([], []))
@@ -478,7 +499,16 @@ class MomentsSim(object):
 
     @staticmethod
     def derive_moment_order_hidden(node_order, mean_only):
-        """docstring for ."""
+        """docstring for .
+
+        mention `Z`-identifier form and the net lookup
+
+        sensitive to mean_only mode and also important because downstream
+        methods react to this (?)
+
+        this order of the moment here applies to all outputs on the hidden layer
+        (moment_eqs and moment_system ? summation indices?)
+        """
 
         # initialise moment_order, first index for mean moments, second index for second order moments
         moment_order = list(([], []))
@@ -495,7 +525,12 @@ class MomentsSim(object):
         return moment_order
 
     def derive_moment_pde(self, net_edges, z_aux_vars, z_aux_vars_dict, theta_repl_dict):
-        """docstring for ."""
+        """docstring for .
+        goes over hidden Markov layer reactions
+
+        reac_rate is something like '4.0 * theta_0'
+        reac_type is also meant on the hidden layer reactions
+        """
 
         # subsequently, add parts to the pde
         pde = ''
@@ -545,7 +580,25 @@ class MomentsSim(object):
 
     @staticmethod
     def derive_moment_eqs(moment_pde, moment_order_hidden, moment_aux_vars, moment_aux_vars_dict, theta_replaceables):
-        """docstring for ."""
+        """docstring for .
+
+        mention sympy
+        and automatic symbolic calculations
+
+        here we should maybe also state the principe of the
+        prob. gen. function
+
+        formula for G
+
+        and derivative in auxiliary variables provide moments
+        with this special limit operator
+
+        and then derivatives of the PDE in G
+        provide a ordinary differential equation system for the moments
+
+        mention also that it is closed due to the involved reaction types which are
+        linear in the inputs (how to phrase exactly? see results or methods text)
+        """
 
         # initialise sympy objects
         z_vars = var(' '.join(moment_aux_vars))
@@ -666,7 +719,30 @@ class MomentsSim(object):
 
     @staticmethod
     def get_indices_for_solution_readout(moment_order_main, moment_order_hidden):
-        """docstring for ."""
+        """docstring for .
+        maybe state mean, var, cov of sums formulas here
+        (or at least their equivalent on the moments, whatever is used)
+
+        adapt:
+
+        Creates a list of tuples with hidden node indices that are needed to
+        sum up each main node; index ordering as in
+        `sim.sim_gillespie.net_main_node_order_without_env` and
+        `sim.sim_gillespie.net_hidden_node_order_without_env` with
+        `Z`-identifier `sim.net.net_nodes_identifier`.
+
+        `Note`: This method is automatically run during `sim.simulate` in
+        `simulation_type='gillespie'`.
+        Afterwards one can access the output at
+        `sim.sim_gillespie.summation_indices_nodes`.
+
+        Examples
+        --------
+        >>> # with a memocell simulation instance sim
+        >>> # e.g., the first four hidden nodes provide the first main node
+        >>> sim.sim_gillespie.summation_indices_nodes
+        [(0, 1, 2, 3), (4, 5, 6)]
+        """
 
         # count the numbers of mean, var and covar moment equations for the main nodes
         # 'val' in the following are the tuples describing the moments,
@@ -785,7 +861,31 @@ class MomentsSim(object):
                                             variables_identifier,
                                             moment_order_main,
                                             net_nodes_identifier):
-        """docstring for ."""
+        """
+
+        maybe state mean, var, cov of sums formulas here
+
+        adapt:
+
+        Creates a list of tuples with main node indices that are needed to
+        sum up each simulation variable; index ordering as in
+        `sim.sim.sim_variables_order` and
+        `sim.sim_gillespie.net_main_node_order_without_env` with
+        `V`-identifier `sim.sim.sim_variables_identifier` and
+        `Z`-identifier `sim.net.net_nodes_identifier`, respectively.
+
+        `Note`: This method is automatically run during `sim.simulate` in
+        `simulation_type='gillespie'`.
+        Afterwards one can access the output at
+        `sim.sim_gillespie.summation_indices_variables`.
+
+        Examples
+        --------
+        >>> # with a memocell simulation instance sim
+        >>> # e.g., main nodes and simulation variables are the same
+        >>> sim.sim_gillespie.summation_indices_variables
+        [(0,), (1,)]
+        """
 
         # inverse the node identifier dictionary
         net_nodes_identifier_inv = {val: key for key, val in net_nodes_identifier.items()}
@@ -908,7 +1008,20 @@ class MomentsSim(object):
         variables_num_covs, variables_cov_ind)
 
     def setup_executable_moment_eqs_template(self, moment_eqs, use_jit=True):
-        """docstring for ."""
+        """
+        Converts the user-specific `moment_eqs` (list of str) to a callable class
+        method, applying the metaprogramming principle via `eval()` and `exec()`
+        methods.
+
+        `Note`: This method is automatically run during `sim.simulate` in
+        `simulation_type='moments'` and during `estimate` and `select_models`
+        methods. The output is typically available via the `moment_system` method.
+
+        `Note`: Numba's `@jit` (just-in-time compilation) decorator is added (`default`)
+        to allow fast computation of the differential moment equation system
+        during simulation and estimation runs; the first `moment_system` call
+        might then take a bit longer due to the compilation.
+        """
 
         # print(moment_eqs)
 
@@ -951,7 +1064,11 @@ class MomentsSim(object):
         return eval('_moment_eqs_template')
 
     def set_moment_eqs_from_template_after_reset(self):
-        """docstring for ."""
+        """Reevaluates the differential moment equation system when it is in `'reset'`
+        mode. The `moment_system` is typically overwritten with `'reset'` when
+        the `selection` module was used to be able to save and load objects
+        with the `pickle` package.
+        """
 
         # this string is now executed for once and stored (via eval) as a function in this class
         # print(str_for_exec) # uncomment this for visualisation
@@ -965,49 +1082,200 @@ class MomentsSim(object):
     ### helper functions for the derive_pde method
     @staticmethod
     def reac_type_to_end(z_start, z_end, rate, z_vars):
-        """docstring for ."""
+        """Returns the PDE building block of the probability generating
+        function :math:`G` for a `'-> E'` reaction (e.g., cell influx or birth)
+        on the hidden Markov layer.
+
+        `Note`: The PDE building block can be derived from (and is equivalent
+        to) the master equation for this hidden layer reaction.
+        For the reaction :math:`∅ → W^{(i,j)}` with the
+        hidden variable :math:`W^{(i,j)}` in state :math:`w^{(i,j)}`
+        and auxiliary variable :math:`z_{(i,j)}` we have the master equation
+
+        :math:`\\partial_t \\, p(w^{(i,j)}, t) = \\lambda \\, p(w^{(i,j)}-1, t)
+        - \\lambda \\, p(w^{(i,j)}, t)`
+
+        which is equivalent to the PDE for :math:`G`
+
+        :math:`\\partial_t \\, G(z,t) = \\lambda \\, (z_{(i,j)} - 1) \\, G(z,t)`,
+
+        where :math:`z` is representative for all auxiliary variables and
+        :math:`\\lambda` is the transition rate.
+        """
 
         # this formula is taken for granted
         return '{0} * ({2} - 1) * F({3})'.format(rate, z_start, z_end, ', '.join(z_vars))
 
     @staticmethod
     def reac_type_start_to(z_start, z_end, rate, z_vars):
-        """docstring for ."""
+        """Returns the PDE building block of the probability generating
+        function :math:`G` for a `'S ->'` reaction (e.g., efflux or cell death)
+        on the hidden Markov layer.
+
+        `Note`: The PDE building block can be derived from (and is equivalent
+        to) the master equation for this hidden layer reaction.
+        For the reaction :math:`W^{(i,j)} → ∅` with the
+        hidden variable :math:`W^{(i,j)}` in state :math:`w^{(i,j)}`
+        and auxiliary variable :math:`z_{(i,j)}` we have the master equation
+
+        :math:`\\partial_t \\, p(w^{(i,j)}, t) = \\lambda \\, (w^{(i,j)}+1) \\, p(w^{(i,j)}+1, t)
+        - \\lambda \\, w^{(i,j)} \\, p(w^{(i,j)}, t)`
+
+        which is equivalent to the PDE for :math:`G`
+
+        :math:`\\partial_t \\, G(z,t) = \\lambda \\, (1 - z_{(i,j)}) \\, \\partial_{z_{(i,j)}} G(z,t)`,
+
+        where :math:`z` is representative for all auxiliary variables and
+        :math:`\\lambda` is the single-cell transition rate.
+        """
 
         # this formula is taken for granted
         return '{0} * (1 - {1}) * diff(F({3}), {1})'.format(rate, z_start, z_end, ', '.join(z_vars))
 
     @staticmethod
     def reac_type_start_to_end(z_start, z_end, rate, z_vars):
-        """docstring for ."""
+        """Returns the PDE building block of the probability generating
+        function :math:`G` for a `'S -> E'` reaction (e.g., cell
+        differentiation or hidden transitions)
+        on the hidden Markov layer.
+
+
+        `Note`: The PDE building block can be derived from (and is equivalent
+        to) the master equation for this hidden layer reaction.
+        For the reaction :math:`W^{(i,j)} → W^{(k,l)}` with
+        different hidden variables :math:`W^{(i,j)}`, :math:`W^{(k,l)}` in states
+        :math:`w^{(i,j)}`, :math:`w^{(k,l)}` and auxiliary variables :math:`z_{(i,j)}`,
+        :math:`z_{(k,l)}`, respectively, we have the master equation
+
+        :math:`\\partial_t \\, p(w^{(i,j)}, w^{(k,l)}, t) =
+        \\lambda \\, (w^{(i,j)}+1) \\, p(w^{(i,j)}+1, w^{(k,l)}-1, t)
+        - \\lambda \\, w^{(i,j)} \\, p(w^{(i,j)}, w^{(k,l)}, t)`
+
+        which is equivalent to the PDE for :math:`G`
+
+        :math:`\\partial_t \\, G(z,t) = \\lambda \\, (z_{(k,l)} - z_{(i,j)}) \\, \\partial_{z_{(i,j)}} G(z,t)`,
+
+        where :math:`z` is representative for all auxiliary variables and
+        :math:`\\lambda` is the single-cell transition rate. The reaction
+        is hidden for :math:`i=k` (same cell type) and realises a differentiation event
+        for :math:`i≠k` (different cell types).
+        """
 
         # this formula is taken for granted
         return '{0} * ({2} - {1}) * diff(F({3}), {1})'.format(rate, z_start, z_end, ', '.join(z_vars))
 
     @staticmethod
     def reac_type_start_to_start_end(z_start, z_end, rate, z_vars):
-        """docstring for ."""
+        """Returns the PDE building block of the probability generating
+        function :math:`G` for a `'S -> S + E'` reaction (e.g., asymmetric
+        cell division) on the hidden Markov layer.
+
+
+        `Note`: The PDE building block can be derived from (and is equivalent
+        to) the master equation for this hidden layer reaction.
+        For the reaction :math:`W^{(i,j)} → W^{(i,j)} + W^{(k,l)}` with
+        different hidden variables :math:`W^{(i,j)}`, :math:`W^{(k,l)}` in states
+        :math:`w^{(i,j)}`, :math:`w^{(k,l)}` and auxiliary variables :math:`z_{(i,j)}`,
+        :math:`z_{(k,l)}`, respectively, we have the master equation
+
+        :math:`\\partial_t \\, p(w^{(i,j)}, w^{(k,l)}, t) =
+        \\lambda \\, w^{(i,j)} \\, p(w^{(i,j)}, w^{(k,l)}-1, t)
+        - \\lambda \\, w^{(i,j)} \\, p(w^{(i,j)}, w^{(k,l)}, t)`
+
+        which is equivalent to the PDE for :math:`G`
+
+        :math:`\\partial_t \\, G(z,t) = \\lambda \\, (z_{(k,l)}\\,z_{(i,j)} - z_{(i,j)}) \\, \\partial_{z_{(i,j)}} G(z,t)`,
+
+        where :math:`z` is representative for all auxiliary variables and
+        :math:`\\lambda` is the single-cell transition rate.
+        """
 
         # this formula is taken for granted
         return '{0} * ({1} * {2} - {1}) * diff(F({3}), {1})'.format(rate, z_start, z_end, ', '.join(z_vars))
 
     @staticmethod
     def reac_type_start_to_start_start(z_start, z_end, rate, z_vars):
-        """docstring for ."""
+        """Returns the PDE building block of the probability generating
+        function :math:`G` for a `'S -> S + S'` reaction (e.g., symmetric
+        self-renewing cell division) on the hidden Markov layer.
+
+
+        `Note`: The PDE building block can be derived from (and is equivalent
+        to) the master equation for this hidden layer reaction.
+        For the reaction :math:`W^{(i,j)} → W^{(i,j)} + W^{(i,j)}` with the
+        hidden variable :math:`W^{(i,j)}` in state
+        :math:`w^{(i,j)}` and auxiliary variable :math:`z_{(i,j)}`
+        we have the master equation
+
+        :math:`\\partial_t \\, p(w^{(i,j)}, t) =
+        \\lambda \\, (w^{(i,j)}-1) \\, p(w^{(i,j)}-1, t)
+        - \\lambda \\, w^{(i,j)} \\, p(w^{(i,j)}, t)`
+
+        which is equivalent to the PDE for :math:`G`
+
+        :math:`\\partial_t \\, G(z,t) = \\lambda \\, (z_{(i,j)}^2 - z_{(i,j)}) \\, \\partial_{z_{(i,j)}} G(z,t)`,
+
+        where :math:`z` is representative for all auxiliary variables and
+        :math:`\\lambda` is the single-cell transition rate.
+        """
 
         # this formula is taken for granted
         return '{0} * ({1} * {1} - {1}) * diff(F({3}), {1})'.format(rate, z_start, z_end, ', '.join(z_vars))
 
     @staticmethod
     def reac_type_start_to_end_end(z_start, z_end, rate, z_vars):
-        """docstring for ."""
+        """Returns the PDE building block of the probability generating
+        function :math:`G` for a `'S -> E + E'` reaction (e.g., symmetric
+        differentiating cell division) on the hidden Markov layer.
+
+
+        `Note`: The PDE building block can be derived from (and is equivalent
+        to) the master equation for this hidden layer reaction.
+        For the reaction :math:`W^{(i,j)} → W^{(k,l)} + W^{(k,l)}` with
+        different hidden variables :math:`W^{(i,j)}`, :math:`W^{(k,l)}` in states
+        :math:`w^{(i,j)}`, :math:`w^{(k,l)}` and auxiliary variables :math:`z_{(i,j)}`,
+        :math:`z_{(k,l)}`, respectively, we have the master equation
+
+        :math:`\\partial_t \\, p(w^{(i,j)}, w^{(k,l)}, t) =
+        \\lambda \\, (w^{(i,j)}+1) \\, p(w^{(i,j)}+1, w^{(k,l)}-2, t)
+        - \\lambda \\, w^{(i,j)} \\, p(w^{(i,j)}, w^{(k,l)}, t)`
+
+        which is equivalent to the PDE for :math:`G`
+
+        :math:`\\partial_t \\, G(z,t) = \\lambda \\, (z_{(k,l)}^2 - z_{(i,j)}) \\, \\partial_{z_{(i,j)}} G(z,t)`,
+
+        where :math:`z` is representative for all auxiliary variables and
+        :math:`\\lambda` is the single-cell transition rate.
+        """
 
         # this formula is taken for granted
         return '{0} * ({2} * {2} - {1}) * diff(F({3}), {1})'.format(rate, z_start, z_end, ', '.join(z_vars))
 
     @staticmethod
     def reac_type_start_to_end1_end2(z_start, z_end_1, z_end_2, rate, z_vars):
-        """docstring for ."""
+        """Returns the PDE building block of the probability generating
+        function :math:`G` for a `'S -> E1 + E2'` reaction (e.g., asymmetric
+        differentiating cell division) on the hidden Markov layer.
+
+
+        `Note`: The PDE building block can be derived from (and is equivalent
+        to) the master equation for this hidden layer reaction.
+        For the reaction :math:`W^{(i,j)} → W^{(k,l)} + W^{(r,s)}` with
+        different hidden variables :math:`W^{(i,j)}`, :math:`W^{(k,l)}`, :math:`W^{(r,s)}` in states
+        :math:`w^{(i,j)}`, :math:`w^{(k,l)}`, :math:`w^{(r,s)}` and auxiliary variables :math:`z_{(i,j)}`,
+        :math:`z_{(k,l)}`, :math:`z_{(r,s)}`, respectively, we have the master equation
+
+        :math:`\\partial_t \\, p(w^{(i,j)}, w^{(k,l)}, w^{(r,s)}, t) =
+        \\lambda \\, (w^{(i,j)}+1) \\, p(w^{(i,j)}+1, w^{(k,l)}-1, w^{(r,s)}-1, t)
+        - \\lambda \\, w^{(i,j)} \\, p(w^{(i,j)}, w^{(k,l)}, w^{(r,s)}, t)`
+
+        which is equivalent to the PDE for :math:`G`
+
+        :math:`\\partial_t \\, G(z,t) = \\lambda \\, (z_{(k,l)} \\, z_{(r,s)} - z_{(i,j)}) \\, \\partial_{z_{(i,j)}} G(z,t)`,
+
+        where :math:`z` is representative for all auxiliary variables and
+        :math:`\\lambda` is the single-cell transition rate.
+        """
 
         # this formula is taken for granted
         # TODO: check this formula (have it on paper notes)
