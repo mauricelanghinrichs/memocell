@@ -637,7 +637,7 @@ class MomentsSim(object):
         # NOTE: that below our alpha-numerical ordering of z_vars coincides with sympy's ordering
         count_i = 0
         for z_var in moment_order_1st_vars:
-            string_deriv = f'Derivative(F({z_vars_str}), {z_var})'
+            string_deriv = f'Derivative(G({z_vars_str}), {z_var})'
             string_subs = f'm_{count_i}_q'
             replace_tuples.append((string_deriv, string_subs))
 
@@ -645,14 +645,14 @@ class MomentsSim(object):
 
         for z_var1, z_var2 in moment_order_2nd_vars:
             if z_var1==z_var2:
-                string_deriv = f'Derivative(F({z_vars_str}), ({z_var1}, 2))'
+                string_deriv = f'Derivative(G({z_vars_str}), ({z_var1}, 2))'
             else:
                 # the following sorted function is needed since auxiliary vars (with
                 # additional 'q') can have a different tuple order than the tuple
                 # order in moment_order_hidden (e.g. if one hidden node has index
                 # >= 10 (two digits)), see jupyter notebook for sympy bug
                 z_var1, z_var2 = tuple(sorted([z_var1, z_var2]))
-                string_deriv = f'Derivative(F({z_vars_str}), {z_var1}, {z_var2})'
+                string_deriv = f'Derivative(G({z_vars_str}), {z_var1}, {z_var2})'
             string_subs = f'm_{count_i}_q'
             replace_tuples.append((string_deriv, string_subs))
 
@@ -665,21 +665,21 @@ class MomentsSim(object):
         # replace higher moment derivatives by a constant (these terms cancel anyway)
         # replace second order derivatives when there are no demanded second moments
         if len(moment_order_2nd_vars) == 0:
-            inner_F = ', '.join(len(moment_aux_vars)*['1.0'])
-            replace_tuples.append((f'Derivative(F({inner_F}), 1.0, 1.0)', 'const'))
-            replace_tuples.append((f'Derivative(F({inner_F}), (1.0, 2))', 'const'))
+            inner_G = ', '.join(len(moment_aux_vars)*['1.0'])
+            replace_tuples.append((f'Derivative(G({inner_G}), 1.0, 1.0)', 'const'))
+            replace_tuples.append((f'Derivative(G({inner_G}), (1.0, 2))', 'const'))
         # else replace third order derivatives
         else:
-            inner_F = ', '.join(len(moment_aux_vars)*['1.0'])
+            inner_G = ', '.join(len(moment_aux_vars)*['1.0'])
 
-            replace_tuples.append((f'Derivative(F({inner_F}), 1.0, 1.0, 1.0)', 'const'))
-            replace_tuples.append((f'Derivative(F({inner_F}), (1.0, 2), 1.0)', 'const'))
-            replace_tuples.append((f'Derivative(F({inner_F}), 1.0, (1.0, 2))', 'const'))
-            replace_tuples.append((f'Derivative(F({inner_F}), (1.0, 3))', 'const'))
+            replace_tuples.append((f'Derivative(G({inner_G}), 1.0, 1.0, 1.0)', 'const'))
+            replace_tuples.append((f'Derivative(G({inner_G}), (1.0, 2), 1.0)', 'const'))
+            replace_tuples.append((f'Derivative(G({inner_G}), 1.0, (1.0, 2))', 'const'))
+            replace_tuples.append((f'Derivative(G({inner_G}), (1.0, 3))', 'const'))
 
         # replace the plain probability generating function by one (since probabilities sum up to one)
-        inner_F = ', '.join(len(moment_aux_vars)*['1.0'])
-        replace_tuples.append((f'F({inner_F})', '1.0'))
+        inner_G = ', '.join(len(moment_aux_vars)*['1.0'])
+        replace_tuples.append((f'G({inner_G})', '1.0'))
 
         # now conduct substitution
         for i, eq in enumerate(moment_eqs):
@@ -1104,7 +1104,7 @@ class MomentsSim(object):
         """
 
         # this formula is taken for granted
-        return '{0} * ({2} - 1) * F({3})'.format(rate, z_start, z_end, ', '.join(z_vars))
+        return '{0} * ({2} - 1) * G({3})'.format(rate, z_start, z_end, ', '.join(z_vars))
 
     @staticmethod
     def reac_type_start_to(z_start, z_end, rate, z_vars):
@@ -1130,7 +1130,7 @@ class MomentsSim(object):
         """
 
         # this formula is taken for granted
-        return '{0} * (1 - {1}) * diff(F({3}), {1})'.format(rate, z_start, z_end, ', '.join(z_vars))
+        return '{0} * (1 - {1}) * diff(G({3}), {1})'.format(rate, z_start, z_end, ', '.join(z_vars))
 
     @staticmethod
     def reac_type_start_to_end(z_start, z_end, rate, z_vars):
@@ -1162,7 +1162,7 @@ class MomentsSim(object):
         """
 
         # this formula is taken for granted
-        return '{0} * ({2} - {1}) * diff(F({3}), {1})'.format(rate, z_start, z_end, ', '.join(z_vars))
+        return '{0} * ({2} - {1}) * diff(G({3}), {1})'.format(rate, z_start, z_end, ', '.join(z_vars))
 
     @staticmethod
     def reac_type_start_to_start_end(z_start, z_end, rate, z_vars):
@@ -1191,7 +1191,7 @@ class MomentsSim(object):
         """
 
         # this formula is taken for granted
-        return '{0} * ({1} * {2} - {1}) * diff(F({3}), {1})'.format(rate, z_start, z_end, ', '.join(z_vars))
+        return '{0} * ({1} * {2} - {1}) * diff(G({3}), {1})'.format(rate, z_start, z_end, ', '.join(z_vars))
 
     @staticmethod
     def reac_type_start_to_start_start(z_start, z_end, rate, z_vars):
@@ -1220,7 +1220,7 @@ class MomentsSim(object):
         """
 
         # this formula is taken for granted
-        return '{0} * ({1} * {1} - {1}) * diff(F({3}), {1})'.format(rate, z_start, z_end, ', '.join(z_vars))
+        return '{0} * ({1} * {1} - {1}) * diff(G({3}), {1})'.format(rate, z_start, z_end, ', '.join(z_vars))
 
     @staticmethod
     def reac_type_start_to_end_end(z_start, z_end, rate, z_vars):
@@ -1249,7 +1249,7 @@ class MomentsSim(object):
         """
 
         # this formula is taken for granted
-        return '{0} * ({2} * {2} - {1}) * diff(F({3}), {1})'.format(rate, z_start, z_end, ', '.join(z_vars))
+        return '{0} * ({2} * {2} - {1}) * diff(G({3}), {1})'.format(rate, z_start, z_end, ', '.join(z_vars))
 
     @staticmethod
     def reac_type_start_to_end1_end2(z_start, z_end_1, z_end_2, rate, z_vars):
@@ -1279,5 +1279,5 @@ class MomentsSim(object):
 
         # this formula is taken for granted
         # TODO: check this formula (have it on paper notes)
-        return '{0} * ({2} * {3} - {1}) * diff(F({4}), {1})'.format(rate, z_start, z_end_1, z_end_2, ', '.join(z_vars))
+        return '{0} * ({2} * {3} - {1}) * diff(G({4}), {1})'.format(rate, z_start, z_end_1, z_end_2, ', '.join(z_vars))
     ###
