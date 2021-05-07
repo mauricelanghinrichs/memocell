@@ -49,16 +49,16 @@ class TestMomentsSimClass(object):
                                                  '1.0*m[2]*theta[0] - 1.0*m[3]*theta[0]',
                                                  '2.0*m[3]*theta[0]'])
         assert(sim.sim_moments.moment_eqs_template_str == '@jit(nopython=True)\ndef _moment_eqs_template(m, time, theta):\n\treturn np.array([\n\t-1.0*m[0]*theta[0],\n\t1.0*m[0]*theta[0],\n\t-2.0*m[2]*theta[0],\n\t1.0*m[2]*theta[0] - 1.0*m[3]*theta[0],\n\t2.0*m[3]*theta[0]\n\t])')
-        assert(np.all(sim.sim_moments.moment_mean_ind.tolist() == [[(0,)], [(1,)]]))
-        assert(np.all(sim.sim_moments.moment_var_ind_intra.tolist() == [[(2,), (0,)], [(4,), (1,)]]))
-        assert(np.all(sim.sim_moments.moment_var_ind_inter.tolist() == [[(), (), ()], [(), (), ()]]))
-        assert(np.all(sim.sim_moments.moment_cov_ind.tolist() == [[(3,), (0,), (1,)]]))
+        assert(sim.sim_moments.moment_mean_ind.tolist() == [[(0,)], [(1,)]])
+        assert(sim.sim_moments.moment_var_ind_intra.tolist() == [[(2,), (0,)], [(4,), (1,)]])
+        assert(sim.sim_moments.moment_var_ind_inter.tolist() == [[(), (), ()], [(), (), ()]])
+        assert(sim.sim_moments.moment_cov_ind.tolist() == [[(3,), (0,), (1,)]])
         assert(sim.sim_moments.moment_num_means == 2)
         assert(sim.sim_moments.moment_num_vars == 2)
         assert(sim.sim_moments.moment_num_covs == 1)
-        assert(np.all(sim.sim_moments.variables_mean_ind.tolist() == [[(0,)], [(1,)]]))
-        assert(np.all(sim.sim_moments.variables_var_ind.tolist() == [[(0,), ()], [(1,), ()]]))
-        assert(np.all(sim.sim_moments.variables_cov_ind.tolist() == [[(), (0,)]]))
+        assert(sim.sim_moments.variables_mean_ind.tolist() == [[(0,)], [(1,)]])
+        assert(sim.sim_moments.variables_var_ind.tolist() == [[(0,), ()], [(1,), ()]])
+        assert(sim.sim_moments.variables_cov_ind.tolist() == [[(), (0,)]])
         assert(sim.sim_moments.variables_num_means == 2)
         assert(sim.sim_moments.variables_num_vars == 2)
         assert(sim.sim_moments.variables_num_covs == 1)
@@ -136,16 +136,16 @@ class TestMomentsSimClass(object):
                                                  '3.0*m[10]*theta[0] + 3.0*m[11]*theta[0] - 3.0*m[12]*theta[0]',
                                                  '6.0*m[12]*theta[0]'])
         assert(sim.sim_moments.moment_eqs_template_str == '@jit(nopython=True)\ndef _moment_eqs_template(m, time, theta):\n\treturn np.array([\n\t-3.0*m[0]*theta[0],\n\t3.0*m[0]*theta[0] - 3.0*m[1]*theta[0],\n\t3.0*m[1]*theta[0] - 3.0*m[2]*theta[0],\n\t3.0*m[2]*theta[0],\n\t-6.0*m[4]*theta[0],\n\t3.0*m[4]*theta[0] - 6.0*m[5]*theta[0],\n\t3.0*m[5]*theta[0] - 6.0*m[6]*theta[0],\n\t3.0*m[6]*theta[0] - 3.0*m[7]*theta[0],\n\t6.0*m[5]*theta[0] - 6.0*m[8]*theta[0],\n\t3.0*m[6]*theta[0] + 3.0*m[8]*theta[0] - 6.0*m[9]*theta[0],\n\t-3.0*m[10]*theta[0] + 3.0*m[7]*theta[0] + 3.0*m[9]*theta[0],\n\t-6.0*m[11]*theta[0] + 6.0*m[9]*theta[0],\n\t3.0*m[10]*theta[0] + 3.0*m[11]*theta[0] - 3.0*m[12]*theta[0],\n\t6.0*m[12]*theta[0]\n\t])')
-        assert(np.all(sim.sim_moments.moment_mean_ind.tolist() == [[(0, 1, 2)], [(3,)]]))
-        assert(np.all(sim.sim_moments.moment_var_ind_intra.tolist() == [[(4, 8, 11), (0, 1, 2)], [(13,), (3,)]]))
-        assert(np.all(sim.sim_moments.moment_var_ind_inter.tolist() == [[(5, 6, 9), (0, 0, 1), (1, 2, 2)], [(), (), ()]]))
-        assert(np.all(sim.sim_moments.moment_cov_ind.tolist() == [[(7, 10, 12), (0, 1, 2), (3, 3, 3)]]))
+        assert(sim.sim_moments.moment_mean_ind.tolist() == [[(0, 1, 2)], [(3,)]])
+        assert(sim.sim_moments.moment_var_ind_intra.tolist() == [[(4, 8, 11), (0, 1, 2)], [(13,), (3,)]])
+        assert(sim.sim_moments.moment_var_ind_inter.tolist() == [[(5, 6, 9), (0, 0, 1), (1, 2, 2)], [(), (), ()]])
+        assert(sim.sim_moments.moment_cov_ind.tolist() == [[(7, 10, 12), (0, 1, 2), (3, 3, 3)]])
         assert(sim.sim_moments.moment_num_means == 2)
         assert(sim.sim_moments.moment_num_vars == 2)
         assert(sim.sim_moments.moment_num_covs == 1)
-        assert(np.all(sim.sim_moments.variables_mean_ind.tolist() == [[(0,)], [(1,)]]))
-        assert(np.all(sim.sim_moments.variables_var_ind.tolist() == [[(0,), ()], [(1,), ()]]))
-        assert(np.all(sim.sim_moments.variables_cov_ind.tolist() == [[(), (0,)]]))
+        assert(sim.sim_moments.variables_mean_ind.tolist() == [[(0,)], [(1,)]])
+        assert(sim.sim_moments.variables_var_ind.tolist() == [[(0,), ()], [(1,), ()]])
+        assert(sim.sim_moments.variables_cov_ind.tolist() == [[(), (0,)]])
         assert(sim.sim_moments.variables_num_means == 2)
         assert(sim.sim_moments.variables_num_vars == 2)
         assert(sim.sim_moments.variables_num_covs == 1)
@@ -212,29 +212,89 @@ class TestMomentsSimClass(object):
         sim.sim_moments.prepare_moment_simulation(sim.sim_variables_order, sim.sim_variables_identifier, mean_only)
 
         # check all testable attributes for the simulation of this network
-        # assert(sim.sim_moments.moment_order_main == )
-        # assert(sim.sim_moments.moment_order_hidden == )
-        # assert(sim.sim_moments.moment_aux_vars == )
-        # assert(sim.sim_moments.moment_aux_vars_dict == )
-        # assert(sim.sim_moments.theta_replaceable == )
-        # assert(sim.sim_moments.theta_replaceable_dict == )
-        # assert(sim.sim_moments.moment_pde == )
-        # assert(sim.sim_moments.moment_eqs == )
-        # assert(sim.sim_moments.moment_eqs_template_str == )
-        # assert(sim.sim_moments.moment_mean_ind == )
-        # assert(sim.sim_moments.moment_var_ind_intra == )
-        # assert(sim.sim_moments.moment_var_ind_inter == )
-        # assert(sim.sim_moments.moment_cov_ind == )
-        # assert(sim.sim_moments.moment_num_means == )
-        # assert(sim.sim_moments.moment_num_vars == )
-        # assert(sim.sim_moments.moment_num_covs == )
-        # assert(sim.sim_moments.variables_mean_ind == )
-        # assert(sim.sim_moments.variables_var_ind == )
-        # assert(sim.sim_moments.variables_cov_ind == )
-        # assert(sim.sim_moments.variables_num_means == )
-        # assert(sim.sim_moments.variables_num_vars == )
-        # assert(sim.sim_moments.variables_num_covs == )
-        # assert(sim.sim_moments.net_hidden_edges == )
+        assert(sim.sim_moments.moment_order_main == [[('Z_0',)], [('Z_0', 'Z_0')]])
+        assert(sim.sim_moments.moment_order_hidden == [[('Z_0__centric',), ('Z_0__module_0__0',), ('Z_0__module_0__1',)],
+                                                         [('Z_0__centric', 'Z_0__centric'),
+                                                          ('Z_0__centric', 'Z_0__module_0__0'),
+                                                          ('Z_0__centric', 'Z_0__module_0__1'),
+                                                          ('Z_0__module_0__0', 'Z_0__module_0__0'),
+                                                          ('Z_0__module_0__0', 'Z_0__module_0__1'),
+                                                          ('Z_0__module_0__1', 'Z_0__module_0__1')]])
+        assert(sim.sim_moments.moment_aux_vars == ['z_0__centric_q', 'z_0__module_0__0_q', 'z_0__module_0__1_q'])
+        assert(sim.sim_moments.moment_aux_vars_dict == {'Z_0__centric': 'z_0__centric_q',
+                                                     'Z_0__module_0__0': 'z_0__module_0__0_q',
+                                                     'Z_0__module_0__1': 'z_0__module_0__1_q'})
+        assert(sim.sim_moments.theta_replaceable == ['theta_0_q'])
+        assert(sim.sim_moments.theta_replaceable_dict == {'theta_0': 'theta_0_q'})
+        assert(sim.sim_moments.moment_pde == '3.0 * theta_0_q * (z_0__module_0__0_q - z_0__centric_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q), z_0__centric_q) + 3.0 * theta_0_q * (z_0__module_0__1_q - z_0__module_0__0_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q), z_0__module_0__0_q) + 3.0 * theta_0_q * (z_0__centric_q * z_0__centric_q - z_0__module_0__1_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q), z_0__module_0__1_q)')
+        assert(sim.sim_moments.moment_eqs == ['-3.0*m[0]*theta[0] + 6.0*m[2]*theta[0]',
+                                             '3.0*m[0]*theta[0] - 3.0*m[1]*theta[0]',
+                                             '3.0*m[1]*theta[0] - 3.0*m[2]*theta[0]',
+                                             '6.0*m[2]*theta[0] - 6.0*m[3]*theta[0] + 12.0*m[5]*theta[0]',
+                                             '3.0*m[3]*theta[0] - 6.0*m[4]*theta[0] + 6.0*m[7]*theta[0]',
+                                             '3.0*m[4]*theta[0] - 6.0*m[5]*theta[0] + 6.0*m[8]*theta[0]',
+                                             '6.0*m[4]*theta[0] - 6.0*m[6]*theta[0]',
+                                             '3.0*m[5]*theta[0] + 3.0*m[6]*theta[0] - 6.0*m[7]*theta[0]',
+                                             '6.0*m[7]*theta[0] - 6.0*m[8]*theta[0]'])
+        assert(sim.sim_moments.moment_eqs_template_str == '@jit(nopython=True)\ndef _moment_eqs_template(m, time, theta):\n\treturn np.array([\n\t-3.0*m[0]*theta[0] + 6.0*m[2]*theta[0],\n\t3.0*m[0]*theta[0] - 3.0*m[1]*theta[0],\n\t3.0*m[1]*theta[0] - 3.0*m[2]*theta[0],\n\t6.0*m[2]*theta[0] - 6.0*m[3]*theta[0] + 12.0*m[5]*theta[0],\n\t3.0*m[3]*theta[0] - 6.0*m[4]*theta[0] + 6.0*m[7]*theta[0],\n\t3.0*m[4]*theta[0] - 6.0*m[5]*theta[0] + 6.0*m[8]*theta[0],\n\t6.0*m[4]*theta[0] - 6.0*m[6]*theta[0],\n\t3.0*m[5]*theta[0] + 3.0*m[6]*theta[0] - 6.0*m[7]*theta[0],\n\t6.0*m[7]*theta[0] - 6.0*m[8]*theta[0]\n\t])')
+        assert(sim.sim_moments.moment_mean_ind.tolist() == [[(0, 1, 2)]])
+        assert(sim.sim_moments.moment_var_ind_intra.tolist() == [[(3, 6, 8), (0, 1, 2)]])
+        assert(sim.sim_moments.moment_var_ind_inter.tolist() == [[(4, 5, 7), (0, 0, 1), (1, 2, 2)]])
+        assert(sim.sim_moments.moment_cov_ind.tolist() == [])
+        assert(sim.sim_moments.moment_num_means == 1)
+        assert(sim.sim_moments.moment_num_vars == 1)
+        assert(sim.sim_moments.moment_num_covs == 0)
+        assert(sim.sim_moments.variables_mean_ind.tolist() == [[(0,)]])
+        assert(sim.sim_moments.variables_var_ind.tolist() == [[(0,), ()]])
+        assert(sim.sim_moments.variables_cov_ind.tolist() == [])
+        assert(sim.sim_moments.variables_num_means == 1)
+        assert(sim.sim_moments.variables_num_vars == 1)
+        assert(sim.sim_moments.variables_num_covs == 0)
+        assert(sim.sim_moments.net_hidden_edges == [('Z_0__centric',
+                                                  'Z_0__module_0__0',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__centric', 'Z_0__module_0__0'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_0__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_0'),
+                                                   'module_start_end': ('X_t', 'X_t'),
+                                                   'edge_rate_symbol_identifier': '3.0 * theta_0',
+                                                   'edge_rate_symbol': '3.0 * l',
+                                                   'module_rate_symbol_identifier': 'theta_0',
+                                                   'module_rate_symbol': 'l',
+                                                   'module_identifier': 'module_0',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> S + S',
+                                                   'module_steps': 3}),
+                                                 ('Z_0__module_0__0',
+                                                  'Z_0__module_0__1',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__module_0__0', 'Z_0__module_0__1'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_0__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_0'),
+                                                   'module_start_end': ('X_t', 'X_t'),
+                                                   'edge_rate_symbol_identifier': '3.0 * theta_0',
+                                                   'edge_rate_symbol': '3.0 * l',
+                                                   'module_rate_symbol_identifier': 'theta_0',
+                                                   'module_rate_symbol': 'l',
+                                                   'module_identifier': 'module_0',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> S + S',
+                                                   'module_steps': 3}),
+                                                 ('Z_0__module_0__1',
+                                                  'Z_0__centric',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__module_0__1', 'Z_0__centric'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_0__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_0'),
+                                                   'module_start_end': ('X_t', 'X_t'),
+                                                   'edge_rate_symbol_identifier': '3.0 * theta_0',
+                                                   'edge_rate_symbol': '3.0 * l',
+                                                   'module_rate_symbol_identifier': 'theta_0',
+                                                   'module_rate_symbol': 'l',
+                                                   'module_identifier': 'module_0',
+                                                   'edge_type': 'S -> E + E',
+                                                   'module_type': 'S -> S + S',
+                                                   'module_steps': 3})])
 
     def test_sim_moment_net_asym_div_erl3(self):
         t = [
@@ -253,29 +313,105 @@ class TestMomentsSimClass(object):
         sim.sim_moments.prepare_moment_simulation(sim.sim_variables_order, sim.sim_variables_identifier, mean_only)
 
         # check all testable attributes for the simulation of this network
-        # assert(sim.sim_moments.moment_order_main == )
-        # assert(sim.sim_moments.moment_order_hidden == )
-        # assert(sim.sim_moments.moment_aux_vars == )
-        # assert(sim.sim_moments.moment_aux_vars_dict == )
-        # assert(sim.sim_moments.theta_replaceable == )
-        # assert(sim.sim_moments.theta_replaceable_dict == )
-        # assert(sim.sim_moments.moment_pde == )
-        # assert(sim.sim_moments.moment_eqs == )
-        # assert(sim.sim_moments.moment_eqs_template_str == )
-        # assert(sim.sim_moments.moment_mean_ind == )
-        # assert(sim.sim_moments.moment_var_ind_intra == )
-        # assert(sim.sim_moments.moment_var_ind_inter == )
-        # assert(sim.sim_moments.moment_cov_ind == )
-        # assert(sim.sim_moments.moment_num_means == )
-        # assert(sim.sim_moments.moment_num_vars == )
-        # assert(sim.sim_moments.moment_num_covs == )
-        # assert(sim.sim_moments.variables_mean_ind == )
-        # assert(sim.sim_moments.variables_var_ind == )
-        # assert(sim.sim_moments.variables_cov_ind == )
-        # assert(sim.sim_moments.variables_num_means == )
-        # assert(sim.sim_moments.variables_num_vars == )
-        # assert(sim.sim_moments.variables_num_covs == )
-        # assert(sim.sim_moments.net_hidden_edges == )
+        assert(sim.sim_moments.moment_order_main == [[('Z_0',), ('Z_1',)], [('Z_0', 'Z_0'), ('Z_0', 'Z_1'), ('Z_1', 'Z_1')]])
+        assert(sim.sim_moments.moment_order_hidden == [[('Z_0__centric',),
+                                                      ('Z_0__module_0__0',),
+                                                      ('Z_0__module_0__1',),
+                                                      ('Z_1__centric',)],
+                                                     [('Z_0__centric', 'Z_0__centric'),
+                                                      ('Z_0__centric', 'Z_0__module_0__0'),
+                                                      ('Z_0__centric', 'Z_0__module_0__1'),
+                                                      ('Z_0__centric', 'Z_1__centric'),
+                                                      ('Z_0__module_0__0', 'Z_0__module_0__0'),
+                                                      ('Z_0__module_0__0', 'Z_0__module_0__1'),
+                                                      ('Z_0__module_0__0', 'Z_1__centric'),
+                                                      ('Z_0__module_0__1', 'Z_0__module_0__1'),
+                                                      ('Z_0__module_0__1', 'Z_1__centric'),
+                                                      ('Z_1__centric', 'Z_1__centric')]])
+        assert(sim.sim_moments.moment_aux_vars == ['z_0__centric_q',
+                                                     'z_0__module_0__0_q',
+                                                     'z_0__module_0__1_q',
+                                                     'z_1__centric_q'])
+        assert(sim.sim_moments.moment_aux_vars_dict == {'Z_0__centric': 'z_0__centric_q',
+                                                         'Z_0__module_0__0': 'z_0__module_0__0_q',
+                                                         'Z_0__module_0__1': 'z_0__module_0__1_q',
+                                                         'Z_1__centric': 'z_1__centric_q'})
+        assert(sim.sim_moments.theta_replaceable == ['theta_0_q'])
+        assert(sim.sim_moments.theta_replaceable_dict == {'theta_0': 'theta_0_q'})
+        assert(sim.sim_moments.moment_pde == '3.0 * theta_0_q * (z_0__module_0__0_q - z_0__centric_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_1__centric_q), z_0__centric_q) + 3.0 * theta_0_q * (z_0__module_0__1_q - z_0__module_0__0_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_1__centric_q), z_0__module_0__0_q) + 3.0 * theta_0_q * (z_0__centric_q * z_1__centric_q - z_0__module_0__1_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_1__centric_q), z_0__module_0__1_q)')
+        assert(sim.sim_moments.moment_eqs == ['-3.0*m[0]*theta[0] + 3.0*m[2]*theta[0]',
+                                             '3.0*m[0]*theta[0] - 3.0*m[1]*theta[0]',
+                                             '3.0*m[1]*theta[0] - 3.0*m[2]*theta[0]',
+                                             '3.0*m[2]*theta[0]',
+                                             '-6.0*m[4]*theta[0] + 6.0*m[6]*theta[0]',
+                                             '3.0*m[4]*theta[0] - 6.0*m[5]*theta[0] + 3.0*m[9]*theta[0]',
+                                             '3.0*m[11]*theta[0] + 3.0*m[5]*theta[0] - 6.0*m[6]*theta[0]',
+                                             '3.0*m[12]*theta[0] + 3.0*m[2]*theta[0] + 3.0*m[6]*theta[0] - 3.0*m[7]*theta[0]',
+                                             '6.0*m[5]*theta[0] - 6.0*m[8]*theta[0]',
+                                             '3.0*m[6]*theta[0] + 3.0*m[8]*theta[0] - 6.0*m[9]*theta[0]',
+                                             '-3.0*m[10]*theta[0] + 3.0*m[7]*theta[0] + 3.0*m[9]*theta[0]',
+                                             '-6.0*m[11]*theta[0] + 6.0*m[9]*theta[0]',
+                                             '3.0*m[10]*theta[0] + 3.0*m[11]*theta[0] - 3.0*m[12]*theta[0]',
+                                             '6.0*m[12]*theta[0]'])
+        assert(sim.sim_moments.moment_eqs_template_str == '@jit(nopython=True)\ndef _moment_eqs_template(m, time, theta):\n\treturn np.array([\n\t-3.0*m[0]*theta[0] + 3.0*m[2]*theta[0],\n\t3.0*m[0]*theta[0] - 3.0*m[1]*theta[0],\n\t3.0*m[1]*theta[0] - 3.0*m[2]*theta[0],\n\t3.0*m[2]*theta[0],\n\t-6.0*m[4]*theta[0] + 6.0*m[6]*theta[0],\n\t3.0*m[4]*theta[0] - 6.0*m[5]*theta[0] + 3.0*m[9]*theta[0],\n\t3.0*m[11]*theta[0] + 3.0*m[5]*theta[0] - 6.0*m[6]*theta[0],\n\t3.0*m[12]*theta[0] + 3.0*m[2]*theta[0] + 3.0*m[6]*theta[0] - 3.0*m[7]*theta[0],\n\t6.0*m[5]*theta[0] - 6.0*m[8]*theta[0],\n\t3.0*m[6]*theta[0] + 3.0*m[8]*theta[0] - 6.0*m[9]*theta[0],\n\t-3.0*m[10]*theta[0] + 3.0*m[7]*theta[0] + 3.0*m[9]*theta[0],\n\t-6.0*m[11]*theta[0] + 6.0*m[9]*theta[0],\n\t3.0*m[10]*theta[0] + 3.0*m[11]*theta[0] - 3.0*m[12]*theta[0],\n\t6.0*m[12]*theta[0]\n\t])')
+        assert(sim.sim_moments.moment_mean_ind.tolist() == [[(0, 1, 2)], [(3,)]])
+        assert(sim.sim_moments.moment_var_ind_intra.tolist() == [[(4, 8, 11), (0, 1, 2)], [(13,), (3,)]])
+        assert(sim.sim_moments.moment_var_ind_inter.tolist() == [[(5, 6, 9), (0, 0, 1), (1, 2, 2)], [(), (), ()]])
+        assert(sim.sim_moments.moment_cov_ind.tolist() == [[(7, 10, 12), (0, 1, 2), (3, 3, 3)]])
+        assert(sim.sim_moments.moment_num_means == 2)
+        assert(sim.sim_moments.moment_num_vars == 2)
+        assert(sim.sim_moments.moment_num_covs == 1)
+        assert(sim.sim_moments.variables_mean_ind.tolist() == [[(0,)], [(1,)]])
+        assert(sim.sim_moments.variables_var_ind.tolist() == [[(0,), ()], [(1,), ()]])
+        assert(sim.sim_moments.variables_cov_ind.tolist() == [[(), (0,)]])
+        assert(sim.sim_moments.variables_num_means == 2)
+        assert(sim.sim_moments.variables_num_vars == 2)
+        assert(sim.sim_moments.variables_num_covs == 1)
+        assert(sim.sim_moments.net_hidden_edges == [('Z_0__centric',
+                                                      'Z_0__module_0__0',
+                                                      0,
+                                                      {'edge_start_end_identifier': ('Z_0__centric', 'Z_0__module_0__0'),
+                                                       'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                       'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                       'module_start_end': ('X_t', 'Y_t'),
+                                                       'edge_rate_symbol_identifier': '3.0 * theta_0',
+                                                       'edge_rate_symbol': '3.0 * l',
+                                                       'module_rate_symbol_identifier': 'theta_0',
+                                                       'module_rate_symbol': 'l',
+                                                       'module_identifier': 'module_0',
+                                                       'edge_type': 'S -> E',
+                                                       'module_type': 'S -> S + E',
+                                                       'module_steps': 3}),
+                                                     ('Z_0__module_0__0',
+                                                      'Z_0__module_0__1',
+                                                      0,
+                                                      {'edge_start_end_identifier': ('Z_0__module_0__0', 'Z_0__module_0__1'),
+                                                       'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                       'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                       'module_start_end': ('X_t', 'Y_t'),
+                                                       'edge_rate_symbol_identifier': '3.0 * theta_0',
+                                                       'edge_rate_symbol': '3.0 * l',
+                                                       'module_rate_symbol_identifier': 'theta_0',
+                                                       'module_rate_symbol': 'l',
+                                                       'module_identifier': 'module_0',
+                                                       'edge_type': 'S -> E',
+                                                       'module_type': 'S -> S + E',
+                                                       'module_steps': 3}),
+                                                     ('Z_0__module_0__1',
+                                                      'Z_1__centric',
+                                                      0,
+                                                      {'edge_start_end_identifier': ('Z_0__module_0__1', 'Z_1__centric'),
+                                                       'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                       'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                       'module_start_end': ('X_t', 'Y_t'),
+                                                       'edge_rate_symbol_identifier': '3.0 * theta_0',
+                                                       'edge_rate_symbol': '3.0 * l',
+                                                       'module_rate_symbol_identifier': 'theta_0',
+                                                       'module_rate_symbol': 'l',
+                                                       'module_identifier': 'module_0',
+                                                       'edge_type': 'S -> E1 + E2',
+                                                       'module_type': 'S -> S + E',
+                                                       'module_steps': 3})])
 
     def test_sim_moment_net_diff_div_erl3(self):
         t = [
@@ -294,29 +430,105 @@ class TestMomentsSimClass(object):
         sim.sim_moments.prepare_moment_simulation(sim.sim_variables_order, sim.sim_variables_identifier, mean_only)
 
         # check all testable attributes for the simulation of this network
-        # assert(sim.sim_moments.moment_order_main == )
-        # assert(sim.sim_moments.moment_order_hidden == )
-        # assert(sim.sim_moments.moment_aux_vars == )
-        # assert(sim.sim_moments.moment_aux_vars_dict == )
-        # assert(sim.sim_moments.theta_replaceable == )
-        # assert(sim.sim_moments.theta_replaceable_dict == )
-        # assert(sim.sim_moments.moment_pde == )
-        # assert(sim.sim_moments.moment_eqs == )
-        # assert(sim.sim_moments.moment_eqs_template_str == )
-        # assert(sim.sim_moments.moment_mean_ind == )
-        # assert(sim.sim_moments.moment_var_ind_intra == )
-        # assert(sim.sim_moments.moment_var_ind_inter == )
-        # assert(sim.sim_moments.moment_cov_ind == )
-        # assert(sim.sim_moments.moment_num_means == )
-        # assert(sim.sim_moments.moment_num_vars == )
-        # assert(sim.sim_moments.moment_num_covs == )
-        # assert(sim.sim_moments.variables_mean_ind == )
-        # assert(sim.sim_moments.variables_var_ind == )
-        # assert(sim.sim_moments.variables_cov_ind == )
-        # assert(sim.sim_moments.variables_num_means == )
-        # assert(sim.sim_moments.variables_num_vars == )
-        # assert(sim.sim_moments.variables_num_covs == )
-        # assert(sim.sim_moments.net_hidden_edges == )
+        assert(sim.sim_moments.moment_order_main == [[('Z_0',), ('Z_1',)], [('Z_0', 'Z_0'), ('Z_0', 'Z_1'), ('Z_1', 'Z_1')]])
+        assert(sim.sim_moments.moment_order_hidden == [[('Z_0__centric',),
+                                                      ('Z_0__module_0__0',),
+                                                      ('Z_0__module_0__1',),
+                                                      ('Z_1__centric',)],
+                                                     [('Z_0__centric', 'Z_0__centric'),
+                                                      ('Z_0__centric', 'Z_0__module_0__0'),
+                                                      ('Z_0__centric', 'Z_0__module_0__1'),
+                                                      ('Z_0__centric', 'Z_1__centric'),
+                                                      ('Z_0__module_0__0', 'Z_0__module_0__0'),
+                                                      ('Z_0__module_0__0', 'Z_0__module_0__1'),
+                                                      ('Z_0__module_0__0', 'Z_1__centric'),
+                                                      ('Z_0__module_0__1', 'Z_0__module_0__1'),
+                                                      ('Z_0__module_0__1', 'Z_1__centric'),
+                                                      ('Z_1__centric', 'Z_1__centric')]])
+        assert(sim.sim_moments.moment_aux_vars == ['z_0__centric_q',
+                                                     'z_0__module_0__0_q',
+                                                     'z_0__module_0__1_q',
+                                                     'z_1__centric_q'])
+        assert(sim.sim_moments.moment_aux_vars_dict == {'Z_0__centric': 'z_0__centric_q',
+                                                         'Z_0__module_0__0': 'z_0__module_0__0_q',
+                                                         'Z_0__module_0__1': 'z_0__module_0__1_q',
+                                                         'Z_1__centric': 'z_1__centric_q'})
+        assert(sim.sim_moments.theta_replaceable == ['theta_0_q'])
+        assert(sim.sim_moments.theta_replaceable_dict == {'theta_0': 'theta_0_q'})
+        assert(sim.sim_moments.moment_pde == '3.0 * theta_0_q * (z_0__module_0__0_q - z_0__centric_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_1__centric_q), z_0__centric_q) + 3.0 * theta_0_q * (z_0__module_0__1_q - z_0__module_0__0_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_1__centric_q), z_0__module_0__0_q) + 3.0 * theta_0_q * (z_1__centric_q * z_1__centric_q - z_0__module_0__1_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_1__centric_q), z_0__module_0__1_q)')
+        assert(sim.sim_moments.moment_eqs == ['-3.0*m[0]*theta[0]',
+                                             '3.0*m[0]*theta[0] - 3.0*m[1]*theta[0]',
+                                             '3.0*m[1]*theta[0] - 3.0*m[2]*theta[0]',
+                                             '6.0*m[2]*theta[0]',
+                                             '-6.0*m[4]*theta[0]',
+                                             '3.0*m[4]*theta[0] - 6.0*m[5]*theta[0]',
+                                             '3.0*m[5]*theta[0] - 6.0*m[6]*theta[0]',
+                                             '6.0*m[6]*theta[0] - 3.0*m[7]*theta[0]',
+                                             '6.0*m[5]*theta[0] - 6.0*m[8]*theta[0]',
+                                             '3.0*m[6]*theta[0] + 3.0*m[8]*theta[0] - 6.0*m[9]*theta[0]',
+                                             '-3.0*m[10]*theta[0] + 3.0*m[7]*theta[0] + 6.0*m[9]*theta[0]',
+                                             '-6.0*m[11]*theta[0] + 6.0*m[9]*theta[0]',
+                                             '3.0*m[10]*theta[0] + 6.0*m[11]*theta[0] - 3.0*m[12]*theta[0]',
+                                             '12.0*m[12]*theta[0] + 6.0*m[2]*theta[0]'])
+        assert(sim.sim_moments.moment_eqs_template_str == '@jit(nopython=True)\ndef _moment_eqs_template(m, time, theta):\n\treturn np.array([\n\t-3.0*m[0]*theta[0],\n\t3.0*m[0]*theta[0] - 3.0*m[1]*theta[0],\n\t3.0*m[1]*theta[0] - 3.0*m[2]*theta[0],\n\t6.0*m[2]*theta[0],\n\t-6.0*m[4]*theta[0],\n\t3.0*m[4]*theta[0] - 6.0*m[5]*theta[0],\n\t3.0*m[5]*theta[0] - 6.0*m[6]*theta[0],\n\t6.0*m[6]*theta[0] - 3.0*m[7]*theta[0],\n\t6.0*m[5]*theta[0] - 6.0*m[8]*theta[0],\n\t3.0*m[6]*theta[0] + 3.0*m[8]*theta[0] - 6.0*m[9]*theta[0],\n\t-3.0*m[10]*theta[0] + 3.0*m[7]*theta[0] + 6.0*m[9]*theta[0],\n\t-6.0*m[11]*theta[0] + 6.0*m[9]*theta[0],\n\t3.0*m[10]*theta[0] + 6.0*m[11]*theta[0] - 3.0*m[12]*theta[0],\n\t12.0*m[12]*theta[0] + 6.0*m[2]*theta[0]\n\t])')
+        assert(sim.sim_moments.moment_mean_ind.tolist() == [[(0, 1, 2)], [(3,)]])
+        assert(sim.sim_moments.moment_var_ind_intra.tolist() == [[(4, 8, 11), (0, 1, 2)], [(13,), (3,)]])
+        assert(sim.sim_moments.moment_var_ind_inter.tolist() == [[(5, 6, 9), (0, 0, 1), (1, 2, 2)], [(), (), ()]])
+        assert(sim.sim_moments.moment_cov_ind.tolist() == [[(7, 10, 12), (0, 1, 2), (3, 3, 3)]])
+        assert(sim.sim_moments.moment_num_means == 2)
+        assert(sim.sim_moments.moment_num_vars == 2)
+        assert(sim.sim_moments.moment_num_covs == 1)
+        assert(sim.sim_moments.variables_mean_ind.tolist() == [[(0,)], [(1,)]])
+        assert(sim.sim_moments.variables_var_ind.tolist() == [[(0,), ()], [(1,), ()]])
+        assert(sim.sim_moments.variables_cov_ind.tolist() == [[(), (0,)]])
+        assert(sim.sim_moments.variables_num_means == 2)
+        assert(sim.sim_moments.variables_num_vars == 2)
+        assert(sim.sim_moments.variables_num_covs == 1)
+        assert(sim.sim_moments.net_hidden_edges == [('Z_0__centric',
+                                                  'Z_0__module_0__0',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__centric', 'Z_0__module_0__0'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                   'module_start_end': ('X_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '3.0 * theta_0',
+                                                   'edge_rate_symbol': '3.0 * dl',
+                                                   'module_rate_symbol_identifier': 'theta_0',
+                                                   'module_rate_symbol': 'dl',
+                                                   'module_identifier': 'module_0',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> E + E',
+                                                   'module_steps': 3}),
+                                                 ('Z_0__module_0__0',
+                                                  'Z_0__module_0__1',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__module_0__0', 'Z_0__module_0__1'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                   'module_start_end': ('X_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '3.0 * theta_0',
+                                                   'edge_rate_symbol': '3.0 * dl',
+                                                   'module_rate_symbol_identifier': 'theta_0',
+                                                   'module_rate_symbol': 'dl',
+                                                   'module_identifier': 'module_0',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> E + E',
+                                                   'module_steps': 3}),
+                                                 ('Z_0__module_0__1',
+                                                  'Z_1__centric',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__module_0__1', 'Z_1__centric'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                   'module_start_end': ('X_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '3.0 * theta_0',
+                                                   'edge_rate_symbol': '3.0 * dl',
+                                                   'module_rate_symbol_identifier': 'theta_0',
+                                                   'module_rate_symbol': 'dl',
+                                                   'module_identifier': 'module_0',
+                                                   'edge_type': 'S -> E + E',
+                                                   'module_type': 'S -> E + E',
+                                                   'module_steps': 3})])
 
     def test_sim_moment_net_influx_markov(self):
         t = [
@@ -335,29 +547,43 @@ class TestMomentsSimClass(object):
         sim.sim_moments.prepare_moment_simulation(sim.sim_variables_order, sim.sim_variables_identifier, mean_only)
 
         # check all testable attributes for the simulation of this network
-        # assert(sim.sim_moments.moment_order_main == )
-        # assert(sim.sim_moments.moment_order_hidden == )
-        # assert(sim.sim_moments.moment_aux_vars == )
-        # assert(sim.sim_moments.moment_aux_vars_dict == )
-        # assert(sim.sim_moments.theta_replaceable == )
-        # assert(sim.sim_moments.theta_replaceable_dict == )
-        # assert(sim.sim_moments.moment_pde == )
-        # assert(sim.sim_moments.moment_eqs == )
-        # assert(sim.sim_moments.moment_eqs_template_str == )
-        # assert(sim.sim_moments.moment_mean_ind == )
-        # assert(sim.sim_moments.moment_var_ind_intra == )
-        # assert(sim.sim_moments.moment_var_ind_inter == )
-        # assert(sim.sim_moments.moment_cov_ind == )
-        # assert(sim.sim_moments.moment_num_means == )
-        # assert(sim.sim_moments.moment_num_vars == )
-        # assert(sim.sim_moments.moment_num_covs == )
-        # assert(sim.sim_moments.variables_mean_ind == )
-        # assert(sim.sim_moments.variables_var_ind == )
-        # assert(sim.sim_moments.variables_cov_ind == )
-        # assert(sim.sim_moments.variables_num_means == )
-        # assert(sim.sim_moments.variables_num_vars == )
-        # assert(sim.sim_moments.variables_num_covs == )
-        # assert(sim.sim_moments.net_hidden_edges == )
+        assert(sim.sim_moments.moment_order_main == [[('Z_0',)], [('Z_0', 'Z_0')]])
+        assert(sim.sim_moments.moment_order_hidden == [[('Z_0__centric',)], [('Z_0__centric', 'Z_0__centric')]])
+        assert(sim.sim_moments.moment_aux_vars == ['z_0__centric_q'])
+        assert(sim.sim_moments.moment_aux_vars_dict == {'Z_0__centric': 'z_0__centric_q'})
+        assert(sim.sim_moments.theta_replaceable == ['theta_0_q'])
+        assert(sim.sim_moments.theta_replaceable_dict == {'theta_0': 'theta_0_q'})
+        assert(sim.sim_moments.moment_pde == '1.0 * theta_0_q * (z_0__centric_q - 1) * F(z_0__centric_q)')
+        assert(sim.sim_moments.moment_eqs == ['1.0*theta[0]', '2.0*m[0]*theta[0]'])
+        assert(sim.sim_moments.moment_eqs_template_str == '@jit(nopython=True)\ndef _moment_eqs_template(m, time, theta):\n\treturn np.array([\n\t1.0*theta[0],\n\t2.0*m[0]*theta[0]\n\t])')
+        assert(sim.sim_moments.moment_mean_ind.tolist() == [[(0,)]])
+        assert(sim.sim_moments.moment_var_ind_intra.tolist() == [[(1,), (0,)]])
+        assert(sim.sim_moments.moment_var_ind_inter.tolist() == [[(), (), ()]])
+        assert(sim.sim_moments.moment_cov_ind.tolist() == [])
+        assert(sim.sim_moments.moment_num_means == 1)
+        assert(sim.sim_moments.moment_num_vars == 1)
+        assert(sim.sim_moments.moment_num_covs == 0)
+        assert(sim.sim_moments.variables_mean_ind.tolist() == [[(0,)]])
+        assert(sim.sim_moments.variables_var_ind.tolist() == [[(0,), ()]])
+        assert(sim.sim_moments.variables_cov_ind.tolist() == [])
+        assert(sim.sim_moments.variables_num_means == 1)
+        assert(sim.sim_moments.variables_num_vars == 1)
+        assert(sim.sim_moments.variables_num_covs == 0)
+        assert(sim.sim_moments.net_hidden_edges == [('Z_env__centric',
+                                                      'Z_0__centric',
+                                                      0,
+                                                      {'edge_start_end_identifier': ('Z_env__centric', 'Z_0__centric'),
+                                                       'edge_centric_start_end_identifier': ('Z_env__centric', 'Z_0__centric'),
+                                                       'module_start_end_identifier': ('Z_env', 'Z_0'),
+                                                       'module_start_end': ('env', 'Y_t'),
+                                                       'edge_rate_symbol_identifier': '1.0 * theta_0',
+                                                       'edge_rate_symbol': '1.0 * din',
+                                                       'module_rate_symbol_identifier': 'theta_0',
+                                                       'module_rate_symbol': 'din',
+                                                       'module_identifier': 'module_0',
+                                                       'edge_type': '-> E',
+                                                       'module_type': '-> E',
+                                                       'module_steps': 1})])
 
     def test_sim_moment_net_efflux_erl3(self):
         t = [
@@ -376,29 +602,89 @@ class TestMomentsSimClass(object):
         sim.sim_moments.prepare_moment_simulation(sim.sim_variables_order, sim.sim_variables_identifier, mean_only)
 
         # check all testable attributes for the simulation of this network
-        # assert(sim.sim_moments.moment_order_main == )
-        # assert(sim.sim_moments.moment_order_hidden == )
-        # assert(sim.sim_moments.moment_aux_vars == )
-        # assert(sim.sim_moments.moment_aux_vars_dict == )
-        # assert(sim.sim_moments.theta_replaceable == )
-        # assert(sim.sim_moments.theta_replaceable_dict == )
-        # assert(sim.sim_moments.moment_pde == )
-        # assert(sim.sim_moments.moment_eqs == )
-        # assert(sim.sim_moments.moment_eqs_template_str == )
-        # assert(sim.sim_moments.moment_mean_ind == )
-        # assert(sim.sim_moments.moment_var_ind_intra == )
-        # assert(sim.sim_moments.moment_var_ind_inter == )
-        # assert(sim.sim_moments.moment_cov_ind == )
-        # assert(sim.sim_moments.moment_num_means == )
-        # assert(sim.sim_moments.moment_num_vars == )
-        # assert(sim.sim_moments.moment_num_covs == )
-        # assert(sim.sim_moments.variables_mean_ind == )
-        # assert(sim.sim_moments.variables_var_ind == )
-        # assert(sim.sim_moments.variables_cov_ind == )
-        # assert(sim.sim_moments.variables_num_means == )
-        # assert(sim.sim_moments.variables_num_vars == )
-        # assert(sim.sim_moments.variables_num_covs == )
-        # assert(sim.sim_moments.net_hidden_edges == )
+        assert(sim.sim_moments.moment_order_main == [[('Z_0',)], [('Z_0', 'Z_0')]])
+        assert(sim.sim_moments.moment_order_hidden == [[('Z_0__centric',), ('Z_0__module_0__0',), ('Z_0__module_0__1',)],
+                                                     [('Z_0__centric', 'Z_0__centric'),
+                                                      ('Z_0__centric', 'Z_0__module_0__0'),
+                                                      ('Z_0__centric', 'Z_0__module_0__1'),
+                                                      ('Z_0__module_0__0', 'Z_0__module_0__0'),
+                                                      ('Z_0__module_0__0', 'Z_0__module_0__1'),
+                                                      ('Z_0__module_0__1', 'Z_0__module_0__1')]])
+        assert(sim.sim_moments.moment_aux_vars == ['z_0__centric_q', 'z_0__module_0__0_q', 'z_0__module_0__1_q'])
+        assert(sim.sim_moments.moment_aux_vars_dict == {'Z_0__centric': 'z_0__centric_q',
+ 'Z_0__module_0__0': 'z_0__module_0__0_q',
+ 'Z_0__module_0__1': 'z_0__module_0__1_q'})
+        assert(sim.sim_moments.theta_replaceable == ['theta_0_q'])
+        assert(sim.sim_moments.theta_replaceable_dict == {'theta_0': 'theta_0_q'})
+        assert(sim.sim_moments.moment_pde == '3.0 * theta_0_q * (z_0__module_0__0_q - z_0__centric_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q), z_0__centric_q) + 3.0 * theta_0_q * (z_0__module_0__1_q - z_0__module_0__0_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q), z_0__module_0__0_q) + 3.0 * theta_0_q * (1 - z_0__module_0__1_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q), z_0__module_0__1_q)')
+        assert(sim.sim_moments.moment_eqs == ['-3.0*m[0]*theta[0]',
+                                 '3.0*m[0]*theta[0] - 3.0*m[1]*theta[0]',
+                                 '3.0*m[1]*theta[0] - 3.0*m[2]*theta[0]',
+                                 '-6.0*m[3]*theta[0]',
+                                 '3.0*m[3]*theta[0] - 6.0*m[4]*theta[0]',
+                                 '3.0*m[4]*theta[0] - 6.0*m[5]*theta[0]',
+                                 '6.0*m[4]*theta[0] - 6.0*m[6]*theta[0]',
+                                 '3.0*m[5]*theta[0] + 3.0*m[6]*theta[0] - 6.0*m[7]*theta[0]',
+                                 '6.0*m[7]*theta[0] - 6.0*m[8]*theta[0]'])
+        assert(sim.sim_moments.moment_eqs_template_str == '@jit(nopython=True)\ndef _moment_eqs_template(m, time, theta):\n\treturn np.array([\n\t-3.0*m[0]*theta[0],\n\t3.0*m[0]*theta[0] - 3.0*m[1]*theta[0],\n\t3.0*m[1]*theta[0] - 3.0*m[2]*theta[0],\n\t-6.0*m[3]*theta[0],\n\t3.0*m[3]*theta[0] - 6.0*m[4]*theta[0],\n\t3.0*m[4]*theta[0] - 6.0*m[5]*theta[0],\n\t6.0*m[4]*theta[0] - 6.0*m[6]*theta[0],\n\t3.0*m[5]*theta[0] + 3.0*m[6]*theta[0] - 6.0*m[7]*theta[0],\n\t6.0*m[7]*theta[0] - 6.0*m[8]*theta[0]\n\t])')
+        assert(sim.sim_moments.moment_mean_ind.tolist() == [[(0, 1, 2)]])
+        assert(sim.sim_moments.moment_var_ind_intra.tolist() == [[(3, 6, 8), (0, 1, 2)]])
+        assert(sim.sim_moments.moment_var_ind_inter.tolist() == [[(4, 5, 7), (0, 0, 1), (1, 2, 2)]])
+        assert(sim.sim_moments.moment_cov_ind.tolist() == [])
+        assert(sim.sim_moments.moment_num_means == 1)
+        assert(sim.sim_moments.moment_num_vars == 1)
+        assert(sim.sim_moments.moment_num_covs == 0)
+        assert(sim.sim_moments.variables_mean_ind.tolist() == [[(0,)]])
+        assert(sim.sim_moments.variables_var_ind.tolist() == [[(0,), ()]])
+        assert(sim.sim_moments.variables_cov_ind.tolist() == [])
+        assert(sim.sim_moments.variables_num_means == 1)
+        assert(sim.sim_moments.variables_num_vars == 1)
+        assert(sim.sim_moments.variables_num_covs == 0)
+        assert(sim.sim_moments.net_hidden_edges == [('Z_0__centric',
+                                                  'Z_0__module_0__0',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__centric', 'Z_0__module_0__0'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_env__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_env'),
+                                                   'module_start_end': ('X_t', 'env'),
+                                                   'edge_rate_symbol_identifier': '3.0 * theta_0',
+                                                   'edge_rate_symbol': '3.0 * dout',
+                                                   'module_rate_symbol_identifier': 'theta_0',
+                                                   'module_rate_symbol': 'dout',
+                                                   'module_identifier': 'module_0',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S ->',
+                                                   'module_steps': 3}),
+                                                 ('Z_0__module_0__0',
+                                                  'Z_0__module_0__1',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__module_0__0', 'Z_0__module_0__1'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_env__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_env'),
+                                                   'module_start_end': ('X_t', 'env'),
+                                                   'edge_rate_symbol_identifier': '3.0 * theta_0',
+                                                   'edge_rate_symbol': '3.0 * dout',
+                                                   'module_rate_symbol_identifier': 'theta_0',
+                                                   'module_rate_symbol': 'dout',
+                                                   'module_identifier': 'module_0',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S ->',
+                                                   'module_steps': 3}),
+                                                 ('Z_0__module_0__1',
+                                                  'Z_env__centric',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__module_0__1', 'Z_env__centric'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_env__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_env'),
+                                                   'module_start_end': ('X_t', 'env'),
+                                                   'edge_rate_symbol_identifier': '3.0 * theta_0',
+                                                   'edge_rate_symbol': '3.0 * dout',
+                                                   'module_rate_symbol_identifier': 'theta_0',
+                                                   'module_rate_symbol': 'dout',
+                                                   'module_identifier': 'module_0',
+                                                   'edge_type': 'S ->',
+                                                   'module_type': 'S ->',
+                                                   'module_steps': 3})])
 
     def test_sim_moment_net_min_2_4(self):
         net = me.Network('net_min_2_4')
@@ -421,29 +707,184 @@ class TestMomentsSimClass(object):
         sim.sim_moments.prepare_moment_simulation(sim.sim_variables_order, sim.sim_variables_identifier, mean_only)
 
         # check all testable attributes for the simulation of this network
-        # assert(sim.sim_moments.moment_order_main == )
-        # assert(sim.sim_moments.moment_order_hidden == )
-        # assert(sim.sim_moments.moment_aux_vars == )
-        # assert(sim.sim_moments.moment_aux_vars_dict == )
-        # assert(sim.sim_moments.theta_replaceable == )
-        # assert(sim.sim_moments.theta_replaceable_dict == )
-        # assert(sim.sim_moments.moment_pde == )
-        # assert(sim.sim_moments.moment_eqs == )
-        # assert(sim.sim_moments.moment_eqs_template_str == )
-        # assert(sim.sim_moments.moment_mean_ind == )
-        # assert(sim.sim_moments.moment_var_ind_intra == )
-        # assert(sim.sim_moments.moment_var_ind_inter == )
-        # assert(sim.sim_moments.moment_cov_ind == )
-        # assert(sim.sim_moments.moment_num_means == )
-        # assert(sim.sim_moments.moment_num_vars == )
-        # assert(sim.sim_moments.moment_num_covs == )
-        # assert(sim.sim_moments.variables_mean_ind == )
-        # assert(sim.sim_moments.variables_var_ind == )
-        # assert(sim.sim_moments.variables_cov_ind == )
-        # assert(sim.sim_moments.variables_num_means == )
-        # assert(sim.sim_moments.variables_num_vars == )
-        # assert(sim.sim_moments.variables_num_covs == )
-        # assert(sim.sim_moments.net_hidden_edges == )
+        assert(sim.sim_moments.moment_order_main == [[('Z_0',), ('Z_1',)], [('Z_0', 'Z_0'), ('Z_0', 'Z_1'), ('Z_1', 'Z_1')]])
+        assert(sim.sim_moments.moment_order_hidden == [[('Z_0__centric',),
+                                                      ('Z_0__module_0__0',),
+                                                      ('Z_1__centric',),
+                                                      ('Z_1__module_1__0',),
+                                                      ('Z_1__module_1__1',),
+                                                      ('Z_1__module_1__2',)],
+                                                     [('Z_0__centric', 'Z_0__centric'),
+                                                      ('Z_0__centric', 'Z_0__module_0__0'),
+                                                      ('Z_0__centric', 'Z_1__centric'),
+                                                      ('Z_0__centric', 'Z_1__module_1__0'),
+                                                      ('Z_0__centric', 'Z_1__module_1__1'),
+                                                      ('Z_0__centric', 'Z_1__module_1__2'),
+                                                      ('Z_0__module_0__0', 'Z_0__module_0__0'),
+                                                      ('Z_0__module_0__0', 'Z_1__centric'),
+                                                      ('Z_0__module_0__0', 'Z_1__module_1__0'),
+                                                      ('Z_0__module_0__0', 'Z_1__module_1__1'),
+                                                      ('Z_0__module_0__0', 'Z_1__module_1__2'),
+                                                      ('Z_1__centric', 'Z_1__centric'),
+                                                      ('Z_1__centric', 'Z_1__module_1__0'),
+                                                      ('Z_1__centric', 'Z_1__module_1__1'),
+                                                      ('Z_1__centric', 'Z_1__module_1__2'),
+                                                      ('Z_1__module_1__0', 'Z_1__module_1__0'),
+                                                      ('Z_1__module_1__0', 'Z_1__module_1__1'),
+                                                      ('Z_1__module_1__0', 'Z_1__module_1__2'),
+                                                      ('Z_1__module_1__1', 'Z_1__module_1__1'),
+                                                      ('Z_1__module_1__1', 'Z_1__module_1__2'),
+                                                      ('Z_1__module_1__2', 'Z_1__module_1__2')]])
+        assert(sim.sim_moments.moment_aux_vars == ['z_0__centric_q',
+                                                 'z_0__module_0__0_q',
+                                                 'z_1__centric_q',
+                                                 'z_1__module_1__0_q',
+                                                 'z_1__module_1__1_q',
+                                                 'z_1__module_1__2_q'])
+        assert(sim.sim_moments.moment_aux_vars_dict == {'Z_0__centric': 'z_0__centric_q',
+                                                     'Z_0__module_0__0': 'z_0__module_0__0_q',
+                                                     'Z_1__centric': 'z_1__centric_q',
+                                                     'Z_1__module_1__0': 'z_1__module_1__0_q',
+                                                     'Z_1__module_1__1': 'z_1__module_1__1_q',
+                                                     'Z_1__module_1__2': 'z_1__module_1__2_q'})
+        assert(sim.sim_moments.theta_replaceable == ['theta_0_q', 'theta_1_q'])
+        assert(sim.sim_moments.theta_replaceable_dict == {'theta_0': 'theta_0_q', 'theta_1': 'theta_1_q'})
+        assert(sim.sim_moments.moment_pde ==
+'2.0 * theta_0_q * (z_0__module_0__0_q - z_0__centric_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_1__centric_q, z_1__module_1__0_q, z_1__module_1__1_q, z_1__module_1__2_q), z_0__centric_q) + 2.0 * theta_0_q * (z_1__centric_q - z_0__module_0__0_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_1__centric_q, z_1__module_1__0_q, z_1__module_1__1_q, z_1__module_1__2_q), z_0__module_0__0_q) + 4.0 * theta_1_q * (z_1__module_1__0_q - z_1__centric_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_1__centric_q, z_1__module_1__0_q, z_1__module_1__1_q, z_1__module_1__2_q), z_1__centric_q) + 4.0 * theta_1_q * (z_1__module_1__1_q - z_1__module_1__0_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_1__centric_q, z_1__module_1__0_q, z_1__module_1__1_q, z_1__module_1__2_q), z_1__module_1__0_q) + 4.0 * theta_1_q * (z_1__module_1__2_q - z_1__module_1__1_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_1__centric_q, z_1__module_1__0_q, z_1__module_1__1_q, z_1__module_1__2_q), z_1__module_1__1_q) + 4.0 * theta_1_q * (z_1__centric_q * z_1__centric_q - z_1__module_1__2_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_1__centric_q, z_1__module_1__0_q, z_1__module_1__1_q, z_1__module_1__2_q), z_1__module_1__2_q)')
+        assert(sim.sim_moments.moment_eqs == ['-2.0*m[0]*theta[0]',
+                                             '2.0*m[0]*theta[0] - 2.0*m[1]*theta[0]',
+                                             '2.0*m[1]*theta[0] - 4.0*m[2]*theta[1] + 8.0*m[5]*theta[1]',
+                                             '4.0*m[2]*theta[1] - 4.0*m[3]*theta[1]',
+                                             '4.0*m[3]*theta[1] - 4.0*m[4]*theta[1]',
+                                             '4.0*m[4]*theta[1] - 4.0*m[5]*theta[1]',
+                                             '-4.0*m[6]*theta[0]',
+                                             '2.0*m[6]*theta[0] - 4.0*m[7]*theta[0]',
+                                             '8.0*m[11]*theta[1] + 2.0*m[7]*theta[0] - 2.0*m[8]*theta[0] - 4.0*m[8]*theta[1]',
+                                             '4.0*m[8]*theta[1] - 2.0*m[9]*theta[0] - 4.0*m[9]*theta[1]',
+                                             '-2.0*m[10]*theta[0] - 4.0*m[10]*theta[1] + 4.0*m[9]*theta[1]',
+                                             '4.0*m[10]*theta[1] - 2.0*m[11]*theta[0] - 4.0*m[11]*theta[1]',
+                                             '-4.0*m[12]*theta[0] + 4.0*m[7]*theta[0]',
+                                             '2.0*m[12]*theta[0] - 2.0*m[13]*theta[0] - 4.0*m[13]*theta[1] + 8.0*m[16]*theta[1] + 2.0*m[8]*theta[0]',
+                                             '4.0*m[13]*theta[1] - 2.0*m[14]*theta[0] - 4.0*m[14]*theta[1] + 2.0*m[9]*theta[0]',
+                                             '2.0*m[10]*theta[0] + 4.0*m[14]*theta[1] - 2.0*m[15]*theta[0] - 4.0*m[15]*theta[1]',
+                                             '2.0*m[11]*theta[0] + 4.0*m[15]*theta[1] - 2.0*m[16]*theta[0] - 4.0*m[16]*theta[1]',
+                                             '4.0*m[13]*theta[0] - 8.0*m[17]*theta[1] + 16.0*m[20]*theta[1] + 8.0*m[5]*theta[1]',
+                                             '2.0*m[14]*theta[0] + 4.0*m[17]*theta[1] - 8.0*m[18]*theta[1] + 8.0*m[23]*theta[1]',
+                                             '2.0*m[15]*theta[0] + 4.0*m[18]*theta[1] - 8.0*m[19]*theta[1] + 8.0*m[25]*theta[1]',
+                                             '2.0*m[16]*theta[0] + 4.0*m[19]*theta[1] - 8.0*m[20]*theta[1] + 8.0*m[26]*theta[1]',
+                                             '8.0*m[18]*theta[1] - 8.0*m[21]*theta[1]',
+                                             '4.0*m[19]*theta[1] + 4.0*m[21]*theta[1] - 8.0*m[22]*theta[1]',
+                                             '4.0*m[20]*theta[1] + 4.0*m[22]*theta[1] - 8.0*m[23]*theta[1]',
+                                             '8.0*m[22]*theta[1] - 8.0*m[24]*theta[1]',
+                                             '4.0*m[23]*theta[1] + 4.0*m[24]*theta[1] - 8.0*m[25]*theta[1]',
+                                             '8.0*m[25]*theta[1] - 8.0*m[26]*theta[1]'])
+        assert(sim.sim_moments.moment_eqs_template_str == '@jit(nopython=True)\ndef _moment_eqs_template(m, time, theta):\n\treturn np.array([\n\t-2.0*m[0]*theta[0],\n\t2.0*m[0]*theta[0] - 2.0*m[1]*theta[0],\n\t2.0*m[1]*theta[0] - 4.0*m[2]*theta[1] + 8.0*m[5]*theta[1],\n\t4.0*m[2]*theta[1] - 4.0*m[3]*theta[1],\n\t4.0*m[3]*theta[1] - 4.0*m[4]*theta[1],\n\t4.0*m[4]*theta[1] - 4.0*m[5]*theta[1],\n\t-4.0*m[6]*theta[0],\n\t2.0*m[6]*theta[0] - 4.0*m[7]*theta[0],\n\t8.0*m[11]*theta[1] + 2.0*m[7]*theta[0] - 2.0*m[8]*theta[0] - 4.0*m[8]*theta[1],\n\t4.0*m[8]*theta[1] - 2.0*m[9]*theta[0] - 4.0*m[9]*theta[1],\n\t-2.0*m[10]*theta[0] - 4.0*m[10]*theta[1] + 4.0*m[9]*theta[1],\n\t4.0*m[10]*theta[1] - 2.0*m[11]*theta[0] - 4.0*m[11]*theta[1],\n\t-4.0*m[12]*theta[0] + 4.0*m[7]*theta[0],\n\t2.0*m[12]*theta[0] - 2.0*m[13]*theta[0] - 4.0*m[13]*theta[1] + 8.0*m[16]*theta[1] + 2.0*m[8]*theta[0],\n\t4.0*m[13]*theta[1] - 2.0*m[14]*theta[0] - 4.0*m[14]*theta[1] + 2.0*m[9]*theta[0],\n\t2.0*m[10]*theta[0] + 4.0*m[14]*theta[1] - 2.0*m[15]*theta[0] - 4.0*m[15]*theta[1],\n\t2.0*m[11]*theta[0] + 4.0*m[15]*theta[1] - 2.0*m[16]*theta[0] - 4.0*m[16]*theta[1],\n\t4.0*m[13]*theta[0] - 8.0*m[17]*theta[1] + 16.0*m[20]*theta[1] + 8.0*m[5]*theta[1],\n\t2.0*m[14]*theta[0] + 4.0*m[17]*theta[1] - 8.0*m[18]*theta[1] + 8.0*m[23]*theta[1],\n\t2.0*m[15]*theta[0] + 4.0*m[18]*theta[1] - 8.0*m[19]*theta[1] + 8.0*m[25]*theta[1],\n\t2.0*m[16]*theta[0] + 4.0*m[19]*theta[1] - 8.0*m[20]*theta[1] + 8.0*m[26]*theta[1],\n\t8.0*m[18]*theta[1] - 8.0*m[21]*theta[1],\n\t4.0*m[19]*theta[1] + 4.0*m[21]*theta[1] - 8.0*m[22]*theta[1],\n\t4.0*m[20]*theta[1] + 4.0*m[22]*theta[1] - 8.0*m[23]*theta[1],\n\t8.0*m[22]*theta[1] - 8.0*m[24]*theta[1],\n\t4.0*m[23]*theta[1] + 4.0*m[24]*theta[1] - 8.0*m[25]*theta[1],\n\t8.0*m[25]*theta[1] - 8.0*m[26]*theta[1]\n\t])')
+        assert(sim.sim_moments.moment_mean_ind.tolist() == [[(0, 1)], [(2, 3, 4, 5)]])
+        assert(sim.sim_moments.moment_var_ind_intra.tolist() == [[(6, 12), (0, 1)], [(17, 21, 24, 26), (2, 3, 4, 5)]])
+        assert(sim.sim_moments.moment_var_ind_inter.tolist() == [[(7,), (0,), (1,)],
+                                            [(18, 19, 20, 22, 23, 25), (2, 2, 2, 3, 3, 4), (3, 4, 5, 4, 5, 5)]])
+        assert(sim.sim_moments.moment_cov_ind.tolist() == [[(8, 9, 10, 11, 13, 14, 15, 16),
+                                                              (0, 0, 0, 0, 1, 1, 1, 1),
+                                                              (2, 3, 4, 5, 2, 3, 4, 5)]])
+        assert(sim.sim_moments.moment_num_means == 2)
+        assert(sim.sim_moments.moment_num_vars == 2)
+        assert(sim.sim_moments.moment_num_covs == 1)
+        assert(sim.sim_moments.variables_mean_ind.tolist() == [[(0,)], [(1,)]])
+        assert(sim.sim_moments.variables_var_ind.tolist() == [[(0,), ()], [(1,), ()]])
+        assert(sim.sim_moments.variables_cov_ind.tolist() == [[(), (0,)]])
+        assert(sim.sim_moments.variables_num_means == 2)
+        assert(sim.sim_moments.variables_num_vars == 2)
+        assert(sim.sim_moments.variables_num_covs == 1)
+        assert(sim.sim_moments.net_hidden_edges == [('Z_0__centric',
+                                              'Z_0__module_0__0',
+                                              0,
+                                              {'edge_start_end_identifier': ('Z_0__centric', 'Z_0__module_0__0'),
+                                               'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                               'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                               'module_start_end': ('X_t', 'Y_t'),
+                                               'edge_rate_symbol_identifier': '2.0 * theta_0',
+                                               'edge_rate_symbol': '2.0 * d',
+                                               'module_rate_symbol_identifier': 'theta_0',
+                                               'module_rate_symbol': 'd',
+                                               'module_identifier': 'module_0',
+                                               'edge_type': 'S -> E',
+                                               'module_type': 'S -> E',
+                                               'module_steps': 2}),
+                                             ('Z_0__module_0__0',
+                                              'Z_1__centric',
+                                              0,
+                                              {'edge_start_end_identifier': ('Z_0__module_0__0', 'Z_1__centric'),
+                                               'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                               'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                               'module_start_end': ('X_t', 'Y_t'),
+                                               'edge_rate_symbol_identifier': '2.0 * theta_0',
+                                               'edge_rate_symbol': '2.0 * d',
+                                               'module_rate_symbol_identifier': 'theta_0',
+                                               'module_rate_symbol': 'd',
+                                               'module_identifier': 'module_0',
+                                               'edge_type': 'S -> E',
+                                               'module_type': 'S -> E',
+                                               'module_steps': 2}),
+                                             ('Z_1__centric',
+                                              'Z_1__module_1__0',
+                                              0,
+                                              {'edge_start_end_identifier': ('Z_1__centric', 'Z_1__module_1__0'),
+                                               'edge_centric_start_end_identifier': ('Z_1__centric', 'Z_1__centric'),
+                                               'module_start_end_identifier': ('Z_1', 'Z_1'),
+                                               'module_start_end': ('Y_t', 'Y_t'),
+                                               'edge_rate_symbol_identifier': '4.0 * theta_1',
+                                               'edge_rate_symbol': '4.0 * l',
+                                               'module_rate_symbol_identifier': 'theta_1',
+                                               'module_rate_symbol': 'l',
+                                               'module_identifier': 'module_1',
+                                               'edge_type': 'S -> E',
+                                               'module_type': 'S -> S + S',
+                                               'module_steps': 4}),
+                                             ('Z_1__module_1__0',
+                                              'Z_1__module_1__1',
+                                              0,
+                                              {'edge_start_end_identifier': ('Z_1__module_1__0', 'Z_1__module_1__1'),
+                                               'edge_centric_start_end_identifier': ('Z_1__centric', 'Z_1__centric'),
+                                               'module_start_end_identifier': ('Z_1', 'Z_1'),
+                                               'module_start_end': ('Y_t', 'Y_t'),
+                                               'edge_rate_symbol_identifier': '4.0 * theta_1',
+                                               'edge_rate_symbol': '4.0 * l',
+                                               'module_rate_symbol_identifier': 'theta_1',
+                                               'module_rate_symbol': 'l',
+                                               'module_identifier': 'module_1',
+                                               'edge_type': 'S -> E',
+                                               'module_type': 'S -> S + S',
+                                               'module_steps': 4}),
+                                             ('Z_1__module_1__1',
+                                              'Z_1__module_1__2',
+                                              0,
+                                              {'edge_start_end_identifier': ('Z_1__module_1__1', 'Z_1__module_1__2'),
+                                               'edge_centric_start_end_identifier': ('Z_1__centric', 'Z_1__centric'),
+                                               'module_start_end_identifier': ('Z_1', 'Z_1'),
+                                               'module_start_end': ('Y_t', 'Y_t'),
+                                               'edge_rate_symbol_identifier': '4.0 * theta_1',
+                                               'edge_rate_symbol': '4.0 * l',
+                                               'module_rate_symbol_identifier': 'theta_1',
+                                               'module_rate_symbol': 'l',
+                                               'module_identifier': 'module_1',
+                                               'edge_type': 'S -> E',
+                                               'module_type': 'S -> S + S',
+                                               'module_steps': 4}),
+                                             ('Z_1__module_1__2',
+                                              'Z_1__centric',
+                                              0,
+                                              {'edge_start_end_identifier': ('Z_1__module_1__2', 'Z_1__centric'),
+                                               'edge_centric_start_end_identifier': ('Z_1__centric', 'Z_1__centric'),
+                                               'module_start_end_identifier': ('Z_1', 'Z_1'),
+                                               'module_start_end': ('Y_t', 'Y_t'),
+                                               'edge_rate_symbol_identifier': '4.0 * theta_1',
+                                               'edge_rate_symbol': '4.0 * l',
+                                               'module_rate_symbol_identifier': 'theta_1',
+                                               'module_rate_symbol': 'l',
+                                               'module_identifier': 'module_1',
+                                               'edge_type': 'S -> E + E',
+                                               'module_type': 'S -> S + S',
+                                               'module_steps': 4})])
 
     def test_sim_moment_net_par2(self):
         net = me.Network('net_par2')
@@ -463,29 +904,268 @@ class TestMomentsSimClass(object):
         sim.sim_moments.prepare_moment_simulation(sim.sim_variables_order, sim.sim_variables_identifier, mean_only)
 
         # check all testable attributes for the simulation of this network
-        # assert(sim.sim_moments.moment_order_main == )
-        # assert(sim.sim_moments.moment_order_hidden == )
-        # assert(sim.sim_moments.moment_aux_vars == )
-        # assert(sim.sim_moments.moment_aux_vars_dict == )
-        # assert(sim.sim_moments.theta_replaceable == )
-        # assert(sim.sim_moments.theta_replaceable_dict == )
-        # assert(sim.sim_moments.moment_pde == )
-        # assert(sim.sim_moments.moment_eqs == )
-        # assert(sim.sim_moments.moment_eqs_template_str == )
-        # assert(sim.sim_moments.moment_mean_ind == )
-        # assert(sim.sim_moments.moment_var_ind_intra == )
-        # assert(sim.sim_moments.moment_var_ind_inter == )
-        # assert(sim.sim_moments.moment_cov_ind == )
-        # assert(sim.sim_moments.moment_num_means == )
-        # assert(sim.sim_moments.moment_num_vars == )
-        # assert(sim.sim_moments.moment_num_covs == )
-        # assert(sim.sim_moments.variables_mean_ind == )
-        # assert(sim.sim_moments.variables_var_ind == )
-        # assert(sim.sim_moments.variables_cov_ind == )
-        # assert(sim.sim_moments.variables_num_means == )
-        # assert(sim.sim_moments.variables_num_vars == )
-        # assert(sim.sim_moments.variables_num_covs == )
-        # assert(sim.sim_moments.net_hidden_edges == )
+        assert(sim.sim_moments.moment_order_main == [[('Z_0',), ('Z_1',)], [('Z_0', 'Z_0'), ('Z_0', 'Z_1'), ('Z_1', 'Z_1')]])
+        assert(sim.sim_moments.moment_order_hidden == [[('Z_0__centric',),
+                                                      ('Z_0__module_0__0',),
+                                                      ('Z_0__module_0__1',),
+                                                      ('Z_0__module_0__2',),
+                                                      ('Z_0__module_1__0',),
+                                                      ('Z_1__centric',),
+                                                      ('Z_1__module_2__0',),
+                                                      ('Z_1__module_2__1',)],
+                                                     [('Z_0__centric', 'Z_0__centric'),
+                                                      ('Z_0__centric', 'Z_0__module_0__0'),
+                                                      ('Z_0__centric', 'Z_0__module_0__1'),
+                                                      ('Z_0__centric', 'Z_0__module_0__2'),
+                                                      ('Z_0__centric', 'Z_0__module_1__0'),
+                                                      ('Z_0__centric', 'Z_1__centric'),
+                                                      ('Z_0__centric', 'Z_1__module_2__0'),
+                                                      ('Z_0__centric', 'Z_1__module_2__1'),
+                                                      ('Z_0__module_0__0', 'Z_0__module_0__0'),
+                                                      ('Z_0__module_0__0', 'Z_0__module_0__1'),
+                                                      ('Z_0__module_0__0', 'Z_0__module_0__2'),
+                                                      ('Z_0__module_0__0', 'Z_0__module_1__0'),
+                                                      ('Z_0__module_0__0', 'Z_1__centric'),
+                                                      ('Z_0__module_0__0', 'Z_1__module_2__0'),
+                                                      ('Z_0__module_0__0', 'Z_1__module_2__1'),
+                                                      ('Z_0__module_0__1', 'Z_0__module_0__1'),
+                                                      ('Z_0__module_0__1', 'Z_0__module_0__2'),
+                                                      ('Z_0__module_0__1', 'Z_0__module_1__0'),
+                                                      ('Z_0__module_0__1', 'Z_1__centric'),
+                                                      ('Z_0__module_0__1', 'Z_1__module_2__0'),
+                                                      ('Z_0__module_0__1', 'Z_1__module_2__1'),
+                                                      ('Z_0__module_0__2', 'Z_0__module_0__2'),
+                                                      ('Z_0__module_0__2', 'Z_0__module_1__0'),
+                                                      ('Z_0__module_0__2', 'Z_1__centric'),
+                                                      ('Z_0__module_0__2', 'Z_1__module_2__0'),
+                                                      ('Z_0__module_0__2', 'Z_1__module_2__1'),
+                                                      ('Z_0__module_1__0', 'Z_0__module_1__0'),
+                                                      ('Z_0__module_1__0', 'Z_1__centric'),
+                                                      ('Z_0__module_1__0', 'Z_1__module_2__0'),
+                                                      ('Z_0__module_1__0', 'Z_1__module_2__1'),
+                                                      ('Z_1__centric', 'Z_1__centric'),
+                                                      ('Z_1__centric', 'Z_1__module_2__0'),
+                                                      ('Z_1__centric', 'Z_1__module_2__1'),
+                                                      ('Z_1__module_2__0', 'Z_1__module_2__0'),
+                                                      ('Z_1__module_2__0', 'Z_1__module_2__1'),
+                                                      ('Z_1__module_2__1', 'Z_1__module_2__1')]])
+        assert(sim.sim_moments.moment_aux_vars == ['z_0__centric_q',
+                                                 'z_0__module_0__0_q',
+                                                 'z_0__module_0__1_q',
+                                                 'z_0__module_0__2_q',
+                                                 'z_0__module_1__0_q',
+                                                 'z_1__centric_q',
+                                                 'z_1__module_2__0_q',
+                                                 'z_1__module_2__1_q'])
+        assert(sim.sim_moments.moment_aux_vars_dict == {'Z_0__centric': 'z_0__centric_q',
+                                                     'Z_0__module_0__0': 'z_0__module_0__0_q',
+                                                     'Z_0__module_0__1': 'z_0__module_0__1_q',
+                                                     'Z_0__module_0__2': 'z_0__module_0__2_q',
+                                                     'Z_0__module_1__0': 'z_0__module_1__0_q',
+                                                     'Z_1__centric': 'z_1__centric_q',
+                                                     'Z_1__module_2__0': 'z_1__module_2__0_q',
+                                                     'Z_1__module_2__1': 'z_1__module_2__1_q'})
+        assert(sim.sim_moments.theta_replaceable == ['theta_0_q', 'theta_1_q', 'theta_2_q'])
+        assert(sim.sim_moments.theta_replaceable_dict == {'theta_0': 'theta_0_q', 'theta_1': 'theta_1_q', 'theta_2': 'theta_2_q'})
+        assert(sim.sim_moments.moment_pde == '4.0 * theta_1_q * (z_0__module_0__0_q - z_0__centric_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_0__centric_q) + 2.0 * theta_0_q * (z_0__module_1__0_q - z_0__centric_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_0__centric_q) + 4.0 * theta_1_q * (z_0__module_0__1_q - z_0__module_0__0_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_0__module_0__0_q) + 4.0 * theta_1_q * (z_0__module_0__2_q - z_0__module_0__1_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_0__module_0__1_q) + 4.0 * theta_1_q * (z_1__centric_q - z_0__module_0__2_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_0__module_0__2_q) + 2.0 * theta_0_q * (z_1__centric_q - z_0__module_1__0_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_0__module_1__0_q) + 3.0 * theta_2_q * (z_1__module_2__0_q - z_1__centric_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_1__centric_q) + 3.0 * theta_2_q * (z_1__module_2__1_q - z_1__module_2__0_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_1__module_2__0_q) + 3.0 * theta_2_q * (z_1__centric_q * z_1__centric_q - z_1__module_2__1_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_1__module_2__1_q)')
+        assert(sim.sim_moments.moment_eqs == ['-2.0*m[0]*theta[0] - 4.0*m[0]*theta[1]',
+                                                 '4.0*m[0]*theta[1] - 4.0*m[1]*theta[1]',
+                                                 '4.0*m[1]*theta[1] - 4.0*m[2]*theta[1]',
+                                                 '4.0*m[2]*theta[1] - 4.0*m[3]*theta[1]',
+                                                 '2.0*m[0]*theta[0] - 2.0*m[4]*theta[0]',
+                                                 '4.0*m[3]*theta[1] + 2.0*m[4]*theta[0] - 3.0*m[5]*theta[2] + 6.0*m[7]*theta[2]',
+                                                 '3.0*m[5]*theta[2] - 3.0*m[6]*theta[2]',
+                                                 '3.0*m[6]*theta[2] - 3.0*m[7]*theta[2]',
+                                                 '-4.0*m[8]*theta[0] - 8.0*m[8]*theta[1]',
+                                                 '4.0*m[8]*theta[1] - 2.0*m[9]*theta[0] - 8.0*m[9]*theta[1]',
+                                                 '-2.0*m[10]*theta[0] - 8.0*m[10]*theta[1] + 4.0*m[9]*theta[1]',
+                                                 '4.0*m[10]*theta[1] - 2.0*m[11]*theta[0] - 8.0*m[11]*theta[1]',
+                                                 '-4.0*m[12]*theta[0] - 4.0*m[12]*theta[1] + 2.0*m[8]*theta[0]',
+                                                 '4.0*m[11]*theta[1] + 2.0*m[12]*theta[0] - 2.0*m[13]*theta[0] - 4.0*m[13]*theta[1] - 3.0*m[13]*theta[2] + 6.0*m[15]*theta[2]',
+                                                 '3.0*m[13]*theta[2] - 2.0*m[14]*theta[0] - 4.0*m[14]*theta[1] - 3.0*m[14]*theta[2]',
+                                                 '3.0*m[14]*theta[2] - 2.0*m[15]*theta[0] - 4.0*m[15]*theta[1] - 3.0*m[15]*theta[2]',
+                                                 '-8.0*m[16]*theta[1] + 8.0*m[9]*theta[1]',
+                                                 '4.0*m[10]*theta[1] + 4.0*m[16]*theta[1] - 8.0*m[17]*theta[1]',
+                                                 '4.0*m[11]*theta[1] + 4.0*m[17]*theta[1] - 8.0*m[18]*theta[1]',
+                                                 '4.0*m[12]*theta[1] - 2.0*m[19]*theta[0] - 4.0*m[19]*theta[1] + 2.0*m[9]*theta[0]',
+                                                 '4.0*m[13]*theta[1] + 4.0*m[18]*theta[1] + 2.0*m[19]*theta[0] - 4.0*m[20]*theta[1] - 3.0*m[20]*theta[2] + 6.0*m[22]*theta[2]',
+                                                 '4.0*m[14]*theta[1] + 3.0*m[20]*theta[2] - 4.0*m[21]*theta[1] - 3.0*m[21]*theta[2]',
+                                                 '4.0*m[15]*theta[1] + 3.0*m[21]*theta[2] - 4.0*m[22]*theta[1] - 3.0*m[22]*theta[2]',
+                                                 '8.0*m[17]*theta[1] - 8.0*m[23]*theta[1]',
+                                                 '4.0*m[18]*theta[1] + 4.0*m[23]*theta[1] - 8.0*m[24]*theta[1]',
+                                                 '2.0*m[10]*theta[0] + 4.0*m[19]*theta[1] - 2.0*m[25]*theta[0] - 4.0*m[25]*theta[1]',
+                                                 '4.0*m[20]*theta[1] + 4.0*m[24]*theta[1] + 2.0*m[25]*theta[0] - 4.0*m[26]*theta[1] - 3.0*m[26]*theta[2] + 6.0*m[28]*theta[2]',
+                                                 '4.0*m[21]*theta[1] + 3.0*m[26]*theta[2] - 4.0*m[27]*theta[1] - 3.0*m[27]*theta[2]',
+                                                 '4.0*m[22]*theta[1] + 3.0*m[27]*theta[2] - 4.0*m[28]*theta[1] - 3.0*m[28]*theta[2]',
+                                                 '8.0*m[24]*theta[1] - 8.0*m[29]*theta[1]',
+                                                 '2.0*m[11]*theta[0] + 4.0*m[25]*theta[1] - 2.0*m[30]*theta[0] - 4.0*m[30]*theta[1]',
+                                                 '4.0*m[26]*theta[1] + 4.0*m[29]*theta[1] + 2.0*m[30]*theta[0] - 4.0*m[31]*theta[1] - 3.0*m[31]*theta[2] + 6.0*m[33]*theta[2]',
+                                                 '4.0*m[27]*theta[1] + 3.0*m[31]*theta[2] - 4.0*m[32]*theta[1] - 3.0*m[32]*theta[2]',
+                                                 '4.0*m[28]*theta[1] + 3.0*m[32]*theta[2] - 4.0*m[33]*theta[1] - 3.0*m[33]*theta[2]',
+                                                 '4.0*m[12]*theta[0] - 4.0*m[34]*theta[0]',
+                                                 '2.0*m[13]*theta[0] + 4.0*m[30]*theta[1] + 2.0*m[34]*theta[0] - 2.0*m[35]*theta[0] - 3.0*m[35]*theta[2] + 6.0*m[37]*theta[2]',
+                                                 '2.0*m[14]*theta[0] + 3.0*m[35]*theta[2] - 2.0*m[36]*theta[0] - 3.0*m[36]*theta[2]',
+                                                 '2.0*m[15]*theta[0] + 3.0*m[36]*theta[2] - 2.0*m[37]*theta[0] - 3.0*m[37]*theta[2]',
+                                                 '8.0*m[31]*theta[1] + 4.0*m[35]*theta[0] - 6.0*m[38]*theta[2] + 12.0*m[40]*theta[2] + 6.0*m[7]*theta[2]',
+                                                 '4.0*m[32]*theta[1] + 2.0*m[36]*theta[0] + 3.0*m[38]*theta[2] - 6.0*m[39]*theta[2] + 6.0*m[42]*theta[2]',
+                                                 '4.0*m[33]*theta[1] + 2.0*m[37]*theta[0] + 3.0*m[39]*theta[2] - 6.0*m[40]*theta[2] + 6.0*m[43]*theta[2]',
+                                                 '6.0*m[39]*theta[2] - 6.0*m[41]*theta[2]',
+                                                 '3.0*m[40]*theta[2] + 3.0*m[41]*theta[2] - 6.0*m[42]*theta[2]',
+                                                 '6.0*m[42]*theta[2] - 6.0*m[43]*theta[2]'])
+        assert(sim.sim_moments.moment_eqs_template_str == '@jit(nopython=True)\ndef _moment_eqs_template(m, time, theta):\n\treturn np.array([\n\t-2.0*m[0]*theta[0] - 4.0*m[0]*theta[1],\n\t4.0*m[0]*theta[1] - 4.0*m[1]*theta[1],\n\t4.0*m[1]*theta[1] - 4.0*m[2]*theta[1],\n\t4.0*m[2]*theta[1] - 4.0*m[3]*theta[1],\n\t2.0*m[0]*theta[0] - 2.0*m[4]*theta[0],\n\t4.0*m[3]*theta[1] + 2.0*m[4]*theta[0] - 3.0*m[5]*theta[2] + 6.0*m[7]*theta[2],\n\t3.0*m[5]*theta[2] - 3.0*m[6]*theta[2],\n\t3.0*m[6]*theta[2] - 3.0*m[7]*theta[2],\n\t-4.0*m[8]*theta[0] - 8.0*m[8]*theta[1],\n\t4.0*m[8]*theta[1] - 2.0*m[9]*theta[0] - 8.0*m[9]*theta[1],\n\t-2.0*m[10]*theta[0] - 8.0*m[10]*theta[1] + 4.0*m[9]*theta[1],\n\t4.0*m[10]*theta[1] - 2.0*m[11]*theta[0] - 8.0*m[11]*theta[1],\n\t-4.0*m[12]*theta[0] - 4.0*m[12]*theta[1] + 2.0*m[8]*theta[0],\n\t4.0*m[11]*theta[1] + 2.0*m[12]*theta[0] - 2.0*m[13]*theta[0] - 4.0*m[13]*theta[1] - 3.0*m[13]*theta[2] + 6.0*m[15]*theta[2],\n\t3.0*m[13]*theta[2] - 2.0*m[14]*theta[0] - 4.0*m[14]*theta[1] - 3.0*m[14]*theta[2],\n\t3.0*m[14]*theta[2] - 2.0*m[15]*theta[0] - 4.0*m[15]*theta[1] - 3.0*m[15]*theta[2],\n\t-8.0*m[16]*theta[1] + 8.0*m[9]*theta[1],\n\t4.0*m[10]*theta[1] + 4.0*m[16]*theta[1] - 8.0*m[17]*theta[1],\n\t4.0*m[11]*theta[1] + 4.0*m[17]*theta[1] - 8.0*m[18]*theta[1],\n\t4.0*m[12]*theta[1] - 2.0*m[19]*theta[0] - 4.0*m[19]*theta[1] + 2.0*m[9]*theta[0],\n\t4.0*m[13]*theta[1] + 4.0*m[18]*theta[1] + 2.0*m[19]*theta[0] - 4.0*m[20]*theta[1] - 3.0*m[20]*theta[2] + 6.0*m[22]*theta[2],\n\t4.0*m[14]*theta[1] + 3.0*m[20]*theta[2] - 4.0*m[21]*theta[1] - 3.0*m[21]*theta[2],\n\t4.0*m[15]*theta[1] + 3.0*m[21]*theta[2] - 4.0*m[22]*theta[1] - 3.0*m[22]*theta[2],\n\t8.0*m[17]*theta[1] - 8.0*m[23]*theta[1],\n\t4.0*m[18]*theta[1] + 4.0*m[23]*theta[1] - 8.0*m[24]*theta[1],\n\t2.0*m[10]*theta[0] + 4.0*m[19]*theta[1] - 2.0*m[25]*theta[0] - 4.0*m[25]*theta[1],\n\t4.0*m[20]*theta[1] + 4.0*m[24]*theta[1] + 2.0*m[25]*theta[0] - 4.0*m[26]*theta[1] - 3.0*m[26]*theta[2] + 6.0*m[28]*theta[2],\n\t4.0*m[21]*theta[1] + 3.0*m[26]*theta[2] - 4.0*m[27]*theta[1] - 3.0*m[27]*theta[2],\n\t4.0*m[22]*theta[1] + 3.0*m[27]*theta[2] - 4.0*m[28]*theta[1] - 3.0*m[28]*theta[2],\n\t8.0*m[24]*theta[1] - 8.0*m[29]*theta[1],\n\t2.0*m[11]*theta[0] + 4.0*m[25]*theta[1] - 2.0*m[30]*theta[0] - 4.0*m[30]*theta[1],\n\t4.0*m[26]*theta[1] + 4.0*m[29]*theta[1] + 2.0*m[30]*theta[0] - 4.0*m[31]*theta[1] - 3.0*m[31]*theta[2] + 6.0*m[33]*theta[2],\n\t4.0*m[27]*theta[1] + 3.0*m[31]*theta[2] - 4.0*m[32]*theta[1] - 3.0*m[32]*theta[2],\n\t4.0*m[28]*theta[1] + 3.0*m[32]*theta[2] - 4.0*m[33]*theta[1] - 3.0*m[33]*theta[2],\n\t4.0*m[12]*theta[0] - 4.0*m[34]*theta[0],\n\t2.0*m[13]*theta[0] + 4.0*m[30]*theta[1] + 2.0*m[34]*theta[0] - 2.0*m[35]*theta[0] - 3.0*m[35]*theta[2] + 6.0*m[37]*theta[2],\n\t2.0*m[14]*theta[0] + 3.0*m[35]*theta[2] - 2.0*m[36]*theta[0] - 3.0*m[36]*theta[2],\n\t2.0*m[15]*theta[0] + 3.0*m[36]*theta[2] - 2.0*m[37]*theta[0] - 3.0*m[37]*theta[2],\n\t8.0*m[31]*theta[1] + 4.0*m[35]*theta[0] - 6.0*m[38]*theta[2] + 12.0*m[40]*theta[2] + 6.0*m[7]*theta[2],\n\t4.0*m[32]*theta[1] + 2.0*m[36]*theta[0] + 3.0*m[38]*theta[2] - 6.0*m[39]*theta[2] + 6.0*m[42]*theta[2],\n\t4.0*m[33]*theta[1] + 2.0*m[37]*theta[0] + 3.0*m[39]*theta[2] - 6.0*m[40]*theta[2] + 6.0*m[43]*theta[2],\n\t6.0*m[39]*theta[2] - 6.0*m[41]*theta[2],\n\t3.0*m[40]*theta[2] + 3.0*m[41]*theta[2] - 6.0*m[42]*theta[2],\n\t6.0*m[42]*theta[2] - 6.0*m[43]*theta[2]\n\t])')
+        assert(sim.sim_moments.moment_mean_ind.tolist() == [[(0, 1, 2, 3, 4)], [(5, 6, 7)]])
+        assert(sim.sim_moments.moment_var_ind_intra.tolist() == [[(8, 16, 23, 29, 34), (0, 1, 2, 3, 4)], [(38, 41, 43), (5, 6, 7)]])
+        assert(sim.sim_moments.moment_var_ind_inter.tolist() == [[(9, 10, 11, 12, 17, 18, 19, 24, 25, 30),
+                                                                  (0, 0, 0, 0, 1, 1, 1, 2, 2, 3),
+                                                                  (1, 2, 3, 4, 2, 3, 4, 3, 4, 4)],
+                                                                 [(39, 40, 42), (5, 5, 6), (6, 7, 7)]])
+        assert(sim.sim_moments.moment_cov_ind.tolist() == [[(13, 14, 15, 20, 21, 22, 26, 27, 28, 31, 32, 33, 35, 36, 37),
+                                                              (0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4),
+                                                              (5, 6, 7, 5, 6, 7, 5, 6, 7, 5, 6, 7, 5, 6, 7)]])
+        assert(sim.sim_moments.moment_num_means == 2)
+        assert(sim.sim_moments.moment_num_vars == 2)
+        assert(sim.sim_moments.moment_num_covs == 1)
+        assert(sim.sim_moments.variables_mean_ind.tolist() == [[(0,)], [(1,)]])
+        assert(sim.sim_moments.variables_var_ind.tolist() == [[(0,), ()], [(1,), ()]])
+        assert(sim.sim_moments.variables_cov_ind.tolist() == [[(), (0,)]])
+        assert(sim.sim_moments.variables_num_means == 2)
+        assert(sim.sim_moments.variables_num_vars == 2)
+        assert(sim.sim_moments.variables_num_covs == 1)
+        assert(sim.sim_moments.net_hidden_edges == [('Z_0__centric',
+                                                  'Z_0__module_0__0',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__centric', 'Z_0__module_0__0'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                   'module_start_end': ('X_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '4.0 * theta_1',
+                                                   'edge_rate_symbol': '4.0 * d4',
+                                                   'module_rate_symbol_identifier': 'theta_1',
+                                                   'module_rate_symbol': 'd4',
+                                                   'module_identifier': 'module_0',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> E',
+                                                   'module_steps': 4}),
+                                                 ('Z_0__centric',
+                                                  'Z_0__module_1__0',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__centric', 'Z_0__module_1__0'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                   'module_start_end': ('X_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '2.0 * theta_0',
+                                                   'edge_rate_symbol': '2.0 * d2',
+                                                   'module_rate_symbol_identifier': 'theta_0',
+                                                   'module_rate_symbol': 'd2',
+                                                   'module_identifier': 'module_1',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> E',
+                                                   'module_steps': 2}),
+                                                 ('Z_0__module_0__0',
+                                                  'Z_0__module_0__1',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__module_0__0', 'Z_0__module_0__1'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                   'module_start_end': ('X_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '4.0 * theta_1',
+                                                   'edge_rate_symbol': '4.0 * d4',
+                                                   'module_rate_symbol_identifier': 'theta_1',
+                                                   'module_rate_symbol': 'd4',
+                                                   'module_identifier': 'module_0',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> E',
+                                                   'module_steps': 4}),
+                                                 ('Z_0__module_0__1',
+                                                  'Z_0__module_0__2',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__module_0__1', 'Z_0__module_0__2'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                   'module_start_end': ('X_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '4.0 * theta_1',
+                                                   'edge_rate_symbol': '4.0 * d4',
+                                                   'module_rate_symbol_identifier': 'theta_1',
+                                                   'module_rate_symbol': 'd4',
+                                                   'module_identifier': 'module_0',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> E',
+                                                   'module_steps': 4}),
+                                                 ('Z_0__module_0__2',
+                                                  'Z_1__centric',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__module_0__2', 'Z_1__centric'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                   'module_start_end': ('X_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '4.0 * theta_1',
+                                                   'edge_rate_symbol': '4.0 * d4',
+                                                   'module_rate_symbol_identifier': 'theta_1',
+                                                   'module_rate_symbol': 'd4',
+                                                   'module_identifier': 'module_0',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> E',
+                                                   'module_steps': 4}),
+                                                 ('Z_0__module_1__0',
+                                                  'Z_1__centric',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__module_1__0', 'Z_1__centric'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                   'module_start_end': ('X_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '2.0 * theta_0',
+                                                   'edge_rate_symbol': '2.0 * d2',
+                                                   'module_rate_symbol_identifier': 'theta_0',
+                                                   'module_rate_symbol': 'd2',
+                                                   'module_identifier': 'module_1',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> E',
+                                                   'module_steps': 2}),
+                                                 ('Z_1__centric',
+                                                  'Z_1__module_2__0',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_1__centric', 'Z_1__module_2__0'),
+                                                   'edge_centric_start_end_identifier': ('Z_1__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_1', 'Z_1'),
+                                                   'module_start_end': ('Y_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '3.0 * theta_2',
+                                                   'edge_rate_symbol': '3.0 * l',
+                                                   'module_rate_symbol_identifier': 'theta_2',
+                                                   'module_rate_symbol': 'l',
+                                                   'module_identifier': 'module_2',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> S + S',
+                                                   'module_steps': 3}),
+                                                 ('Z_1__module_2__0',
+                                                  'Z_1__module_2__1',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_1__module_2__0', 'Z_1__module_2__1'),
+                                                   'edge_centric_start_end_identifier': ('Z_1__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_1', 'Z_1'),
+                                                   'module_start_end': ('Y_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '3.0 * theta_2',
+                                                   'edge_rate_symbol': '3.0 * l',
+                                                   'module_rate_symbol_identifier': 'theta_2',
+                                                   'module_rate_symbol': 'l',
+                                                   'module_identifier': 'module_2',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> S + S',
+                                                   'module_steps': 3}),
+                                                 ('Z_1__module_2__1',
+                                                  'Z_1__centric',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_1__module_2__1', 'Z_1__centric'),
+                                                   'edge_centric_start_end_identifier': ('Z_1__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_1', 'Z_1'),
+                                                   'module_start_end': ('Y_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '3.0 * theta_2',
+                                                   'edge_rate_symbol': '3.0 * l',
+                                                   'module_rate_symbol_identifier': 'theta_2',
+                                                   'module_rate_symbol': 'l',
+                                                   'module_identifier': 'module_2',
+                                                   'edge_type': 'S -> E + E',
+                                                   'module_type': 'S -> S + S',
+                                                   'module_steps': 3})])
 
     ### mean-only mode
     def test_sim_moment_net_min_2_4_mean_only(self):
@@ -509,29 +1189,140 @@ class TestMomentsSimClass(object):
         sim.sim_moments.prepare_moment_simulation(sim.sim_variables_order, sim.sim_variables_identifier, mean_only)
 
         # check all testable attributes for the simulation of this network
-        # assert(sim.sim_moments.moment_order_main == )
-        # assert(sim.sim_moments.moment_order_hidden == )
-        # assert(sim.sim_moments.moment_aux_vars == )
-        # assert(sim.sim_moments.moment_aux_vars_dict == )
-        # assert(sim.sim_moments.theta_replaceable == )
-        # assert(sim.sim_moments.theta_replaceable_dict == )
-        # assert(sim.sim_moments.moment_pde == )
-        # assert(sim.sim_moments.moment_eqs == )
-        # assert(sim.sim_moments.moment_eqs_template_str == )
-        # assert(sim.sim_moments.moment_mean_ind == )
-        # assert(sim.sim_moments.moment_var_ind_intra == )
-        # assert(sim.sim_moments.moment_var_ind_inter == )
-        # assert(sim.sim_moments.moment_cov_ind == )
-        # assert(sim.sim_moments.moment_num_means == )
-        # assert(sim.sim_moments.moment_num_vars == )
-        # assert(sim.sim_moments.moment_num_covs == )
-        # assert(sim.sim_moments.variables_mean_ind == )
-        # assert(sim.sim_moments.variables_var_ind == )
-        # assert(sim.sim_moments.variables_cov_ind == )
-        # assert(sim.sim_moments.variables_num_means == )
-        # assert(sim.sim_moments.variables_num_vars == )
-        # assert(sim.sim_moments.variables_num_covs == )
-        # assert(sim.sim_moments.net_hidden_edges == )
+        assert(sim.sim_moments.moment_order_main == [[('Z_0',), ('Z_1',)], []])
+        assert(sim.sim_moments.moment_order_hidden == [[('Z_0__centric',),
+                                                      ('Z_0__module_0__0',),
+                                                      ('Z_1__centric',),
+                                                      ('Z_1__module_1__0',),
+                                                      ('Z_1__module_1__1',),
+                                                      ('Z_1__module_1__2',)],
+                                                     []])
+        assert(sim.sim_moments.moment_aux_vars == ['z_0__centric_q',
+                                                 'z_0__module_0__0_q',
+                                                 'z_1__centric_q',
+                                                 'z_1__module_1__0_q',
+                                                 'z_1__module_1__1_q',
+                                                 'z_1__module_1__2_q'])
+        assert(sim.sim_moments.moment_aux_vars_dict == {'Z_0__centric': 'z_0__centric_q',
+                                                     'Z_0__module_0__0': 'z_0__module_0__0_q',
+                                                     'Z_1__centric': 'z_1__centric_q',
+                                                     'Z_1__module_1__0': 'z_1__module_1__0_q',
+                                                     'Z_1__module_1__1': 'z_1__module_1__1_q',
+                                                     'Z_1__module_1__2': 'z_1__module_1__2_q'})
+        assert(sim.sim_moments.theta_replaceable == ['theta_0_q', 'theta_1_q'])
+        assert(sim.sim_moments.theta_replaceable_dict == {'theta_0': 'theta_0_q', 'theta_1': 'theta_1_q'})
+        assert(sim.sim_moments.moment_pde ==
+'2.0 * theta_0_q * (z_0__module_0__0_q - z_0__centric_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_1__centric_q, z_1__module_1__0_q, z_1__module_1__1_q, z_1__module_1__2_q), z_0__centric_q) + 2.0 * theta_0_q * (z_1__centric_q - z_0__module_0__0_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_1__centric_q, z_1__module_1__0_q, z_1__module_1__1_q, z_1__module_1__2_q), z_0__module_0__0_q) + 4.0 * theta_1_q * (z_1__module_1__0_q - z_1__centric_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_1__centric_q, z_1__module_1__0_q, z_1__module_1__1_q, z_1__module_1__2_q), z_1__centric_q) + 4.0 * theta_1_q * (z_1__module_1__1_q - z_1__module_1__0_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_1__centric_q, z_1__module_1__0_q, z_1__module_1__1_q, z_1__module_1__2_q), z_1__module_1__0_q) + 4.0 * theta_1_q * (z_1__module_1__2_q - z_1__module_1__1_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_1__centric_q, z_1__module_1__0_q, z_1__module_1__1_q, z_1__module_1__2_q), z_1__module_1__1_q) + 4.0 * theta_1_q * (z_1__centric_q * z_1__centric_q - z_1__module_1__2_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_1__centric_q, z_1__module_1__0_q, z_1__module_1__1_q, z_1__module_1__2_q), z_1__module_1__2_q)')
+        assert(sim.sim_moments.moment_eqs == ['-2.0*m[0]*theta[0]',
+                                             '2.0*m[0]*theta[0] - 2.0*m[1]*theta[0]',
+                                             '2.0*m[1]*theta[0] - 4.0*m[2]*theta[1] + 8.0*m[5]*theta[1]',
+                                             '4.0*m[2]*theta[1] - 4.0*m[3]*theta[1]',
+                                             '4.0*m[3]*theta[1] - 4.0*m[4]*theta[1]',
+                                             '4.0*m[4]*theta[1] - 4.0*m[5]*theta[1]'])
+        assert(sim.sim_moments.moment_eqs_template_str == '@jit(nopython=True)\ndef _moment_eqs_template(m, time, theta):\n\treturn np.array([\n\t-2.0*m[0]*theta[0],\n\t2.0*m[0]*theta[0] - 2.0*m[1]*theta[0],\n\t2.0*m[1]*theta[0] - 4.0*m[2]*theta[1] + 8.0*m[5]*theta[1],\n\t4.0*m[2]*theta[1] - 4.0*m[3]*theta[1],\n\t4.0*m[3]*theta[1] - 4.0*m[4]*theta[1],\n\t4.0*m[4]*theta[1] - 4.0*m[5]*theta[1]\n\t])')
+        assert(sim.sim_moments.moment_mean_ind.tolist() == [[(0, 1)], [(2, 3, 4, 5)]])
+        assert(sim.sim_moments.moment_var_ind_intra.tolist() == [])
+        assert(sim.sim_moments.moment_var_ind_inter.tolist() == [])
+        assert(sim.sim_moments.moment_cov_ind.tolist() == [])
+        assert(sim.sim_moments.moment_num_means == 2)
+        assert(sim.sim_moments.moment_num_vars == 0)
+        assert(sim.sim_moments.moment_num_covs == 0)
+        assert(sim.sim_moments.variables_mean_ind.tolist() == [[(0,)], [(1,)]])
+        assert(sim.sim_moments.variables_var_ind.tolist() == [])
+        assert(sim.sim_moments.variables_cov_ind.tolist() == [])
+        assert(sim.sim_moments.variables_num_means == 2)
+        assert(sim.sim_moments.variables_num_vars == 0)
+        assert(sim.sim_moments.variables_num_covs == 0)
+        assert(sim.sim_moments.net_hidden_edges == [('Z_0__centric',
+                                              'Z_0__module_0__0',
+                                              0,
+                                              {'edge_start_end_identifier': ('Z_0__centric', 'Z_0__module_0__0'),
+                                               'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                               'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                               'module_start_end': ('X_t', 'Y_t'),
+                                               'edge_rate_symbol_identifier': '2.0 * theta_0',
+                                               'edge_rate_symbol': '2.0 * d',
+                                               'module_rate_symbol_identifier': 'theta_0',
+                                               'module_rate_symbol': 'd',
+                                               'module_identifier': 'module_0',
+                                               'edge_type': 'S -> E',
+                                               'module_type': 'S -> E',
+                                               'module_steps': 2}),
+                                             ('Z_0__module_0__0',
+                                              'Z_1__centric',
+                                              0,
+                                              {'edge_start_end_identifier': ('Z_0__module_0__0', 'Z_1__centric'),
+                                               'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                               'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                               'module_start_end': ('X_t', 'Y_t'),
+                                               'edge_rate_symbol_identifier': '2.0 * theta_0',
+                                               'edge_rate_symbol': '2.0 * d',
+                                               'module_rate_symbol_identifier': 'theta_0',
+                                               'module_rate_symbol': 'd',
+                                               'module_identifier': 'module_0',
+                                               'edge_type': 'S -> E',
+                                               'module_type': 'S -> E',
+                                               'module_steps': 2}),
+                                             ('Z_1__centric',
+                                              'Z_1__module_1__0',
+                                              0,
+                                              {'edge_start_end_identifier': ('Z_1__centric', 'Z_1__module_1__0'),
+                                               'edge_centric_start_end_identifier': ('Z_1__centric', 'Z_1__centric'),
+                                               'module_start_end_identifier': ('Z_1', 'Z_1'),
+                                               'module_start_end': ('Y_t', 'Y_t'),
+                                               'edge_rate_symbol_identifier': '4.0 * theta_1',
+                                               'edge_rate_symbol': '4.0 * l',
+                                               'module_rate_symbol_identifier': 'theta_1',
+                                               'module_rate_symbol': 'l',
+                                               'module_identifier': 'module_1',
+                                               'edge_type': 'S -> E',
+                                               'module_type': 'S -> S + S',
+                                               'module_steps': 4}),
+                                             ('Z_1__module_1__0',
+                                              'Z_1__module_1__1',
+                                              0,
+                                              {'edge_start_end_identifier': ('Z_1__module_1__0', 'Z_1__module_1__1'),
+                                               'edge_centric_start_end_identifier': ('Z_1__centric', 'Z_1__centric'),
+                                               'module_start_end_identifier': ('Z_1', 'Z_1'),
+                                               'module_start_end': ('Y_t', 'Y_t'),
+                                               'edge_rate_symbol_identifier': '4.0 * theta_1',
+                                               'edge_rate_symbol': '4.0 * l',
+                                               'module_rate_symbol_identifier': 'theta_1',
+                                               'module_rate_symbol': 'l',
+                                               'module_identifier': 'module_1',
+                                               'edge_type': 'S -> E',
+                                               'module_type': 'S -> S + S',
+                                               'module_steps': 4}),
+                                             ('Z_1__module_1__1',
+                                              'Z_1__module_1__2',
+                                              0,
+                                              {'edge_start_end_identifier': ('Z_1__module_1__1', 'Z_1__module_1__2'),
+                                               'edge_centric_start_end_identifier': ('Z_1__centric', 'Z_1__centric'),
+                                               'module_start_end_identifier': ('Z_1', 'Z_1'),
+                                               'module_start_end': ('Y_t', 'Y_t'),
+                                               'edge_rate_symbol_identifier': '4.0 * theta_1',
+                                               'edge_rate_symbol': '4.0 * l',
+                                               'module_rate_symbol_identifier': 'theta_1',
+                                               'module_rate_symbol': 'l',
+                                               'module_identifier': 'module_1',
+                                               'edge_type': 'S -> E',
+                                               'module_type': 'S -> S + S',
+                                               'module_steps': 4}),
+                                             ('Z_1__module_1__2',
+                                              'Z_1__centric',
+                                              0,
+                                              {'edge_start_end_identifier': ('Z_1__module_1__2', 'Z_1__centric'),
+                                               'edge_centric_start_end_identifier': ('Z_1__centric', 'Z_1__centric'),
+                                               'module_start_end_identifier': ('Z_1', 'Z_1'),
+                                               'module_start_end': ('Y_t', 'Y_t'),
+                                               'edge_rate_symbol_identifier': '4.0 * theta_1',
+                                               'edge_rate_symbol': '4.0 * l',
+                                               'module_rate_symbol_identifier': 'theta_1',
+                                               'module_rate_symbol': 'l',
+                                               'module_identifier': 'module_1',
+                                               'edge_type': 'S -> E + E',
+                                               'module_type': 'S -> S + S',
+                                               'module_steps': 4})])
 
     def test_sim_moment_net_par2_mean_only(self):
         net = me.Network('net_par2')
@@ -551,29 +1342,192 @@ class TestMomentsSimClass(object):
         sim.sim_moments.prepare_moment_simulation(sim.sim_variables_order, sim.sim_variables_identifier, mean_only)
 
         # check all testable attributes for the simulation of this network
-        # assert(sim.sim_moments.moment_order_main == )
-        # assert(sim.sim_moments.moment_order_hidden == )
-        # assert(sim.sim_moments.moment_aux_vars == )
-        # assert(sim.sim_moments.moment_aux_vars_dict == )
-        # assert(sim.sim_moments.theta_replaceable == )
-        # assert(sim.sim_moments.theta_replaceable_dict == )
-        # assert(sim.sim_moments.moment_pde == )
-        # assert(sim.sim_moments.moment_eqs == )
-        # assert(sim.sim_moments.moment_eqs_template_str == )
-        # assert(sim.sim_moments.moment_mean_ind == )
-        # assert(sim.sim_moments.moment_var_ind_intra == )
-        # assert(sim.sim_moments.moment_var_ind_inter == )
-        # assert(sim.sim_moments.moment_cov_ind == )
-        # assert(sim.sim_moments.moment_num_means == )
-        # assert(sim.sim_moments.moment_num_vars == )
-        # assert(sim.sim_moments.moment_num_covs == )
-        # assert(sim.sim_moments.variables_mean_ind == )
-        # assert(sim.sim_moments.variables_var_ind == )
-        # assert(sim.sim_moments.variables_cov_ind == )
-        # assert(sim.sim_moments.variables_num_means == )
-        # assert(sim.sim_moments.variables_num_vars == )
-        # assert(sim.sim_moments.variables_num_covs == )
-        # assert(sim.sim_moments.net_hidden_edges == )
+        assert(sim.sim_moments.moment_order_main == [[('Z_0',), ('Z_1',)], []])
+        assert(sim.sim_moments.moment_order_hidden == [[('Z_0__centric',),
+                                                      ('Z_0__module_0__0',),
+                                                      ('Z_0__module_0__1',),
+                                                      ('Z_0__module_0__2',),
+                                                      ('Z_0__module_1__0',),
+                                                      ('Z_1__centric',),
+                                                      ('Z_1__module_2__0',),
+                                                      ('Z_1__module_2__1',)],
+                                                     []])
+        assert(sim.sim_moments.moment_aux_vars == ['z_0__centric_q',
+                                                 'z_0__module_0__0_q',
+                                                 'z_0__module_0__1_q',
+                                                 'z_0__module_0__2_q',
+                                                 'z_0__module_1__0_q',
+                                                 'z_1__centric_q',
+                                                 'z_1__module_2__0_q',
+                                                 'z_1__module_2__1_q'])
+        assert(sim.sim_moments.moment_aux_vars_dict == {'Z_0__centric': 'z_0__centric_q',
+                                                     'Z_0__module_0__0': 'z_0__module_0__0_q',
+                                                     'Z_0__module_0__1': 'z_0__module_0__1_q',
+                                                     'Z_0__module_0__2': 'z_0__module_0__2_q',
+                                                     'Z_0__module_1__0': 'z_0__module_1__0_q',
+                                                     'Z_1__centric': 'z_1__centric_q',
+                                                     'Z_1__module_2__0': 'z_1__module_2__0_q',
+                                                     'Z_1__module_2__1': 'z_1__module_2__1_q'})
+        assert(sim.sim_moments.theta_replaceable == ['theta_0_q', 'theta_1_q', 'theta_2_q'])
+        assert(sim.sim_moments.theta_replaceable_dict == {'theta_0': 'theta_0_q', 'theta_1': 'theta_1_q', 'theta_2': 'theta_2_q'})
+        assert(sim.sim_moments.moment_pde == '4.0 * theta_1_q * (z_0__module_0__0_q - z_0__centric_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_0__centric_q) + 2.0 * theta_0_q * (z_0__module_1__0_q - z_0__centric_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_0__centric_q) + 4.0 * theta_1_q * (z_0__module_0__1_q - z_0__module_0__0_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_0__module_0__0_q) + 4.0 * theta_1_q * (z_0__module_0__2_q - z_0__module_0__1_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_0__module_0__1_q) + 4.0 * theta_1_q * (z_1__centric_q - z_0__module_0__2_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_0__module_0__2_q) + 2.0 * theta_0_q * (z_1__centric_q - z_0__module_1__0_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_0__module_1__0_q) + 3.0 * theta_2_q * (z_1__module_2__0_q - z_1__centric_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_1__centric_q) + 3.0 * theta_2_q * (z_1__module_2__1_q - z_1__module_2__0_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_1__module_2__0_q) + 3.0 * theta_2_q * (z_1__centric_q * z_1__centric_q - z_1__module_2__1_q) * diff(F(z_0__centric_q, z_0__module_0__0_q, z_0__module_0__1_q, z_0__module_0__2_q, z_0__module_1__0_q, z_1__centric_q, z_1__module_2__0_q, z_1__module_2__1_q), z_1__module_2__1_q)')
+        assert(sim.sim_moments.moment_eqs == ['-2.0*m[0]*theta[0] - 4.0*m[0]*theta[1]',
+                                             '4.0*m[0]*theta[1] - 4.0*m[1]*theta[1]',
+                                             '4.0*m[1]*theta[1] - 4.0*m[2]*theta[1]',
+                                             '4.0*m[2]*theta[1] - 4.0*m[3]*theta[1]',
+                                             '2.0*m[0]*theta[0] - 2.0*m[4]*theta[0]',
+                                             '4.0*m[3]*theta[1] + 2.0*m[4]*theta[0] - 3.0*m[5]*theta[2] + 6.0*m[7]*theta[2]',
+                                             '3.0*m[5]*theta[2] - 3.0*m[6]*theta[2]',
+                                             '3.0*m[6]*theta[2] - 3.0*m[7]*theta[2]'])
+        assert(sim.sim_moments.moment_eqs_template_str == '@jit(nopython=True)\ndef _moment_eqs_template(m, time, theta):\n\treturn np.array([\n\t-2.0*m[0]*theta[0] - 4.0*m[0]*theta[1],\n\t4.0*m[0]*theta[1] - 4.0*m[1]*theta[1],\n\t4.0*m[1]*theta[1] - 4.0*m[2]*theta[1],\n\t4.0*m[2]*theta[1] - 4.0*m[3]*theta[1],\n\t2.0*m[0]*theta[0] - 2.0*m[4]*theta[0],\n\t4.0*m[3]*theta[1] + 2.0*m[4]*theta[0] - 3.0*m[5]*theta[2] + 6.0*m[7]*theta[2],\n\t3.0*m[5]*theta[2] - 3.0*m[6]*theta[2],\n\t3.0*m[6]*theta[2] - 3.0*m[7]*theta[2]\n\t])')
+        assert(sim.sim_moments.moment_mean_ind.tolist() == [[(0, 1, 2, 3, 4)], [(5, 6, 7)]])
+        assert(sim.sim_moments.moment_var_ind_intra.tolist() == [])
+        assert(sim.sim_moments.moment_var_ind_inter.tolist() == [])
+        assert(sim.sim_moments.moment_cov_ind.tolist() == [])
+        assert(sim.sim_moments.moment_num_means == 2)
+        assert(sim.sim_moments.moment_num_vars == 0)
+        assert(sim.sim_moments.moment_num_covs == 0)
+        assert(sim.sim_moments.variables_mean_ind.tolist() == [[(0,)], [(1,)]])
+        assert(sim.sim_moments.variables_var_ind.tolist() == [])
+        assert(sim.sim_moments.variables_cov_ind.tolist() == [])
+        assert(sim.sim_moments.variables_num_means == 2)
+        assert(sim.sim_moments.variables_num_vars == 0)
+        assert(sim.sim_moments.variables_num_covs == 0)
+        assert(sim.sim_moments.net_hidden_edges == [('Z_0__centric',
+                                                  'Z_0__module_0__0',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__centric', 'Z_0__module_0__0'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                   'module_start_end': ('X_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '4.0 * theta_1',
+                                                   'edge_rate_symbol': '4.0 * d4',
+                                                   'module_rate_symbol_identifier': 'theta_1',
+                                                   'module_rate_symbol': 'd4',
+                                                   'module_identifier': 'module_0',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> E',
+                                                   'module_steps': 4}),
+                                                 ('Z_0__centric',
+                                                  'Z_0__module_1__0',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__centric', 'Z_0__module_1__0'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                   'module_start_end': ('X_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '2.0 * theta_0',
+                                                   'edge_rate_symbol': '2.0 * d2',
+                                                   'module_rate_symbol_identifier': 'theta_0',
+                                                   'module_rate_symbol': 'd2',
+                                                   'module_identifier': 'module_1',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> E',
+                                                   'module_steps': 2}),
+                                                 ('Z_0__module_0__0',
+                                                  'Z_0__module_0__1',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__module_0__0', 'Z_0__module_0__1'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                   'module_start_end': ('X_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '4.0 * theta_1',
+                                                   'edge_rate_symbol': '4.0 * d4',
+                                                   'module_rate_symbol_identifier': 'theta_1',
+                                                   'module_rate_symbol': 'd4',
+                                                   'module_identifier': 'module_0',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> E',
+                                                   'module_steps': 4}),
+                                                 ('Z_0__module_0__1',
+                                                  'Z_0__module_0__2',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__module_0__1', 'Z_0__module_0__2'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                   'module_start_end': ('X_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '4.0 * theta_1',
+                                                   'edge_rate_symbol': '4.0 * d4',
+                                                   'module_rate_symbol_identifier': 'theta_1',
+                                                   'module_rate_symbol': 'd4',
+                                                   'module_identifier': 'module_0',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> E',
+                                                   'module_steps': 4}),
+                                                 ('Z_0__module_0__2',
+                                                  'Z_1__centric',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__module_0__2', 'Z_1__centric'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                   'module_start_end': ('X_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '4.0 * theta_1',
+                                                   'edge_rate_symbol': '4.0 * d4',
+                                                   'module_rate_symbol_identifier': 'theta_1',
+                                                   'module_rate_symbol': 'd4',
+                                                   'module_identifier': 'module_0',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> E',
+                                                   'module_steps': 4}),
+                                                 ('Z_0__module_1__0',
+                                                  'Z_1__centric',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_0__module_1__0', 'Z_1__centric'),
+                                                   'edge_centric_start_end_identifier': ('Z_0__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_0', 'Z_1'),
+                                                   'module_start_end': ('X_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '2.0 * theta_0',
+                                                   'edge_rate_symbol': '2.0 * d2',
+                                                   'module_rate_symbol_identifier': 'theta_0',
+                                                   'module_rate_symbol': 'd2',
+                                                   'module_identifier': 'module_1',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> E',
+                                                   'module_steps': 2}),
+                                                 ('Z_1__centric',
+                                                  'Z_1__module_2__0',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_1__centric', 'Z_1__module_2__0'),
+                                                   'edge_centric_start_end_identifier': ('Z_1__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_1', 'Z_1'),
+                                                   'module_start_end': ('Y_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '3.0 * theta_2',
+                                                   'edge_rate_symbol': '3.0 * l',
+                                                   'module_rate_symbol_identifier': 'theta_2',
+                                                   'module_rate_symbol': 'l',
+                                                   'module_identifier': 'module_2',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> S + S',
+                                                   'module_steps': 3}),
+                                                 ('Z_1__module_2__0',
+                                                  'Z_1__module_2__1',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_1__module_2__0', 'Z_1__module_2__1'),
+                                                   'edge_centric_start_end_identifier': ('Z_1__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_1', 'Z_1'),
+                                                   'module_start_end': ('Y_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '3.0 * theta_2',
+                                                   'edge_rate_symbol': '3.0 * l',
+                                                   'module_rate_symbol_identifier': 'theta_2',
+                                                   'module_rate_symbol': 'l',
+                                                   'module_identifier': 'module_2',
+                                                   'edge_type': 'S -> E',
+                                                   'module_type': 'S -> S + S',
+                                                   'module_steps': 3}),
+                                                 ('Z_1__module_2__1',
+                                                  'Z_1__centric',
+                                                  0,
+                                                  {'edge_start_end_identifier': ('Z_1__module_2__1', 'Z_1__centric'),
+                                                   'edge_centric_start_end_identifier': ('Z_1__centric', 'Z_1__centric'),
+                                                   'module_start_end_identifier': ('Z_1', 'Z_1'),
+                                                   'module_start_end': ('Y_t', 'Y_t'),
+                                                   'edge_rate_symbol_identifier': '3.0 * theta_2',
+                                                   'edge_rate_symbol': '3.0 * l',
+                                                   'module_rate_symbol_identifier': 'theta_2',
+                                                   'module_rate_symbol': 'l',
+                                                   'module_identifier': 'module_2',
+                                                   'edge_type': 'S -> E + E',
+                                                   'module_type': 'S -> S + S',
+                                                   'module_steps': 3})])
 
     ### initial values
     def test_sim_moment_net_min_2_4_initial_values_synchronous(self):
@@ -596,6 +1550,22 @@ class TestMomentsSimClass(object):
         sim.prepare_simulation_variables(simulation_variables)
         sim.sim_moments.prepare_moment_simulation(sim.sim_variables_order, sim.sim_variables_identifier, mean_only)
 
+        # test some initial values
+        initial_values_type = 'synchronous'
+
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0,
+                ('X_t','X_t'): 0.0, ('Y_t','Y_t'): 0.0, ('X_t','Y_t'): 0.0}
+        np.testing.assert_allclose(sim.sim_moments.process_initial_values(initial_values,
+                                        initial_values_type),
+                                        np.array([1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]))
+
+        initial_values = {('X_t',): 10.0, ('Y_t',): 20.0,
+                ('X_t','X_t'): 5.0, ('Y_t','Y_t'): 15.0, ('X_t','Y_t'): 10.0}
+        np.testing.assert_allclose(sim.sim_moments.process_initial_values(initial_values,
+                                        initial_values_type),
+                                        np.array([ 10.,   0.,  20.,   0.,   0.,   0.,  95.,   0., 210.,   0.,   0.,   0.,   0.,   0.,   0.,   0.,   0., 395.,   0.,   0.,   0.,   0.,  0.,   0.,   0.,   0.,   0.]))
+
+
     def test_sim_moment_net_par2_initial_values_synchronous(self):
         net = me.Network('net_par2')
         net.structure([
@@ -612,6 +1582,26 @@ class TestMomentsSimClass(object):
         # to generate symbolic attributes we call some methods manually
         sim.prepare_simulation_variables(simulation_variables)
         sim.sim_moments.prepare_moment_simulation(sim.sim_variables_order, sim.sim_variables_identifier, mean_only)
+
+        # test some initial values
+        initial_values_type = 'synchronous'
+
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0,
+                        ('X_t','X_t'): 0.0, ('Y_t','Y_t'): 0.0, ('X_t','Y_t'): 0.0}
+        np.testing.assert_allclose(sim.sim_moments.process_initial_values(initial_values,
+                                        initial_values_type),
+                                        np.array([1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                                               0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                                               0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]))
+
+        initial_values = {('X_t',): 10.0, ('Y_t',): 20.0,
+                        ('X_t','X_t'): 5.0, ('Y_t','Y_t'): 15.0, ('X_t','Y_t'): 10.0}
+        np.testing.assert_allclose(sim.sim_moments.process_initial_values(initial_values,
+                                        initial_values_type),
+                                        np.array([ 10.,   0.,   0.,   0.,   0.,  20.,   0.,   0.,  95.,   0.,   0.,
+                                                 0.,   0., 210.,   0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.,
+                                                 0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.,
+                                                 0.,   0.,   0.,   0.,   0., 395.,   0.,   0.,   0.,   0.,   0.]))
 
     def test_sim_moment_net_min_2_4_initial_values_uniform(self):
         net = me.Network('net_min_2_4')
@@ -633,6 +1623,27 @@ class TestMomentsSimClass(object):
         sim.prepare_simulation_variables(simulation_variables)
         sim.sim_moments.prepare_moment_simulation(sim.sim_variables_order, sim.sim_variables_identifier, mean_only)
 
+        # test some initial values
+        initial_values_type = 'uniform'
+
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0,
+                ('X_t','X_t'): 0.0, ('Y_t','Y_t'): 0.0, ('X_t','Y_t'): 0.0}
+        np.testing.assert_allclose(sim.sim_moments.process_initial_values(initial_values,
+                                        initial_values_type),
+                                        np.array([0.5, 0.5, 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. ,
+                                                   0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. ,
+                                                   0. ]))
+
+        initial_values = {('X_t',): 10.0, ('Y_t',): 20.0,
+                ('X_t','X_t'): 5.0, ('Y_t','Y_t'): 15.0, ('X_t','Y_t'): 10.0}
+        np.testing.assert_allclose(sim.sim_moments.process_initial_values(initial_values,
+                                        initial_values_type),
+                                        np.array([ 5.    ,  5.    ,  5.    ,  5.    ,  5.    ,  5.    , 23.75  ,
+                                                   23.75  , 26.25  , 26.25  , 26.25  , 26.25  , 23.75  , 26.25  ,
+                                                   26.25  , 26.25  , 26.25  , 24.6875, 24.6875, 24.6875, 24.6875,
+                                                   24.6875, 24.6875, 24.6875, 24.6875, 24.6875, 24.6875]))
+
+
     def test_sim_moment_net_par2_initial_values_uniform(self):
         net = me.Network('net_par2')
         net.structure([
@@ -649,3 +1660,30 @@ class TestMomentsSimClass(object):
         # to generate symbolic attributes we call some methods manually
         sim.prepare_simulation_variables(simulation_variables)
         sim.sim_moments.prepare_moment_simulation(sim.sim_variables_order, sim.sim_variables_identifier, mean_only)
+
+        # test some initial values
+        initial_values_type = 'uniform'
+
+        initial_values = {('X_t',): 1.0, ('Y_t',): 0.0,
+                        ('X_t','X_t'): 0.0, ('Y_t','Y_t'): 0.0, ('X_t','Y_t'): 0.0}
+        np.testing.assert_allclose(sim.sim_moments.process_initial_values(initial_values,
+                                        initial_values_type),
+                                        np.array([0.2, 0.2, 0.2, 0.2, 0.2, 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. ,
+                                                   0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. ,
+                                                   0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. ,
+                                                   0. , 0. , 0. , 0. , 0. ]))
+
+        initial_values = {('X_t',): 10.0, ('Y_t',): 20.0,
+                        ('X_t','X_t'): 5.0, ('Y_t','Y_t'): 15.0, ('X_t','Y_t'): 10.0}
+        np.testing.assert_allclose(sim.sim_moments.process_initial_values(initial_values,
+                                        initial_values_type),
+                                        np.array([ 2.        ,  2.        ,  2.        ,  2.        ,  2.        ,
+                                                    6.66666667,  6.66666667,  6.66666667,  3.8       ,  3.8       ,
+                                                    3.8       ,  3.8       ,  3.8       , 14.        , 14.        ,
+                                                   14.        ,  3.8       ,  3.8       ,  3.8       ,  3.8       ,
+                                                   14.        , 14.        , 14.        ,  3.8       ,  3.8       ,
+                                                    3.8       , 14.        , 14.        , 14.        ,  3.8       ,
+                                                    3.8       , 14.        , 14.        , 14.        ,  3.8       ,
+                                                   14.        , 14.        , 14.        , 43.88888889, 43.88888889,
+                                                   43.88888889, 43.88888889, 43.88888889, 43.88888889]),
+                                                   rtol=1.0e-05, atol=1.0e-05)
