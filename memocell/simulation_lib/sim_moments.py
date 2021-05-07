@@ -14,9 +14,25 @@ import numpy as np
 from scipy.integrate import odeint
 from numba import jit
 
+# NOTE: for some of the docstrings one could add more formula, e.g.
+# - cell type stochastic processes (main layer) as sum of hidden Markov processes
+# - how mean, variance and covariance are then obtained by summation
+# - basic definition of the probability generating function G and z
+# - why derivatives of G in z are connected to moments
+# - why derivatives of the PDE for G in z provide the ODE system for the moments
 
 class MomentsSim(object):
-    """docstring for ."""
+    """Helper class for moment (mean, variance, covariance) simulations.
+
+    In the typical situation, use the top-level `Simulation` class with its
+    main method `simulate` (`simulation_type='moments'`).
+    The `MomentsSim` class and its methods are then called automatically.
+
+    `Note`: The moment simulations in MemoCell are obtained as solutions of a
+    differential equation system for the moments of all hidden Markov layer
+    variables. They are the exact counterpart to mean, variance and covariance
+    statistics as computed approximately from a set of stochastic simulations.
+    """
     def __init__(self, net):
 
         # inherit the instance of the Network class
@@ -86,7 +102,12 @@ class MomentsSim(object):
         self.variables_num_covs  = None
 
     def prepare_moment_simulation(self, variables_order, variables_identifier, mean_only):
-        """docstring for ."""
+        """Prepares the moment simulation by automatic symbolic derivation of
+        the differential equations for the moments on the hidden Markov layer
+        and the summation indices to assemble them to mean, variance and covariance
+        solutions for the main/observable layer and simulation variables. See
+        the called downstream methods for more info.
+        """
 
         # trigger the preparation if it does not exist already
         if not self.moments_preparation_exists:
@@ -138,11 +159,17 @@ class MomentsSim(object):
 
     def moment_simulation(self, theta_values_order, time_values,
                                 initial_values_main, initial_values_type):
-        """docstring for .
+        """Top-level method in the MomentsSim class to compute moment
+        (mean, variance, covariance) simulations.
 
-        mention the exact moments on the hidden layer somewhere
-        (maybe in moment order?), i.e. write in terms of E(), particulary that
-        our second X_X moment means E(X(X-1))"""
+        This method wraps downstream methods to update the user provided
+        `theta` rate parameters and initial values, compute the moment
+        simulation on the hidden layer and sum up the hidden layer moments to
+        obtain mean, variance and covariance solutions on the observable/main layer
+        and for the simulation variables (by `run_moment_ode_system`).
+
+        `Note`: In the typical situation, use the top-level `Simulation` class
+        with its main method `simulate`; this method is then run automatically."""
 
         ### TODO: maybe use getter/setter attributes or similar to only rerun these
         ### lines when initial_values_order or theta_values_order have changed
@@ -167,7 +194,18 @@ class MomentsSim(object):
             return self.run_moment_ode_system(self.moment_initial_values, time_values, theta_values_order)
 
     def run_moment_ode_system(self, moment_initial_values, time_values, theta_values):
-        """docstring for ."""
+        """Integrates the differential equation system for the
+        hidden layer moments and sums them up to obtain mean, variance and
+        covariance solutions for the simulation variables (and
+        main/observable layer nodes).
+
+        `Note`: Based on the `moment_system` and summation indices,
+        obtained by automatic symbolic derivation and metaprogramming for
+        any MemoCell model (e.g., as in executed in `prepare_moment_simulation`);
+        see downstream methods for more info. Integration itself is done
+        numerically by scipy's `odeint` method.
+        """
+
         # run_moment_ode_system triggers one integration of the ODE system
         # yielding a solution of the different moments over time
         # the solution depends on the initial condition (moment_initial_values)
@@ -208,7 +246,6 @@ class MomentsSim(object):
         ###
 
         ### sum up or reorder solution to obtain the simulation variables output
-        # TODO: here
         variables_mean = np.zeros((self.variables_num_means, num_time_points))
         variables_var = np.zeros((self.variables_num_vars, num_time_points))
         variables_cov = np.zeros((self.variables_num_covs, num_time_points))
@@ -228,41 +265,68 @@ class MomentsSim(object):
 
 
     def process_initial_values(self, initial_values_main, initial_values_type):
-        """docstring for .
-        copied from jupyter notebook (env_initial_values)
+        """Processes the user provided initial values for the moments (mean,
+        variance, covariance for the main nodes) to obtain the initial moments
+        on the hidden layer, depending on the multinomial schemes
+        `initial_values_type='synchronous'` or `initial_values_type='uniform'`.
 
-        more info on written notes in goodnotes
+        `Note`: `Synchronous` initial distribution type means that main node
+        numbers are placed into the each main node's `'centric'` hidden layer node.
+        `Uniform` initial distribution types means that main node numbers
+        are distributed randomly (uniform) among all its hidden layer nodes.
+        For this the respective helper methods `process_initial_values_synchronous`
+        or `process_initial_values_uniform` are called.
 
-        - currently, MemoCell offers zero-variance, zero-covariance, synchronous initial values only
-        - aim: allow more general choice of initial values
-        - see goodnotes notes on initial_values, where a more general multinomial distribution scheme is derived
-        - the idea is: one has to specify
-            - the observable distribution (moments for moment simulations, distribution for stochastic simulations)
-            - a distribution scheme on the hidden layer (based on multinomial parameters; e.g., uniform or synchronous)
-        - then one can derive the relevant initial values for hidden layer too
-        - the following relations for the hidden variable moments can be derived
-            - hidden variable of cell type `i`: :math:`\\mathrm{E}(W^{(i,j)}_0) = p_j\\,\\mathrm{E}(W^{(i)}_0)`
-            - hidden variable of cell type `i`: :math:`\\mathrm{Var}(W^{(i,j)}_0) = p_j (1-p_j)\\,\\mathrm{E}(W^{(i)}_0) + p_j^2 \\,\\mathrm{Var}(W^{(i)}_0)`
-            - two hidden variables of cell type `i`: :math:`\\mathrm{Cov}(W^{(i,j)}_0, W^{(i,l)}_0) = - p_j p_l \\,\\mathrm{E}(W^{(i)}_0) + p_j p_l \\,\\mathrm{Var}(W^{(i)}_0)`
-            - hidden variables between two different cell types `i,k`: :math:`\\mathrm{Cov}(W^{(i,j)}_0, W^{(k,l)}_0) = p_j p_l \\, \\mathrm{Cov}(W^{(i)}_0, W^{(k)}_0)`
-        - with general multinomial parameters `p_j`, which is the probability that the hidden variable `(i,j)` gets a cell from obserbale variable `(i)`; i.e. :math:`(..., W^{(i,j)}_0,...) \\sim \\mathrm{MultiNomial}(p_1,...,p_j,...,p_{u_i}; N)` where `N` is random with :math:`N=W^{(i)}_0`, hence all the proofs for above relations use theorems of conditional expectation, variance and covariance
-        - note that generally we set up the stochastic process with :math:`W^{(i)}_t = \\sum_{j \\in \\{1,...,u_i\\} } W^{(i,j)}_t`, where `u_i` is the number of all hidden variables of cell type `i`
+        `Note`: The distribution types have their stochastic simulation equivalents,
+        see there.
 
-        continue:
+        `Note`: Below we summarise the theory for distributing the hidden layer
+        from main layer moments + initial value type. In MemoCell the stochastic
+        processes on the main/observable layer are the sum of their stochastic
+        processes on the hidden Markov layer. For each cell type :math:`i` its
+        stochastic cell numbers follow
+        :math:`W^{(i)}_t = \\sum_{j \\in \\{1,...,u_i\\} } W^{(i,j)}_t`,
+        where :math:`u_i` is the number of all hidden variables for that cell type.
+        For the initial distribution (:math:`t=0`) we have :math:`N=W^{(i)}_0`
+        (random) cells to distribute for each cell type and hence sample the
+        hidden variables from a multinomial distribution, i.e.
+        :math:`(..., W^{(i,j)}_0,...) \\sim \\mathrm{MultiNomial}(p_1,...,p_j,...,p_{u_i}; N)`,
+        where the :math:`p_j` probabilities allow to encode any hidden layer
+        distribution scheme. Using theorems of conditional and total expectation,
+        variance and covariance one can then obtain the following relations,
+        connecting the main/observable and the hidden layer:
 
-        - In MemoCell we have to provide the initial values for the moments :math:`\\mathrm{E}(X)`, :math:`\\mathrm{E}(X(X-1))` and :math:`\\mathrm{E}(XY)`
-        - so we have to calculate what the above mean, variance and covariance relations imply for these moments
-        - we derive:
-            - the mean stays for cell type `i`: :math:`\\mathrm{E}(W^{(i,j)}_0) = p_j\\,\\mathrm{E}(W^{(i)}_0)`
-            - the second factorial moment for cell type `i`: :math:`\\mathrm{E}\\big(W^{(i,j)}_0 (W^{(i,j)}_0-1)\\big) = p_j^2\\,\\big(\\mathrm{Var}(W^{(i)}_0)+ \\mathrm{E}(W^{(i)}_0)^2 - \\mathrm{E}(W^{(i)}_0)\\big)`
-            - the second mixed moment within cell type `i`: :math:`\\mathrm{E}(W^{(i,j)}_0 W^{(i,l)}_0) = p_j p_l\\big(\\mathrm{Var}(W^{(i)}_0)+ \\mathrm{E}(W^{(i)}_0)^2 - \\mathrm{E}(W^{(i)}_0)\\big)`
-            - the second mixed moment for different cell types `i,k`: :math:`\\mathrm{E}(W^{(i,j)}_0 W^{(k,l)}_0) = p_j p_l\\big(\\mathrm{Cov}(W^{(i)}_0, W^{(k)}_0) + \\mathrm{E}(W^{(i)}_0) \\, \\mathrm{E}(W^{(k)}_0) \\big)`
+        - The mean of the :math:`j`-th hidden variable of cell type :math:`i` is :math:`\\mathrm{E}(W^{(i,j)}_0) = p_j\\,\\mathrm{E}(W^{(i)}_0)`,
 
-        now define two modes:
+        - the variance of the :math:`j`-th hidden variable of cell type :math:`i` is :math:`\\mathrm{Var}(W^{(i,j)}_0) = p_j (1-p_j)\\,\\mathrm{E}(W^{(i)}_0) + p_j^2 \\,\\mathrm{Var}(W^{(i)}_0)`,
 
-        - uniform: all cells for a given cell type are uniformly distributed between all its hidden nodes; i.e. `p_j=1/u_i` (for each cell type `i`)
-        - synchronous: all cells for a given cell type are placed into the 'centric' node; i.e. `p_1=1`, else `p_j=0`, `j>1` (for each cell type)
+        - the covariance between the :math:`j`-th and :math:`l`-th hidden variables (:math:`j≠l`) of cell type :math:`i` is :math:`\\mathrm{Cov}(W^{(i,j)}_0, W^{(i,l)}_0) = - p_j p_l \\,\\mathrm{E}(W^{(i)}_0) + p_j p_l \\,\\mathrm{Var}(W^{(i)}_0)` and
+
+        - the covariance between the :math:`j`-th hidden variable of cell type :math:`i` and the :math:`l`-th hidden variable of cell type :math:`k` (:math:`i≠k`) is :math:`\\mathrm{Cov}(W^{(i,j)}_0, W^{(k,l)}_0) = p_j p_l \\, \\mathrm{Cov}(W^{(i)}_0, W^{(k)}_0)`.
+
+        As MemoCell works with (mixed/factorial) moments one readily rephrases
+        the above relations and obtains
+
+        - The mean remains :math:`\\mathrm{E}(W^{(i,j)}_0) = p_j\\,\\mathrm{E}(W^{(i)}_0)`,
+
+        - the second factorial moment is :math:`\\mathrm{E}\\big(W^{(i,j)}_0 (W^{(i,j)}_0-1)\\big) = p_j^2\\,\\big(\\mathrm{Var}(W^{(i)}_0)+ \\mathrm{E}(W^{(i)}_0)^2 - \\mathrm{E}(W^{(i)}_0)\\big)`,
+
+        - the second mixed moment within cell type :math:`i` (:math:`j≠l`) is :math:`\\mathrm{E}(W^{(i,j)}_0 W^{(i,l)}_0) = p_j p_l\\big(\\mathrm{Var}(W^{(i)}_0)+ \\mathrm{E}(W^{(i)}_0)^2 - \\mathrm{E}(W^{(i)}_0)\\big)` and
+
+        - the second mixed moment for different cell types :math:`i≠k` is :math:`\\mathrm{E}(W^{(i,j)}_0 W^{(k,l)}_0) = p_j p_l\\big(\\mathrm{Cov}(W^{(i)}_0, W^{(k)}_0) + \\mathrm{E}(W^{(i)}_0) \\, \\mathrm{E}(W^{(k)}_0) \\big)`.
+
+        These ideas allow to implement any distribution scheme for the hidden layer
+        from observable information and the given multinomial type (:math:`p_j`
+        parameters). Specifically, MemoCell currently implements a
+        uniform and a synchronous type, i.e.
+
+        - `uniform` initial value type: :math:`p_j=1/u_i` (for each cell type :math:`i`) and
+
+        - `synchronous` initial value type: :math:`p_1=1` (`'centric'` node), else :math:`p_j=0`, :math:`j>1` (for each cell type).
         """
+        # NOTE: more notes/tests in jupyter notebook (env_initial_values) and
+        # derivation in written notes in goodnotes
+
         # NOTE: initial values processing was updated
         # for paper version, see stalled memo_py module
 
@@ -302,7 +366,11 @@ class MomentsSim(object):
     def process_initial_values_uniform(self, moment_order_hidden,
                                 initial_values_main, net_nodes_identifier,
                                 net_hidden_node_numbers):
-        """docstring for ."""
+        """Helper method for `process_initial_values` (see there also);
+        returns the hidden layer initial moment values under `'uniform'`
+        `initial_values_type`. Order of the moments follows
+        `sim.sim_moments.moment_order_hidden` in their `Z`-identifier form.
+        """
 
         # for uniform initial values we have p_j = 1/u_i, where u_i is the
         # number of all hidden nodes for a cell type / main node i, so each
@@ -386,7 +454,11 @@ class MomentsSim(object):
 
     def process_initial_values_synchronous(self, moment_order_hidden,
                                 initial_values_main, net_nodes_identifier):
-        """docstring for ."""
+        """Helper method for `process_initial_values` (see there also);
+        returns the hidden layer initial moment values under `'synchronous'`
+        `initial_values_type`. Order of the moments follows
+        `sim.sim_moments.moment_order_hidden` in their `Z`-identifier form.
+        """
         # for synchronous initial values we have p_1 = 1 (centric node), else 0
         # (for multinomial distribution scheme on the hidden layer)
 
@@ -452,35 +524,56 @@ class MomentsSim(object):
 
     @staticmethod
     def compute_initial_moment_first(p_j, mean_i):
-        """docstring for ."""
+        """Helper method for `process_initial_values` (see there and related);
+        computes mean of a hidden variable with multinomial parameter `p_j`
+        and main/observable mean `mean_i` for cell type `i`."""
         return p_j * mean_i
 
     @staticmethod
     def compute_initial_moment_second_factorial(p_j, mean_i, var_i):
-        """docstring for ."""
+        """Helper method for `process_initial_values` (see there and related);
+        computes second factorial moment of a hidden variable with multinomial
+        parameter `p_j` and main/observable mean `mean_i` and variance `var_i`
+        for cell type `i`."""
         return p_j * p_j * (var_i + mean_i * mean_i - mean_i)
 
     @staticmethod
     def compute_initial_moment_second_mixed_ii(p_j, p_l, mean_i, var_i):
-        """docstring for ."""
+        """Helper method for `process_initial_values` (see there and related);
+        computes second mixed moment of hidden variables with multinomial
+        parameters `p_j`, `p_l` and main/observable mean `mean_i` and variance `var_i`
+        of the same cell type `i`."""
         return p_j * p_l * (var_i + mean_i * mean_i - mean_i)
 
     @staticmethod
     def compute_initial_moment_second_mixed_ik(p_j, p_l, mean_i, mean_k, cov_ik):
-        """docstring for ."""
+        """Helper method for `process_initial_values` (see there and related);
+        computes second mixed moment of hidden variables with multinomial
+        parameters `p_j`, `p_l` and main/observable means `mean_i`, `mean_k`
+        and covariance `cov_ik` for different cell types `i, k`."""
         return p_j * p_l * (cov_ik + mean_i * mean_k)
 
     @staticmethod
     def derive_moment_order_main(node_order, mean_only):
-        """docstring for .
+        """Derives the order of the moments for the main/observable nodes in
+        their `Z`-identifier form. Contains two lists, with the first moments
+        (means) and second moments (for variance, covariance), respectively;
+        the second moments are left out if `mean_only=True`.
 
-        mention `Z`-identifier form and the net lookup
+        `Note`: Based on `net.net_main_node_order`, with the difference that the
+        environmental node is removed for the moments. Hence original names are also
+        available via `sim.net.net_nodes_identifier`.
 
-        sensitive to mean_only mode and also important because downstream
-        methods react to this (?)
+        `Note`: This method is automatically run during `sim.simulate` in
+        `simulation_type='moments'` and during `estimate` and `select_models`
+        methods. The output is typically available via
+        `sim_moments.moment_order_main`.
 
-        this order of the moment here applies to all outputs on the main node
-        / observable layer level (summation indices? what else?)
+        Examples
+        --------
+        >>> # with a memocell simulation instance sim
+        >>> sim.sim_moments.moment_order_main
+        [[('Z_0',), ('Z_1',)], [('Z_0', 'Z_0'), ('Z_0', 'Z_1'), ('Z_1', 'Z_1')]]
         """
 
         # initialise moment_order, first index for mean moments, second index for second order moments
@@ -499,15 +592,39 @@ class MomentsSim(object):
 
     @staticmethod
     def derive_moment_order_hidden(node_order, mean_only):
-        """docstring for .
+        """Derives the order of the moments for the hidden nodes in
+        their `Z`-identifier form. Contains two lists, with the first moments
+        (means) and second moments (for variance, covariance), respectively;
+        the second moments are left out if `mean_only=True`.
 
-        mention `Z`-identifier form and the net lookup
+        `Note`: Based on `net.net_hidden_node_order`, with the difference that the
+        environmental node is removed for the moments. Hence original names are also
+        available via `sim.net.net_nodes_identifier`.
 
-        sensitive to mean_only mode and also important because downstream
-        methods react to this (?)
+        `Note`: This method is automatically run during `sim.simulate` in
+        `simulation_type='moments'` and during `estimate` and `select_models`
+        methods. The output is typically available via
+        `sim_moments.moment_order_hidden`.
 
-        this order of the moment here applies to all outputs on the hidden layer
-        (moment_eqs and moment_system ? summation indices?)
+        `Note`: The order for the hidden moments defines the order of the initial
+        values (`moment_initial_values`) and the differential equation system
+        (`moment_eqs` and `moment_system`). The tuples below correspond to
+        means `E(X)` (e.g., `('Z_0__centric',)`), second factorial moments
+        `E(X(X-1))` (e.g., `('Z_0__centric', 'Z_0__centric')`) and second mixed
+        moments `E(XY)` (e.g., `('Z_0__centric', 'Z_1__centric')`),
+        respectively.
+
+        Examples
+        --------
+        >>> # with a memocell simulation instance sim
+        >>> sim.sim_moments.moment_order_hidden
+        [[('Z_0__centric',), ('Z_1__centric',), ('Z_1__module_1__0',)],
+         [('Z_0__centric', 'Z_0__centric'),
+          ('Z_0__centric', 'Z_1__centric'),
+          ('Z_0__centric', 'Z_1__module_1__0'),
+          ('Z_1__centric', 'Z_1__centric'),
+          ('Z_1__centric', 'Z_1__module_1__0'),
+          ('Z_1__module_1__0', 'Z_1__module_1__0')]]
         """
 
         # initialise moment_order, first index for mean moments, second index for second order moments
@@ -525,11 +642,28 @@ class MomentsSim(object):
         return moment_order
 
     def derive_moment_pde(self, net_edges, z_aux_vars, z_aux_vars_dict, theta_repl_dict):
-        """docstring for .
-        goes over hidden Markov layer reactions
+        """Derives the partial differential equation (PDE) for the
+        probability generating function `G`, providing a complete description
+        of the stochastic process on the hidden Markov layer.
 
-        reac_rate is something like '4.0 * theta_0'
-        reac_type is also meant on the hidden layer reactions
+        `Note`: This method goes over all edges (`net_edges`) to accumulate
+        the overall PDE from the single-reaction building blocks (see
+        helper methods below). The PDE description is equivalent to
+        (and can be derived from) the description in terms of the master
+        equation. Taking derivatives for the auxiliary `z`-variables and applying
+        the limit operator provide the differential equation system for the moments
+        (see `derive_moment_eqs` method).
+
+        `Note`: This method is automatically run during `sim.simulate` in
+        `simulation_type='moments'` and during `estimate` and `select_models`
+        methods. The output is typically available via
+        `sim_moments.moment_pde`.
+
+        Examples
+        --------
+        >>> # with a memocell simulation instance sim
+        >>> sim.sim_moments.moment_pde
+        '1.0 * theta_0_q * (z_1__centric_q - z_0__centric_q) * diff(G(z_0__centric_q, z_1__centric_q), z_0__centric_q)'
         """
 
         # subsequently, add parts to the pde
@@ -580,24 +714,38 @@ class MomentsSim(object):
 
     @staticmethod
     def derive_moment_eqs(moment_pde, moment_order_hidden, moment_aux_vars, moment_aux_vars_dict, theta_replaceables):
-        """docstring for .
+        """Derives the ordinary differential equation (ODE) system for the moments
+        on the hidden Markov layer in its symbolic form.
 
-        mention sympy
-        and automatic symbolic calculations
+        `Note`: This is applied theory surrounding the probability generating
+        function `G` and Markov jump processes described by a PDE in `G` (or
+        equivalent a master equation). Derivatives of the PDE (as in `moment_pde`)
+        in the auxiliary variables `z` and application of the limit `z→1` lead to
+        linear differential equations for the moments (mean/first moment and second
+        factorial and mixed moments). Also, this ODE system is closed for the
+        linear reaction types available in MemoCell, i.e. the resulting equations
+        are exact. These operations are automatically conducted
+        for any MemoCell model, making use of `sympy`; downstream, they are
+        processed to a callable class method (`moment_system`), available for
+        numerical integration (`run_moment_ode_system` and top-level
+        `moment_simulation`).
 
-        here we should maybe also state the principe of the
-        prob. gen. function
+        `Note`: This method is automatically run during `sim.simulate` in
+        `simulation_type='moments'` and during `estimate` and `select_models`
+        methods. The output is typically available via
+        `sim_moments.moment_eqs`; the order of the equations corresponds to
+        `sim_moments.moment_order_hidden`.
 
-        formula for G
-
-        and derivative in auxiliary variables provide moments
-        with this special limit operator
-
-        and then derivatives of the PDE in G
-        provide a ordinary differential equation system for the moments
-
-        mention also that it is closed due to the involved reaction types which are
-        linear in the inputs (how to phrase exactly? see results or methods text)
+        Examples
+        --------
+        >>> # with a memocell simulation instance sim
+        >>> # theta rate parameters and moment vector m
+        >>> sim.sim_moments.moment_eqs
+        ['-1.0*m[0]*theta[0]',
+         '1.0*m[0]*theta[0]',
+         '-2.0*m[2]*theta[0]',
+         '1.0*m[2]*theta[0] - 1.0*m[3]*theta[0]',
+         '2.0*m[3]*theta[0]']
         """
 
         # initialise sympy objects
@@ -719,29 +867,32 @@ class MomentsSim(object):
 
     @staticmethod
     def get_indices_for_solution_readout(moment_order_main, moment_order_hidden):
-        """docstring for .
-        maybe state mean, var, cov of sums formulas here
-        (or at least their equivalent on the moments, whatever is used)
-
-        adapt:
-
-        Creates a list of tuples with hidden node indices that are needed to
-        sum up each main node; index ordering as in
-        `sim.sim_gillespie.net_main_node_order_without_env` and
-        `sim.sim_gillespie.net_hidden_node_order_without_env` with
-        `Z`-identifier `sim.net.net_nodes_identifier`.
+        """Creates array objects with indices for the hidden layer moments
+        (first, second mixed and factorial) that allow to sum them up
+        for solutions of mean, variance and covariance of the main/observable
+        nodes.
 
         `Note`: This method is automatically run during `sim.simulate` in
-        `simulation_type='gillespie'`.
-        Afterwards one can access the output at
-        `sim.sim_gillespie.summation_indices_nodes`.
+        `simulation_type='moments'` and during `estimate` and `select_models`
+        methods. The output is typically available at `moment_mean_ind`,
+        `moment_var_ind_intra`, `moment_var_ind_inter` and `moment_cov_ind` and
+        used in `run_moment_ode_system` and top-level `moment_simulation`;
+        index values correspond to `moment_order_hidden`.
 
         Examples
         --------
         >>> # with a memocell simulation instance sim
-        >>> # e.g., the first four hidden nodes provide the first main node
-        >>> sim.sim_gillespie.summation_indices_nodes
-        [(0, 1, 2, 3), (4, 5, 6)]
+        >>> sim.sim_moments.moment_mean_ind
+        array([[(0,)],
+        [(1, 2)]], dtype=object)
+        >>> sim.sim_moments.moment_var_ind_intra
+        array([[(3,), (0,)],
+        [(6, 8), (1, 2)]], dtype=object)
+        >>> sim.sim_moments.moment_var_ind_inter
+        array([[(), (), ()],
+        [(7,), (1,), (2,)]], dtype=object)
+        >>> sim.sim_moments.moment_cov_ind
+        array([[(4, 5), (0, 0), (1, 2)]], dtype=object)
         """
 
         # count the numbers of mean, var and covar moment equations for the main nodes
@@ -861,30 +1012,27 @@ class MomentsSim(object):
                                             variables_identifier,
                                             moment_order_main,
                                             net_nodes_identifier):
-        """
-
-        maybe state mean, var, cov of sums formulas here
-
-        adapt:
-
-        Creates a list of tuples with main node indices that are needed to
-        sum up each simulation variable; index ordering as in
-        `sim.sim.sim_variables_order` and
-        `sim.sim_gillespie.net_main_node_order_without_env` with
-        `V`-identifier `sim.sim.sim_variables_identifier` and
-        `Z`-identifier `sim.net.net_nodes_identifier`, respectively.
+        """Creates array objects with indices for the mean, variance and
+        covariance solutions on the main/observable layer that allow to sum them up
+        for mean, variance and covariance solutions for the simulation variables.
 
         `Note`: This method is automatically run during `sim.simulate` in
-        `simulation_type='gillespie'`.
-        Afterwards one can access the output at
-        `sim.sim_gillespie.summation_indices_variables`.
+        `simulation_type='moments'` and during `estimate` and `select_models`
+        methods. The output is typically available at `variables_mean_ind`,
+        `variables_var_ind` and `variables_cov_ind` and
+        used in `run_moment_ode_system` and top-level `moment_simulation`.
 
         Examples
         --------
         >>> # with a memocell simulation instance sim
-        >>> # e.g., main nodes and simulation variables are the same
-        >>> sim.sim_gillespie.summation_indices_variables
-        [(0,), (1,)]
+        >>> sim.sim_moments.variables_mean_ind
+        array([[(0,)],
+        [(1,)]], dtype=object)
+        >>> sim.sim_moments.variables_var_ind
+        array([[(0,), ()],
+        [(1,), ()]], dtype=object)
+        >>> sim.sim_moments.variables_cov_ind
+        array([[(), (0,)]], dtype=object)
         """
 
         # inverse the node identifier dictionary
