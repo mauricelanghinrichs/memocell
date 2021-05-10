@@ -46,6 +46,12 @@ First Example
 [TODO: also add coverage badge at the top of the README; set up travis or remove badge]
 [current coverage, with some sim tests still missing, is ~ 93%]
 
+More Examples
+^^^^^^^^^^^^^
+
+Other examples can be found in the above folder ``examples`` (as jupyter notebooks).
+If they don't render correctly by github, copy-paste the entire URL into `nbviewer <https://nbviewer.jupyter.org>`_.
+
 Documentation
 -------------
 
