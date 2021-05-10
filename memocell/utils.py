@@ -13,7 +13,7 @@ import numpy.linalg as la
 
 ### general functions
 ### Phase-type densities from selected hidden network schemes
-def phase_type_pdf(alpha, A, x):
+def phase_type_pdf(alpha, S, x):
     """Returns the probability density function of a continuous
     phase-type distribution.
 
@@ -25,7 +25,7 @@ def phase_type_pdf(alpha, A, x):
     alpha : 1d numpy.ndarray
         The initial probability vector of the phase-type
         distribution (with shape `(1,m)`).
-    A : 2d numpy.ndarray
+    S : 2d numpy.ndarray
         The transient generator matrix of the phase-type
         distribution (with shape `(m,m)`).
     x : 1d numpy.ndarray or array-like
@@ -38,14 +38,14 @@ def phase_type_pdf(alpha, A, x):
         corresponding `x` values.
     """
     ### adapted from butools "PdfFromME" and "PdfFromPH" methods
-    _validate_phase_type(alpha, A)
+    _validate_phase_type(alpha, S)
 
     # @ is matrix mult between np.array (instead of deprecated np.matrix)
-    ph_pdf = np.array([np.sum(alpha @ expm(A*xv) @ (-A)) for xv in x])
+    ph_pdf = np.array([np.sum(alpha @ expm(S*xv) @ (-S)) for xv in x])
     return ph_pdf
 
 def phase_type_from_erlang(theta, n):
-    """Returns initial probabilities :math:`\\alpha` and generator matrix :math:`A`
+    """Returns initial probabilities :math:`\\alpha` and generator matrix :math:`S`
     for phase-type representation of an Erlang waiting time distribution with :math:`n` steps
     and rate :math:`\\theta` (mean waiting time :math:`1/\\theta`).
 
@@ -74,7 +74,7 @@ def phase_type_from_erlang(theta, n):
     alpha : 1d numpy.ndarray
         The initial probability vector of the phase-type
         distribution (with shape `(1,n)`).
-    A : 2d numpy.ndarray
+    S : 2d numpy.ndarray
         The transient generator matrix of the phase-type
         distribution (with shape `(n,n)`).
     """
@@ -97,7 +97,7 @@ def phase_type_from_erlang(theta, n):
 
     # preallocate initial probs and subgenerator matrix
     alpha = np.zeros((1, int(n)))
-    A = np.zeros((int(n), int(n)))
+    S = np.zeros((int(n), int(n)))
 
     # first index sets source
     alpha[0, 0] = 1.0
@@ -106,17 +106,17 @@ def phase_type_from_erlang(theta, n):
     r = n * theta
 
     # outflux from source
-    A[0, 0] = -r
+    S[0, 0] = -r
 
     # fill matrix
     for i in range(1, int(n)):
-        A[i-1, i] = r
-        A[i, i] = -r
+        S[i-1, i] = r
+        S[i, i] = -r
 
-    return alpha, A
+    return alpha, S
 
 def phase_type_from_parallel_erlang2(theta1, theta2, n1, n2):
-    """Returns initial probabilities :math:`\\alpha` and generator matrix :math:`A`
+    """Returns initial probabilities :math:`\\alpha` and generator matrix :math:`S`
     for a phase-type representation of two parallel Erlang channels with parametrisation
     :math:`(\\theta_1, n_1)` and :math:`(\\theta_2, n_2)` (rate and steps of Erlang
     channels).
@@ -146,7 +146,7 @@ def phase_type_from_parallel_erlang2(theta1, theta2, n1, n2):
     alpha : 1d numpy.ndarray
         The initial probability vector of the phase-type
         distribution (with shape `(1,m)` where :math:`m=n_1+n_2-1`).
-    A : 2d numpy.ndarray
+    S : 2d numpy.ndarray
         The transient generator matrix of the phase-type
         distribution (with shape `(m,m)` where :math:`m=n_1+n_2-1`).
     """
@@ -171,7 +171,7 @@ def phase_type_from_parallel_erlang2(theta1, theta2, n1, n2):
 
     # preallocate initial probs and subgenerator matrix
     alpha = np.zeros((1, int(n1 + n2)-1))
-    A = np.zeros((int(n1 + n2)-1, int(n1 + n2)-1))
+    S = np.zeros((int(n1 + n2)-1, int(n1 + n2)-1))
 
     # first index sets source
     alpha[0, 0] = 1.0
@@ -182,24 +182,24 @@ def phase_type_from_parallel_erlang2(theta1, theta2, n1, n2):
 
     # outflux from source
     # (from competing channels)
-    A[0, 0] = -(r1+r2)
+    S[0, 0] = -(r1+r2)
 
     # fill matrix (first channel)
     l = [0] + list(range(1, int(n1)))
     for i, inext in zip(l[0:-1], l[1:]):
-        A[i, inext] = r1
-        A[inext, inext] = -r1
+        S[i, inext] = r1
+        S[inext, inext] = -r1
 
     # fill matrix (second channel)
     l = [0] + list(range(int(n1), int(n1+n2)-1))
     for i, inext in zip(l[0:-1], l[1:]):
-        A[i, inext] = r2
-        A[inext, inext] = -r2
+        S[i, inext] = r2
+        S[inext, inext] = -r2
 
-    return alpha, A
+    return alpha, S
 
 def phase_type_from_parallel_erlang3(theta1, theta2, theta3, n1, n2, n3):
-    """Returns initial probabilities :math:`\\alpha` and generator matrix :math:`A`
+    """Returns initial probabilities :math:`\\alpha` and generator matrix :math:`S`
     for a phase-type representation of three parallel Erlang channels with parametrisation
     :math:`(\\theta_1, n_1)`, :math:`(\\theta_2, n_2)` and :math:`(\\theta_3, n_3)`
     (rate and steps of Erlang channels).
@@ -234,7 +234,7 @@ def phase_type_from_parallel_erlang3(theta1, theta2, theta3, n1, n2, n3):
     alpha : 1d numpy.ndarray
         The initial probability vector of the phase-type
         distribution (with shape `(1,m)` where :math:`m=n_1+n_2+n_3-2`).
-    A : 2d numpy.ndarray
+    S : 2d numpy.ndarray
         The transient generator matrix of the phase-type
         distribution (with shape `(m,m)` where :math:`m=n_1+n_2+n_3-2`).
     """
@@ -259,7 +259,7 @@ def phase_type_from_parallel_erlang3(theta1, theta2, theta3, n1, n2, n3):
 
     # preallocate initial probs and subgenerator matrix
     alpha = np.zeros((1, int(n1 + n2 + n3)-2))
-    A = np.zeros((int(n1 + n2 + n3)-2, int(n1 + n2 + n3)-2))
+    S = np.zeros((int(n1 + n2 + n3)-2, int(n1 + n2 + n3)-2))
 
     # first index sets source
     alpha[0, 0] = 1.0
@@ -271,29 +271,29 @@ def phase_type_from_parallel_erlang3(theta1, theta2, theta3, n1, n2, n3):
 
     # outflux from source
     # (from competing channels)
-    A[0, 0] = -(r1+r2+r3)
+    S[0, 0] = -(r1+r2+r3)
 
     # fill matrix (first channel)
     l = [0] + list(range(1, int(n1)))
     for i, inext in zip(l[0:-1], l[1:]):
-        A[i, inext] = r1
-        A[inext, inext] = -r1
+        S[i, inext] = r1
+        S[inext, inext] = -r1
 
     # fill matrix (second channel)
     l = [0] + list(range(int(n1), int(n1+n2)-1))
     for i, inext in zip(l[0:-1], l[1:]):
-        A[i, inext] = r2
-        A[inext, inext] = -r2
+        S[i, inext] = r2
+        S[inext, inext] = -r2
 
     # fill matrix (third channel)
     l = [0] + list(range(int(n1+n2)-1, int(n1+n2+n3)-2))
     for i, inext in zip(l[0:-1], l[1:]):
-        A[i, inext] = r3
-        A[inext, inext] = -r3
+        S[i, inext] = r3
+        S[inext, inext] = -r3
 
-    return alpha, A
+    return alpha, S
 
-def _validate_phase_type(alpha, A, prec=1e-6):
+def _validate_phase_type(alpha, S, prec=1e-6):
     """Private validation method. Adapted from butools."""
     ### adapted from butools "CheckPHRepresentation" and "CheckMERepresentation" methods
     # if butools.checkInput and not CheckPHRepresentation (alpha, A):
@@ -318,28 +318,28 @@ def _validate_phase_type(alpha, A, prec=1e-6):
         raise ValueError('Alpha has a negative element.')
 
     ### check generator matrix
-    if not isinstance(A, np.ndarray):
-        raise TypeError('Numpy array expected for A.')
+    if not isinstance(S, np.ndarray):
+        raise TypeError('Numpy array expected for S.')
 
-    if A.shape[0]!=A.shape[1]:
-        raise ValueError('A is not a square matrix.')
+    if S.shape[0]!=S.shape[1]:
+        raise ValueError('S is not a square matrix.')
 
-    if np.any(np.diag(A)>=prec):
-        raise ValueError('The diagonal of the generator A is not negative.')
+    if np.any(np.diag(S)>=prec):
+        raise ValueError('The diagonal of the generator S is not negative.')
 
-    N = A.shape[0]
-    odQ = A<-prec
+    N = S.shape[0]
+    odQ = S<-prec
     for i in range(N):
         odQ[i,i] = 0
     if np.sum(np.any(odQ))>0:
-        raise ValueError('The generator A has negative off-diagonal element.')
+        raise ValueError('The generator S has negative off-diagonal element.')
 
-    if np.max(np.sum(A, axis=1))>prec:
-        raise ValueError('The rowsum of the transient generator A is greater than 0.')
+    if np.max(np.sum(S, axis=1))>prec:
+        raise ValueError('The rowsum of the transient generator S is greater than 0.')
 
-    ev = la.eigvals(A)
+    ev = la.eigvals(S)
     if np.max(np.real(ev))>=prec:
-        raise ValueError('The transient generator A has non-negative eigenvalue.')
+        raise ValueError('The transient generator S has non-negative eigenvalue.')
 
     ix = np.argsort(np.abs(np.real(ev)))
     maxev = ev[ix[0]]
@@ -347,5 +347,5 @@ def _validate_phase_type(alpha, A, prec=1e-6):
         raise ValueError('The dominant eigenvalue of the matrix is not real.')
 
     ### checks related to both
-    if alpha.shape[1]!=A.shape[0]:
-        raise ValueError('A and alpha have non-matching shapes.')
+    if alpha.shape[1]!=S.shape[0]:
+        raise ValueError('S and alpha have non-matching shapes.')
