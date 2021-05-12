@@ -43,6 +43,9 @@ Other dependencies should be installed automatically during the ``memocell`` ins
 First Example
 ^^^^^^^^^^^^^
 
+maybe change this to an "illustrative" (check spelling) example and
+rename "more examples" to "code examples" or "notebook examples"
+
 [TODO: also add coverage badge at the top of the README; set up travis or remove badge]
 [current coverage, with some sim tests still missing, is ~ 93%]
 
