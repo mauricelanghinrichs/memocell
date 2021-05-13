@@ -10,6 +10,7 @@
 !images/*.pdf
 !images/*.png
 !images/*.svg
+!examples/data_cell_div_t10.pickle
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
