@@ -60,7 +60,7 @@ the start of the experiment/process (Figure below, right panel).
 
 .. image:: images/intro_cell_count_data_white.png
     :align: center
-    :scale: 25 %
+    :scale: 10 %
 
 With the specification of a prior model space (which we skip
 here, see code examples), MemoCell will update this prior by the data
@@ -72,7 +72,7 @@ left panel).
 
 .. image:: images/intro_inference_white.png
     :align: center
-    :scale: 25 %
+    :scale: 10 %
 
 Internally, MemoCell compares data and stochastic models by summary statistics
 of the so-called moments (mean, variance, covariance of cell counts).
