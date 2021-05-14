@@ -72,7 +72,7 @@ left panel).
 
 .. image:: images/intro_inference_white.png
     :align: center
-    :scale: 10 %
+    :width: 200px
 
 Internally, MemoCell compares data and stochastic models by summary statistics
 of the so-called moments (mean, variance, covariance of cell counts).
