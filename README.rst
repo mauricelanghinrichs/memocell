@@ -58,7 +58,7 @@ To do this, MemoCell requires (typically more accessible) cell count level data.
 In this case, these could be cell numbers observed at one single time point after
 the start of the experiment/process (Figure below, right panel).
 
-.. image:: ../images/intro_cell_count_data.svg
+.. image:: images/intro_cell_count_data_white.png
     :align: center
     :scale: 25 %
 
@@ -70,7 +70,7 @@ estimate for the distribution of cell division times. The estimate by MemoCell
 recovers the unobserved, ground truth of the test data set (Figure below,
 left panel).
 
-.. image:: ../images/intro_inference_white.png
+.. image:: images/intro_inference_white.png
     :align: center
     :scale: 25 %
 
