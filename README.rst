@@ -59,7 +59,7 @@ In this case, these could be cell numbers observed at one single time point afte
 the start of the experiment/process (Figure below, right panel).
 
 .. image:: images/intro_cell_count_data.svg
-    :width: 500px
+    :width: 550px
 
 With the specification of a prior model space (which we skip
 here, see code examples), MemoCell will update this prior by the data
@@ -70,7 +70,7 @@ recovers the unobserved, ground truth of the test data set (Figure below,
 left panel).
 
 .. image:: images/intro_inference.svg
-    :width: 600px
+    :width: 550px
 
 Internally, MemoCell compares data and stochastic models by summary statistics
 of the so-called moments (mean, variance, covariance of cell counts).
