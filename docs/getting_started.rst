@@ -73,7 +73,8 @@ Code Examples
 ^^^^^^^^^^^^^
 
 Concrete code and usage examples can be found in the ``examples`` folder on the
-github ``TODO add link`` website (as jupyter notebooks).
+`github website <https://github.com/mauricelanghinrichs/memocell>`_
+(as jupyter notebooks).
 If they don't render correctly by github, copy-paste the entire URL into
 `nbviewer <https://nbviewer.jupyter.org>`_;
 alternatively, you may download and run them yourself.
