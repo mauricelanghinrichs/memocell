@@ -40,9 +40,11 @@ def net_main_plot(net, node_settings=None, edge_settings=None,
     net : memocell.network.Network
         A memocell network object.
     node_settings : dict of dict, optional
-        Optional label and color settings for the network nodes.
+        Optional label and color settings for the network nodes. Colors
+        require hex literals and labels require html (not latex) format.
     edge_settings : dict of dict, optional
-        Optional label and color settings for the network edges.
+        Optional label and color settings for the network edges. Colors
+        require hex literals and labels require html (not latex) format.
     layout : None or str, optional
         Specify layout engine for computing node positions; e.g. 'dot', 'neato', 'circo'.
     show : bool, optional
@@ -97,9 +99,11 @@ def net_hidden_plot(net, node_settings=None, edge_settings=None,
     net : memocell.network.Network
         A memocell network object.
     node_settings : dict of dict, optional
-        Optional label and color settings for the network nodes.
+        Optional label and color settings for the network nodes. Colors
+        require hex literals and labels require html (not latex) format.
     edge_settings : dict of dict, optional
-        Optional label and color settings for the network edges.
+        Optional label and color settings for the network edges. Colors
+        require hex literals and labels require html (not latex) format.
     layout : None or str, optional
         Specify layout engine for computing node positions; e.g. 'dot', 'neato', 'circo'.
     show : bool, optional
