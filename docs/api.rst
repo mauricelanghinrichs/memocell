@@ -1,6 +1,6 @@
-=============
-API Reference
-=============
+===
+API
+===
 
 This page details the methods and classes provided by the ``memocell`` module. Some
 plotting helper methods and input validation methods are flagged as private and will

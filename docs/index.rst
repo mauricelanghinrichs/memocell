@@ -15,8 +15,7 @@ Content
    :maxdepth: 2
 
    getting_started
-   motivation_theory
-   usage
+   theory
+   api
    various
    dev_docs
-   api

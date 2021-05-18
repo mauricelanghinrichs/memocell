@@ -1,6 +1,6 @@
 
-Motivation and Theory
-=====================
+Theory
+======
 
 Waiting Times and Memory
 ^^^^^^^^^^^^^^^^^^^^^^^^
