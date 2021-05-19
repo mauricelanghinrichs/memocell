@@ -203,12 +203,26 @@ larger or smaller than (or equal to) 1.
     :align: center
     :scale: 15 %
 
-Note that already finite Erlang mixture distributions are dense in the
+Note that already finite mixtures of Erlang distributions are dense in the
 field of positive-valued distributions [#bladt]_ [#schb]_, so we believe
 that our approach may provide a versatile start point for many problems.
 
 Stochastic Processes
 ^^^^^^^^^^^^^^^^^^^^
+
+maybe it is easiest to start with introducing now the use of phase-type ideas
+for different reactions assembled together in a multi-reaction network;
+then they that it somehow also covers ensemble/integer cell numbers; maybe think
+about this a bit more.. the given reaction types somehow enforce specific state
+changes, while in the previous section there was no real assumption on this
+
+to understand many-cell systems maybe helpful to mention the property of the
+exponential distribution on the hidden layer: once many cells are placed on a
+cell type their rate just amplifies with the cell number as minimum of n
+exponential waiting times has n times the rate
+
+mention that we don't fit ph distr. directly! we look at interlinked
+ph distributions in networks and try to infer them via cell counts
 
 here I have to make two main steps: ensemble level, multiple reaction;
 the whole description (S, Q) before was for a single cell
@@ -223,6 +237,22 @@ in the previous section they represented concrete states (i.e. (1,0,0)), but
 now they 'encode' or 'induce' a whole set of states (each variable can be
 in any integer and then all states arises combinatorial)
 
+mention also MemoCell automatic symbolic derivation and metaprogramming
+features
+
+say we implement phase-type (and Erlang) now for different reactions (before
+we had more states that could have been anything); write again this phrase
+that a reaction is realised only with the final jump into the absorbing state
+/ which executes the stochiometric change of the reaction, while all transitions
+between the transient states or variables are hidden (differentiation reaction
+between hidden variables of the same cell type that cannot be seen on the
+observable layer)
+
+maybe now also mention when we talk about cell numbers for the first time
+really (not just a single cell) that we deal with infinite sized integer
+systems, hence master equation for the whole process infinite dimensional
+and no solution can be directly obtained via matrix exp
+
 general master equation for Markov jump processes (continuous time, discrete
 state space); SEE NEW notes on Goodnotes: maybe remove this initial condition thing
 and directly write the general ME, starting from initial distribution p(w0, t0);
@@ -233,6 +263,14 @@ section that this is can applied automatically for many cells running through th
 transition graphs and networks
 
 rates we introduce are the rates of single cells passing through such schemes
+
+maybe mention the scaling with the run time in variance/covariance mode, that
+people dont expect too much for large networks... the #moment_eqs scales
+quadratically with the number of hidden layer variables, maybe copy-paste
+exact formula here from paper methods
+
+maybe mention that also ph are closed under minima and so on (order stats
+in general?)
 
 maybe also mention exponential split probabilities to enter the different
 channels; theta/(sum over all theta diverging)
@@ -246,8 +284,10 @@ statistics).
 
 mention that reactions start at centric hidden node
 
-People may also find other inspiration
-in Reference [#min_max_ph]_; for example
+mention that we split multi reaction system that diverge from the same cell type
+as split at the first reaction; however one can also implement other stuff
+such as min / max of these channels using simulation_variables; then link to
+reference [#min_max_ph]_
 
 reaction types; maybe change notation as in methods with :math:`W^{(i)}` and
 :math:`W^{(k)}` variables.
@@ -324,6 +364,8 @@ MemoCell solves :math:`\mathrm{E}\big(W^{(i,j)}_t\big)`,
 
 Bayesian Inference
 ^^^^^^^^^^^^^^^^^^
+
+ref mackay maybe
 
 state main Bayes theorems for model selection and parameter estimation
 
