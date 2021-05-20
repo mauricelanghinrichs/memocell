@@ -257,10 +257,9 @@ types
 
 where :math:`S` is the start cell type and :math:`E` is the end cell type. For
 example, the differentiation reaction from :math:`X` (start node) to :math:`Y`
-(end node) was implemented by the type :math:`S \rightarrow E`); any single
+(end node) was implemented by the type :math:`S \rightarrow E`; any single
 cell of cell type :math:`X` that undergoes the reaction will switch to cell
 type :math:`Y` at the final (=second) jump of this Erlang channel.
-
 
 Mathematically, the stochastic process on the observable layer is simply the
 sum of the Markov processes for the corresponding hidden layer variables.
@@ -352,110 +351,155 @@ moment equations where :math:`\ell=\sum_i u_i` is the total number
 of hidden variables over all cell types (however, we also allow to compute
 faster :math:`\ell` solutions for the means only).
 
-Three more `NOTES`:
+**Some further notes below:**
 
-- For both stochastic and moment simulations one has to specify the initial condition. Please see the API docs for the available options and how they are realised in MemoCell.
+`NOTE`: For both stochastic and moment simulations one has to specify the
+initial condition. Please see the API docs for the available options
+and how they are realised in MemoCell.
 
-- By default, when multiple reactions have the same start cell type their reaction channels diverge at the "centric" hidden node/variable (larger sizes, see Figure above for :math:`Y` differentiation and division). This means that the diverging channels :math:`i=(1, ..., c)` are competitive and have channel entry probabilities :math:`\lambda_i/(\lambda_1 + ... + \lambda_c)` where :math:`\lambda_i` is the rate of the first hidden step of channel :math:`i` (a property of the exponential distribution). However you can implement other behaviour as well using `simulation_variables`; for example a minimum or maximum of different Erlang waiting times (as seen in [#min_max_ph]_).
+`NOTE`: By default, when multiple reactions have the same start cell type
+their reaction channels diverge at the "centric" hidden node/variable
+(larger sizes, see Figure above for :math:`Y` differentiation and division).
+This means that the diverging channels :math:`i=(1, ..., c)` are competitive
+and have channel entry probabilities
+:math:`\lambda_i/(\lambda_1 + ... + \lambda_c)` where :math:`\lambda_i`
+is the rate of the first hidden step of channel :math:`i` (a property of
+the exponential distribution). However you can implement other behaviour as
+well using `simulation_variables`; for example a minimum or maximum of
+different Erlang waiting times (as seen in [#min_max_ph]_).
 
-- Of course, you may use MemoCell for any system of interest (beyond our "framing" of cell number dynamics) that fits to the setting of discrete-state-space time-continuous processes with the above reaction types
-
+`NOTE`: Of course, you may use MemoCell for any system of interest
+(beyond our "framing" of cell number dynamics) that fits to the setting
+of discrete-state-space time-continuous processes with the above reaction
+types.
 
 Bayesian Inference
 ^^^^^^^^^^^^^^^^^^
 
-maybe start with the intro sentence about Bayesian probability etc.; treat
-the world as a random variable
+MemoCell enables Bayesian inference for stochastic processes with
+phase-type reaction waiting times from cell count data. Based on the
+information contained in the data, posterior model and parameter probabilities
+are computed. From this, Bayesian-averaged inferences over the complete model
+space can derived; for estimates of waiting time distributions,
+model topologies and more.
 
-cell count data can be ensemble or single cell level
-
-maybe switch term from state to node or variable when describing the figure;
-in the previous section they represented concrete states (i.e. (1,0,0)), but
-now they 'encode' or 'induce' a whole set of states (each variable can be
-in any integer and then all states arises combinatorial)
-
-`NOTE`: It is worth to stress that MemoCell not only fits a single phase-type
-distribution directly to the data (other specific methods exist for this; e.g.,
-via moment matching). MemoCell fits the resulting cell number dynamics that
-are shaped by `multiple` phase-type reactions in a network. This allows to use
-more accessible cell count data (compared to recorded waiting time data) and
-possibly to infer multiple phase-type reactions simultaneously from the same
-data.
-
-say what happens if data has no infomration on what people are interested in
--> posterior looks like prior (i.e., in default settings model or
-parameter probs stay uniform); we can of course not promise that the provided
-data in general, but also the inference based on the summary statistics
-contain all information that people wish to learn about
-
-say we are not really interested in resolving the hidden layer structure, but more
-in the resulting density or distribution (which also shapes the cell number
-dynamics); the resulting density may be achieved by different hidden states and
-transition schemes anyway and hence the exact may be unidentifiable anyway
-
-
-
-ref mackay maybe
-
-state main Bayes theorems for model selection and parameter estimation
-
-mention likelihood function? (maybe reference to API here, as log likelihood)
-
-mention nested sampling
-
-maybe say that waiting times (the hidden layer structure) is inferred on the
-model selection level; hence we also require quite good model probs values
-to be able to do accurate Bayesian-averaged inferences -> hence nested sampling
-
-allows Bayesian-averaged inference over the complete model space, introduce
-formula and sampling procedure (maybe link to API)
+Bayesian inference means to update some `prior` knowledge (about the process
+of interest) with data :math:`D` to obtain `posterior` knowledge [#mackay]_.
+Importantly, different pathway topologies and/or different waiting times
+(the hidden layer structure) for the stochastic processes are represented
+on the model level in MemoCell. Hence the prior-to-posterior update needs to be
+computed for a set of models :math:`(M_1, ..., M_m)`, and, for each model
+:math:`M_k` individually, for its rate parameter vector :math:`\pmb{\theta}_k`.
+Thus MemoCell applies a two-level Bayes' theorem. First, for any fixed model
+:math:`k`, one wants to estimate its continuous parameter posterior
+:math:`p(\pmb{\theta}_k | D, M_k)` via
 
 .. math::
     p(\pmb{\theta}_k | D, M_k) = \frac{p(D | \pmb{\theta}_k, M_k) \, p(\pmb{\theta}_k| M_k)}{p(D | M_k)}
-    = \frac{\mathcal{L}(\pmb{\theta}_k) \, \pi(\pmb{\theta}_k)}{Z_k}
+    = \frac{\mathcal{L}(\pmb{\theta}_k) \, \pi(\pmb{\theta}_k)}{Z_k},
+
+where :math:`p(D | \pmb{\theta}_k, M_k)=\mathcal{L}(\pmb{\theta}_k)` is the
+likelihood, :math:`p(\pmb{\theta}_k| M_k)=\pi(\pmb{\theta}_k)` the rate parameter
+prior and :math:`p(D | M_k)=Z_k` the model evidence. Second, the
+discrete distribution of posterior model probabilities :math:`p(M_k | D)`
+is given by
 
 .. math::
     p(M_k | D) = \frac{p(D | M_k) \, p(M_k)}{p(D)}
     = \frac{Z_k \, p(M_k)}{p(D)}
 
-it is sufficient to know model evidence and model prior to know the model
-posterior distribution, as :math:`p(D)` can be calculated as
-probability-normalizing factor.
+where :math:`p(M_k)` is the model prior and :math:`p(D)` can be calculated
+by normalisation over the complete model set.
 
-parameter prior, for each parameter :math:`\theta` in the vector :math:`\pmb{\theta}`
-one has to specify
-
-.. math::
-    \pi(\theta) = \left. \begin{cases} 1 / (b_u - b_l) & \text{if } \theta \in [b_l, b_u] \\
-    0 & \text{else} \end{cases} \right\}
-
-evidence integral via nested sampling...
+As accurate evidence values are of prime importance for the model-based
+inferences (waiting times, topologies, etc.), MemoCell employs nested sampling
+[#skilling]_, in the specific implementation as provided by the dynesty package
+[#dynesty]_. Nested sampling solves a reparametrised version of the
+evidence integral (the second integral)
 
 .. math::
     Z_k = \int\nolimits_{\Theta_k} \mathcal{L}(\pmb{\theta}_k) \, \pi(\pmb{\theta}_k) \, \mathrm{d}\pmb{\theta}_k
     = \int\nolimits_{0}^{1} \mathcal{L}(X) \, \mathrm{d}X
 
-where :math:`\Theta_k` denotes the entire parameter domain. and the second integral
-is the one solved in nested sampling, introducing a prior mass :math:`X` sorted
-by the likelihood (ref to dynesty, or methods in release paper). second integral
-is reparametrised.
+where :math:`\Theta_k` denotes the entire parameter domain and :math:`X` is the
+likelihood-sorted prior mass. Nested sampling also provides `bona fide`
+posterior parameter samples when weighted with their importance weight
+(`est.bay_est_samples_weighted` of an estimation instance `est` in MemoCell),
+hence both Bayes' levels are estimated in a model selection run
+(`select_models` in MemoCell). (For more theory info, see the two references or
+the methods of our release paper).
 
-nested sampling also yields bona fide posterior parameter samples, when they
-are weighted as :math:`p(\pmb{\theta}_i) = \mathcal{L}_i \, \Delta X_i / Z`, where :math:`i` indicates the
-samples of the :math:`i`-th iteration of a nested sampling run. So use
-`est.bay_est_samples_weighted` of an estimation instance `est` in MemoCell.
+Data and models are compared in the likelihood function
+:math:`\mathcal{L}(\pmb{\theta})`. Here, MemoCell uses the exact and
+relatively fast moment simulations (means, variances, covariances of the
+observable layer cell counts) to compare them to the analogous mean, variance
+and covariance summary statistics of the cell count data. Due to the central
+limit theorem, the summary statistics allow to set up a standard Gaussian
+likelihood (see API docs or methods in our release paper).
+The cell count data can be on the single-cell or ensemble level;
+one can also load summary statistics directly (such as population
+averaged mean-only data).
 
-Bayesian-averaged output over entire model space
+The most important step of post-processing are the Bayesian-averaged inferences
+over the entire model space. For any quantity of interest :math:`X`, one
+can compute its posterior distribution given the data :math:`p(X|D)`. If
+:math:`p(X|\pmb{\theta}_k, M_k, D)=p(X|\pmb{\theta}_k, M_k)`,
+meaning the models with their parameters contain all information to compute
+:math:`X`, we can express the posterior of :math:`X` as
 
 .. math::
     p(X|D) = \sum\nolimits_{k=1}^{m} \int\nolimits_{\Theta_k} \,
-    p(X|\pmb{\theta}_k, M_k, D) \, p(\pmb{\theta}_k | M_k, D) \,
-    p(M_k | D) \, \mathrm{d}\pmb{\theta}_k
+    p(X|\pmb{\theta}_k, M_k) \, p(\pmb{\theta}_k | M_k, D) \,
+    p(M_k | D) \, \mathrm{d}\pmb{\theta}_k.
 
-where typically :math:`p(X|\pmb{\theta}_k, M_k, D)=p(X|\pmb{\theta}_k, M_k)`
-(posterior model contains all info to compute :math:`X`). describe sampling
-procedure, read eq. from right to left; maybe also add topology
-inference of an application of this
+This formula might be used analytically or with sampling. `Sampling`:
+1) sample a model from the model posterior,
+2) sample a posterior parameter set within that model,
+3) compute :math:`X` and repeat (read the equation from right to left).
+For example, this can be applied to obtain posterior samples of the
+waiting time densities. Of course, for such analyses it is vital to
+have an exhaustive model space that does not obviously fail to describe
+the data.
+
+To compute the posterior probabilities of model topologies
+:math:`p(T_i | D)` is a particular application of this formula.
+Topologies are mutually disjoint partitions of the model space and do not
+depend on parameter values. Therefore
+:math:`p(T_i | D) = \sum_k p(T_i| M_k) \, p(M_k | D)`, where
+:math:`p(T_i| M_k)` is either :math:`1` (model :math:`M_k` is of topology
+:math:`T_i`) or :math:`0` (is not). Thus one simply has to add up all
+model probabilities that belong to a certain topology.
+
+**Some further notes below:**
+
+`NOTE`: It is worth to stress that MemoCell not only fits a single phase-type
+distribution directly to data (other specific methods exist for this; e.g.,
+via moment matching). MemoCell fits the resulting `cell number dynamics` that
+are shaped by `multiple` phase-type reactions in a network. This allows to use
+more accessible cell count data (compared to recorded waiting time data) and
+possibly to infer multiple phase-type reactions simultaneously from the same
+data.
+
+`NOTE`: Typically we are not interested in resolving the precise hidden layer
+structure for the waiting times, but rather in the resulting waiting time
+density or distribution function that they produce (and which shape the
+cell number dynamics). The same density may be constructed by different
+hidden states and transition schemes (phase-type distributions are not unique)
+and hence the hidden layer may be unidentifiable anyway.
+
+`NOTE`: Model evidences are future-proof in the sense that they are computed
+for each model individually and do not depend on the overall model set. Hence
+one can save model estimations and compare them to new models later
+on without re-estimating the full model set.
+
+`NOTE`: MemoCell can only infer information that is somehow "contained"
+in the data (more precisely: in the summary statistics of the data).
+There may be features in stochastic processes that are structurally or
+practically (given the resolution of the data) impossible to infer.
+If data is `not` informative, the posteriors look like the prior; on the other
+hand: if the data `is` informative the posterior contracts/shrinks/changes
+compared to the prior (see information gain, Kullback-Leibler divergence).
+
 
 Subsampling from Compartments
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
