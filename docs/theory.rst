@@ -34,9 +34,9 @@ The exponential distribution is the only continuous distribution that fulfils
 the property of memorylessness, meaning
 :math:`p(\tau > t + s | \tau > s) = p(\tau > t)`. This is also why stochastic
 processes that fulfil the Markov property of memorylessness are characterised
-by exponential waiting times for all their transition events. Markov jump
-processes with exponential waiting times allow powerful analytical access (will
-be used and shown). However, the exponential waiting time distribution in
+by exponential waiting times for their single transition events. Markov jump
+processes with exponential waiting times allow powerful analytical access
+[#cinlar]_. However, the exponential waiting time distribution in
 itself is often not a good assumption for biological transitions. Applied to
 cell division, one would assume that the next division event is most likely to
 occur immediately after the previous division (the mode is at 0); contradicting
@@ -47,9 +47,10 @@ non-exponential waiting time distributions -- specifically the Erlang
 and phase-type distributions. Indeed, phase-type distributions are "dense"
 (in the mathematical sense) in the field of all positive-valued distributions;
 as such, they can `approximate any` waiting time distribution `arbitrarily closely`
-[#bladt]_ [#schb]_. Importantly, these distributions are constructed by
-convolutions or mixtures of exponential distributions and thus we retain the
-analytical tractability.
+[#bladt]_ [#schb]_. Importantly, these distributions can be constructed by
+transitions over multiple states in Markov jump processes (i.e., as
+convolutions or mixtures of exponential distributions) [#bladt]_ [#cox55]_
+[#jensen]_ and thus we retain the analytical tractability.
 
 This principle is demonstrated best with the Erlang distribution. An Erlang
 waiting time :math:`\tau` is generated when a single cell passes through
@@ -79,10 +80,10 @@ variability [#erlang_cv1]_ [#erlang_cv2]_).
     :scale: 16 %
 
 Next to the direct description of the waiting times as done above,
-a second equivalent description of the transition process can be
-given via the master equation (or Kolmogorov forward (and backward)
-equation). This is possible because the process is Markovian
-(exponential waiting times) on the level of the hidden states.
+a second equivalent description is obtained via the master equation
+characterising the Markov process on the level of the (hidden) states
+[the master equation is also known as Kolmogorov forward (and backward)
+equation; sometimes in slightly different notation].
 
 For the :math:`n=3` example, a single cell is either in one of the
 three "green" states :math:`w_1=(1,0,0,0)`, :math:`w_2=(0,1,0,0)`,
@@ -210,87 +211,37 @@ that our approach may provide a versatile start point for many problems.
 Stochastic Processes
 ^^^^^^^^^^^^^^^^^^^^
 
-maybe it is easiest to start with introducing now the use of phase-type ideas
-for different reactions assembled together in a multi-reaction network;
-then they that it somehow also covers ensemble/integer cell numbers; maybe think
-about this a bit more.. the given reaction types somehow enforce specific state
-changes, while in the previous section there was no real assumption on this
+Based on these ideas we now construct a class of (non-Markovian) stochastic
+processes. Single reactions of (possibly) phase-type waiting times are now
+assembled together into multi-reaction networks. Such processes can be
+implemented in MemoCell and inferred from cell count data.
 
-to understand many-cell systems maybe helpful to mention the property of the
-exponential distribution on the hidden layer: once many cells are placed on a
-cell type their rate just amplifies with the cell number as minimum of n
-exponential waiting times has n times the rate
+We introduce a main/observable layer -- the dynamics we are
+interested in -- and a hidden layer -- which is governed by Markovian dynamics
+and contains all the fictitious variables and states to construct the more complex
+waiting times. Different reaction types are available in MemoCell and for
+each of them the same principle is used to generate Erlang and
+possible phase-type waiting times: A reaction is only executed (and seen
+on the observable layer) via the final jump into the absorbing variable;
+all the previous jumps between the transient states happen on the hidden
+layer (not seen on the observable layer).
 
-mention that we don't fit ph distr. directly! we look at interlinked
-ph distributions in networks and try to infer them via cell counts
+.. image:: ../images/net_scheme_multi.png
+    :align: center
+    :scale: 22 %
 
-here I have to make two main steps: ensemble level, multiple reaction;
-the whole description (S, Q) before was for a single cell
+The Figure above gives an example. We have three observable cell types :math:`X`,
+:math:`Y` and :math:`Z`, each with cell numbers from :math:`\{0,1,2,3,...\}`.
+Cells of :math:`X` may differentiate to :math:`Y`, cells of :math:`Y` may
+differentiate to :math:`Z` and also symmetrically divide, cells of :math:`Z`
+leave the system (`env` is a helper environment variable). The reaction arrows
+on the main layer are annotated by :math:`(\theta, n)` tuples, specifying the
+Erlang channels to generate the reaction waiting times; the hidden Markov
+layer is populated accordingly with the required number of hidden variables
+and transitions.
 
-maybe introduce waiting times first (as a single-reaction module, also
-mention Markov processes there) and connect different modules here now for
-multi-reaction pathways; and then main: how to efficiently characterise them
--> moment simulations (next to stochastic simulations)
-
-maybe switch term from state to node or variable when describing the figure;
-in the previous section they represented concrete states (i.e. (1,0,0)), but
-now they 'encode' or 'induce' a whole set of states (each variable can be
-in any integer and then all states arises combinatorial)
-
-mention also MemoCell automatic symbolic derivation and metaprogramming
-features
-
-say we implement phase-type (and Erlang) now for different reactions (before
-we had more states that could have been anything); write again this phrase
-that a reaction is realised only with the final jump into the absorbing state
-/ which executes the stochiometric change of the reaction, while all transitions
-between the transient states or variables are hidden (differentiation reaction
-between hidden variables of the same cell type that cannot be seen on the
-observable layer)
-
-maybe now also mention when we talk about cell numbers for the first time
-really (not just a single cell) that we deal with infinite sized integer
-systems, hence master equation for the whole process infinite dimensional
-and no solution can be directly obtained via matrix exp
-
-general master equation for Markov jump processes (continuous time, discrete
-state space); SEE NEW notes on Goodnotes: maybe remove this initial condition thing
-and directly write the general ME, starting from initial distribution p(w0, t0);
-mention that all are 1xn row vectors
-
-maybe focus here in this first section on the "single cell view"; say in next
-section that this is can applied automatically for many cells running through the
-transition graphs and networks
-
-rates we introduce are the rates of single cells passing through such schemes
-
-maybe mention the scaling with the run time in variance/covariance mode, that
-people dont expect too much for large networks... the #moment_eqs scales
-quadratically with the number of hidden layer variables, maybe copy-paste
-exact formula here from paper methods
-
-maybe mention that also ph are closed under minima and so on (order stats
-in general?)
-
-maybe also mention exponential split probabilities to enter the different
-channels; theta/(sum over all theta diverging)
-
-maybe say how the competition is implemented (for more than one module starting
-at a main variable, we split at its centric hidden variable), or even show a
-scheme (similar to schemes above for Erlang and PH2 channels); maybe also say
-that other thing than this competition can be implemented via simulation variables
-for example minimum or maximum between two channels (ph closed under order
-statistics).
-
-mention that reactions start at centric hidden node
-
-mention that we split multi reaction system that diverge from the same cell type
-as split at the first reaction; however one can also implement other stuff
-such as min / max of these channels using simulation_variables; then link to
-reference [#min_max_ph]_
-
-reaction types; maybe change notation as in methods with :math:`W^{(i)}` and
-:math:`W^{(k)}` variables.
+Currently MemoCell offers the following set of zero- and first-order reaction
+types
 
 - :math:`S \rightarrow E` (cell differentiation),
 
@@ -304,66 +255,145 @@ reaction types; maybe change notation as in methods with :math:`W^{(i)}` and
 
 - :math:`\rightarrow E` (influx or birth),
 
-hidden and main variables?
+where :math:`S` is the start cell type and :math:`E` is the end cell type. For
+example, the differentiation reaction from :math:`X` (start node) to :math:`Y`
+(end node) was implemented by the type :math:`S \rightarrow E`); any single
+cell of cell type :math:`X` that undergoes the reaction will switch to cell
+type :math:`Y` at the final (=second) jump of this Erlang channel.
 
-.. image:: ../images/net_scheme_multi.png
-    :align: center
-    :scale: 22 %
 
-summation formula? for variables and for mean, variance, covariance?
-
-approach based on G to get ODE for the moments? maybe mention at least which
-moments are solved
-
-maybe mention summation formulas, but skip the part how to solve them via
-PDE (in formulas) at least; just they we get ODE system for these hidden
-layer moments
-
-write that MemoCell can produce moment AND stochastic simulations for the
-class of cell pathway processes (/general waiting time
-stochastic models with the above reaction types)
-
-what about initial conditions? ref to API?
+Mathematically, the stochastic process on the observable layer is simply the
+sum of the Markov processes for the corresponding hidden layer variables.
+For each cell type :math:`i \in \{1,...,v\}`, where :math:`v` is the total
+number of cell types, we have a stochastic process for its cell numbers given
+by
 
 .. math::
-    W^{(i)}_t = \sum\nolimits_{j\in\{1,...,u_i\}} W^{(i,j)}_t
+    W^{(i)}_t = \sum\nolimits_{j\in\{1,...,u_i\}} W^{(i,j)}_t,
 
-for any fixed :math:`i \in \{1,...,v\}`.
+summing all its hidden Markov processes :math:`W^{(i,j)}_t`;
+:math:`u_i` is the total number of hidden variables of cell type :math:`i`.
+In the Figure above we have three cell types with concrete notation
+:math:`X_t = W^{(1)}_t`, :math:`Y_t = W^{(2)}_t` and :math:`Z_t = W^{(3)}_t`;
+and for example :math:`X_t = W^{(1,1)}_t +  W^{(1,2)}_t` summing the two
+yellow hidden variables. Technically, this setup allows to encode the
+hidden layer transitions between the `transient` states as "differentiation"
+reactions as the observable cell numbers of the cell type will stay unaltered.
 
-mean:
+`NOTE`: These stochastic processes typically live in a countable, but infinite
+state space and thus cannot be trivially solved through the master
+equation and the matrix exponential on the hidden layer.
+
+In the previous section, the waiting times were introduced for a `single`
+cell passing through the states of a reaction (and in any case, this
+is what the waiting time and its rate refer to). However this is not
+limiting: The stochastic processes here readily work for ensemble/population
+of many single cells placed in the network. If :math:`w` cells are available
+for a transition on the hidden layer, each with a waiting time
+:math:`\tau_i \sim \mathrm{Exp}(\lambda)`, the fastest cell will cause the state
+change. I.e., we look for :math:`\tau = \mathrm{min}(\tau_1, ..., \tau_w)`
+which is distributed as :math:`\tau \sim \mathrm{Exp}(w \lambda)`. Thus one
+can upscale the transition rates in the master equation and in simulations
+to calculate the ensemble-level dynamics.
+
+In this manner, MemoCell offers standard stochastic simulations for the defined
+class of stochastic processes. A Gillespie algorithm [#gill1]_ [#gill2]_
+is used on the hidden Markov layer and afterwards the observable layer
+is obtained by summation.
+
+The second kind of simulations are so-called moment simulations. MemoCell
+provides the solutions of means, variances and covariances
+of cell type numbers over time, derived for any user-defined network and
+parameters. These solutions are exact for the set of available reaction types
+and relatively fast to compute (compared to stochastic simulations). Thereby
+they form the basis of the Bayesian inference in MemoCell.
+
+To do this, MemoCell again exploits the analytical access via the Markov jump
+processes on the hidden layer. The approach of the probability
+generating function :math:`G` is employed, leading to a closed ordinary
+differential equation system for the first and second (mixed and factorial)
+moments of the hidden layer variables; for more info, see API docs or the
+methods of our release paper. MemoCell derives this system symbolically
+(as an application of sympy and metaprogramming) and integrates it
+numerically. Concretely one obtains time-dependent
+:math:`\mathrm{E}\big(W^{(i,j)}_t\big)`,
+:math:`\mathrm{E}\big(W^{(i,j)}_t \, (W^{(i,j)}_t-1)\big)` and
+:math:`\mathrm{E}\big(W^{(i,j)}_t \, W^{(k,l)}_t\big)` for all hidden variables
+(:math:`i,k \in \{1,...,v\}`, :math:`i \ne k`, :math:`j \in \{1,...,u_i\}`,
+:math:`l \in \{1,...,u_k\}`). These hidden layer moments are then
+automatically added up to obtain the means, variances and covariances
+on the main/observable layer. First we see that the mean for each cell type
+:math:`i` is given by
 
 .. math::
     \mathrm{E}\big(W^{(i)}_t\big) = \sum\nolimits_{j\in\{1,...,u_i\}}
     \mathrm{E}\big(W^{(i,j)}_t\big)
 
-covariance and variance:
+the variance for each cell type :math:`i` is given by
 
 .. math::
     \mathrm{Var}\big(W^{(i)}_t\big) = \sum\nolimits_{j} \mathrm{Var}\big(W^{(i,j)}_t\big)
     + 2 \sum\nolimits_{j,l | j<l} \mathrm{Cov}\big(W^{(i,j)}_t, W^{(i,l)}_t\big)
 
-where :math:`j,l \in\{1,...,u_i\}`.
+where :math:`j,l \in\{1,...,u_i\}`, and the covariance between two different
+cell types :math:`i` and :math:`k` is given by
 
 .. math::
     \mathrm{Cov}\big(W^{(i)}_t, W^{(k)}_t\big) =
     \sum\nolimits_{j}\sum\nolimits_{l} \mathrm{Cov}\big(W^{(i,j)}_t, W^{(k,l)}_t\big)
 
-where :math:`j \in\{1,...,u_i\}` and :math:`l \in\{1,...,u_k\}`.
-
-the variance and covariances on the hidden layer can be decomposed into
-second factorial and mixed moments:
+where :math:`j \in\{1,...,u_i\}` and :math:`l \in\{1,...,u_k\}`. Then,
+the result is obtained by expressing the variances and covariances of the
+hidden variables in terms of their moments, i.e. using
 :math:`\mathrm{Var}(X)=\mathrm{E}(X(X-1))+\mathrm{E}(X)-\mathrm{E}(X)^2`
-and :math:`\mathrm{Cov}(X, Y)=\mathrm{E}(X Y)-\mathrm{E}(X) \mathrm{E}(Y)`
+and :math:`\mathrm{Cov}(X, Y)=\mathrm{E}(X Y)-\mathrm{E}(X) \mathrm{E}(Y)`.
+Note that MemoCell needs to solve :math:`\ell(\ell+3)/2`
+moment equations where :math:`\ell=\sum_i u_i` is the total number
+of hidden variables over all cell types (however, we also allow to compute
+faster :math:`\ell` solutions for the means only).
 
-MemoCell solves :math:`\mathrm{E}\big(W^{(i,j)}_t\big)`,
-:math:`\mathrm{E}\big(W^{(i,j)}_t \, (W^{(i,j)}_t-1)\big)` and
-:math:`\mathrm{E}\big(W^{(i,j)}_t \, W^{(k,l)}_t\big)` for all hidden variables
-:math:`i,k \in \{1,...,v\}`, :math:`i \ne k`, :math:`j \in \{1,...,u_i\}`,
-:math:`l \in \{1,...,u_k\}`.
+Three more `NOTES`:
+
+- For both stochastic and moment simulations one has to specify the initial condition. Please see the API docs for the available options and how they are realised in MemoCell.
+
+- By default, when multiple reactions have the same start cell type their reaction channels diverge at the "centric" hidden node/variable (larger sizes, see Figure above for :math:`Y` differentiation and division). This means that the diverging channels :math:`i=(1, ..., c)` are competitive and have channel entry probabilities :math:`\lambda_i/(\lambda_1 + ... + \lambda_c)` where :math:`\lambda_i` is the rate of the first hidden step of channel :math:`i` (a property of the exponential distribution). However you can implement other behaviour as well using `simulation_variables`; for example a minimum or maximum of different Erlang waiting times (as seen in [#min_max_ph]_).
+
+- Of course, you may use MemoCell for any system of interest (beyond our "framing" of cell number dynamics) that fits to the setting of discrete-state-space time-continuous processes with the above reaction types
 
 
 Bayesian Inference
 ^^^^^^^^^^^^^^^^^^
+
+maybe start with the intro sentence about Bayesian probability etc.; treat
+the world as a random variable
+
+cell count data can be ensemble or single cell level
+
+maybe switch term from state to node or variable when describing the figure;
+in the previous section they represented concrete states (i.e. (1,0,0)), but
+now they 'encode' or 'induce' a whole set of states (each variable can be
+in any integer and then all states arises combinatorial)
+
+`NOTE`: It is worth to stress that MemoCell not only fits a single phase-type
+distribution directly to the data (other specific methods exist for this; e.g.,
+via moment matching). MemoCell fits the resulting cell number dynamics that
+are shaped by `multiple` phase-type reactions in a network. This allows to use
+more accessible cell count data (compared to recorded waiting time data) and
+possibly to infer multiple phase-type reactions simultaneously from the same
+data.
+
+say what happens if data has no infomration on what people are interested in
+-> posterior looks like prior (i.e., in default settings model or
+parameter probs stay uniform); we can of course not promise that the provided
+data in general, but also the inference based on the summary statistics
+contain all information that people wish to learn about
+
+say we are not really interested in resolving the hidden layer structure, but more
+in the resulting density or distribution (which also shapes the cell number
+dynamics); the resulting density may be achieved by different hidden states and
+transition schemes anyway and hence the exact may be unidentifiable anyway
+
+
 
 ref mackay maybe
 
@@ -372,6 +402,10 @@ state main Bayes theorems for model selection and parameter estimation
 mention likelihood function? (maybe reference to API here, as log likelihood)
 
 mention nested sampling
+
+maybe say that waiting times (the hidden layer structure) is inferred on the
+model selection level; hence we also require quite good model probs values
+to be able to do accurate Bayesian-averaged inferences -> hence nested sampling
 
 allows Bayesian-averaged inference over the complete model space, introduce
 formula and sampling procedure (maybe link to API)
