@@ -12,7 +12,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../memocell'))
+sys.path.insert(0, os.path.abspath('../'))
 
 import sphinx_rtd_theme
 
@@ -33,13 +33,10 @@ release = '0.1.0'
 # ones.
 extensions = [
     'sphinx_rtd_theme',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'numpydoc'
 ]
 
-napoleon_numpy_docstring = True
 autodoc_member_order = 'bysource'
 numpydoc_show_class_members = False
 
