@@ -10,6 +10,9 @@
    :target: https://travis-ci.org/borntyping/cookiecutter-pypackage-minimal
    :alt: Latest Travis CI build status
 
+.. image:: https://readthedocs.org/projects/memocell/badge/?version=latest
+   :target: https://memocell.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation Status
 
 
 MemoCell - Bayesian inference of stochastic cellular processes with and without memory in Python.
@@ -97,8 +100,10 @@ alternatively, you may download and run them yourself.
 Documentation
 -------------
 
-Documentation can be found here [TODO link to read the docs].
-It includes an extensive API [TODO add link here] detailing all
+Documentation can be found at
+`readthedocs <https://memocell.readthedocs.io/en/latest/getting_started.html>`_.
+It includes an extensive
+`API <https://memocell.readthedocs.io/en/latest/api.html>`_ detailing all
 classes and functions of MemoCell.
 
 License
