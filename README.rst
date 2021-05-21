@@ -10,6 +10,9 @@
    :target: https://travis-ci.com/mauricelanghinrichs/memocell
    :alt: Latest Travis CI build status
 
+.. image:: https://codecov.io/gh/mauricelanghinrichs/memocell/branch/master/graph/badge.svg?token=feWWjm4Uow
+   :target: https://codecov.io/gh/mauricelanghinrichs/memocell
+
 .. image:: https://readthedocs.org/projects/memocell/badge/?version=latest
    :target: https://memocell.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
