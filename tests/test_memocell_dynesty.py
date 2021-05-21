@@ -13,7 +13,7 @@ from dynesty import NestedSampler
 from dynesty.utils import resample_equal
 
 class TestDynestyEvidence(object):
-    @pytest.fixture()
+    @pytest.fixture(scope='class')
     def sampler_setup(self):
         # see jupyter notebook memopy_testing_evidence_analytical (env_working)
         # for background, reference and visualisations of this test

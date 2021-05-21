@@ -31,7 +31,7 @@ class TestPlotsModule(object):
         plt.close('all')
 
     ### plot methods for data
-    @pytest.fixture()
+    @pytest.fixture(scope='class')
     def data_setup(self):
         count_data = np.array([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.,
                                              1., 1., 1., 1., 1., 2., 2., 2., 2., 2., 3., 3.],
@@ -79,7 +79,7 @@ class TestPlotsModule(object):
         plt.close('all')
 
     ### plot methods for moment and gillespie simulations
-    @pytest.fixture()
+    @pytest.fixture(scope='class')
     def sim_l2_moments_setup(self):
         net = me.Network('net_div_l2')
         net.structure([{'start': 'X_t', 'end': 'X_t',
@@ -108,7 +108,7 @@ class TestPlotsModule(object):
         me.plots.sim_covariance_plot(sim_l2_moments_setup, show=False)
         plt.close('all')
 
-    @pytest.fixture()
+    @pytest.fixture(scope='class')
     def sim_l2_gillespie_setup(self):
         net = me.Network('net_div_l2')
         net.structure([{'start': 'X_t', 'end': 'X_t',
@@ -134,7 +134,7 @@ class TestPlotsModule(object):
         plt.close('all')
 
     ### plots methods for estimation and selection
-    @pytest.fixture()
+    @pytest.fixture(scope='class')
     def est_sel_setup(self):
         net = me.Network('net_div_g5')
         net.structure([{'start': 'X_t', 'end': 'X_t',

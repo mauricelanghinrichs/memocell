@@ -10,8 +10,11 @@ install:
   - pip install pytest-cov codecov
 
 # command to run tests
+# --runslow is to run all tests
 script:
   - pytest --cov=memocell --runslow
 
+# this automatically reports to codecov,
+# which create their README badge
 after_success:
   - codecov

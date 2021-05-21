@@ -10,7 +10,7 @@ import numpy as np
 
 class TestEstimationClass(object):
     ### test on 1st and 2nd moments first, fit_mean_only later
-    @pytest.fixture()
+    @pytest.fixture(scope='class')
     def simple_est_setup(self):
         # see jupyter notebook ex_docs_tests for more info and plots
         ### define network
@@ -78,7 +78,7 @@ class TestEstimationClass(object):
                             nlive, tolerance, bound, sample)
         return est
 
-    @pytest.fixture()
+    @pytest.fixture(scope='class')
     def simple_est_setup_summary(self):
         # see jupyter notebook ex_docs_tests for more info and plots
         ### define network
@@ -392,7 +392,7 @@ class TestEstimationClass(object):
         np.testing.assert_allclose(data_order_sol_2[2], data_order_res_2[2])
 
     ### mean only tests
-    @pytest.fixture()
+    @pytest.fixture(scope='class')
     def simple_est_setup_mean_only(self):
         # see jupyter notebook ex_docs_tests for more info and plots
         ### define network
@@ -459,7 +459,7 @@ class TestEstimationClass(object):
                             nlive, tolerance, bound, sample)
         return est
 
-    @pytest.fixture()
+    @pytest.fixture(scope='class')
     def simple_est_setup_mean_only_summary(self):
         # see jupyter notebook ex_docs_tests for more info and plots
         ### define network
@@ -509,7 +509,7 @@ class TestEstimationClass(object):
                             nlive, tolerance, bound, sample)
         return est
 
-    @pytest.fixture()
+    @pytest.fixture(scope='class')
     def simple_est_setup_mean_only_summary_data_mean_only(self):
         # see jupyter notebook ex_docs_tests for more info and plots
         ### define network
