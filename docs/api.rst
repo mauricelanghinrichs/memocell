@@ -9,7 +9,7 @@ not appear below; please see the raw code on github for these.
 Networks
 ========
 
-.. automodule:: memocell.network
+.. automodule:: network
     :members:
     :undoc-members:
     :show-inheritance:
@@ -17,7 +17,7 @@ Networks
 Simulations
 ===========
 
-.. automodule:: memocell.simulation
+.. automodule:: simulation
     :members:
     :undoc-members:
     :show-inheritance:
