@@ -34,10 +34,10 @@ release = '0.1.0'
 extensions = [
     'sphinx_rtd_theme',
     'sphinx.ext.napoleon',
-    'sphinx.ext.autodoc',
     'numpydoc'
 ]
 
+napoleon_numpy_docstring = True
 autodoc_member_order = 'bysource'
 numpydoc_show_class_members = False
 
