@@ -177,7 +177,8 @@ transient generator :math:`S`. Due to the denseness of phase-type
 distributions and the fact that they arise naturally as waiting times over
 transition graphs in analytically tractable Markov processes, they
 constitute a powerful approach to represent virtually any waiting
-time distribution. Mean and variance can be computed by
+time distribution. Exponential, Erlang and other distributions are special cases
+of phase-type distributions. Mean and variance can be computed by
 :math:`\mathrm{E}(\tau)=-\pmb{\alpha}S^{-1}\pmb{1}` and
 :math:`\mathrm{Var}(\tau)= 2\pmb{\alpha}S^{-2}\pmb{1}-(\pmb{\alpha}S^{-1}\pmb{1})^2`,
 respectively. Note that phase-type representations are
@@ -197,22 +198,23 @@ Figure below).
 In the Figure example we have used 2-step and 4-step Erlang channels that
 together construct a quite long-tailed waiting time distribution (Figure
 below); in comparison the weighted densities of the individual `(0.03,4)` and
-`(0.04,2)` Erlang channels. The CV of such phase-type distributions can be
-larger or smaller than (or equal to) 1.
+`(0.04,2)` Erlang channels.
 
 .. image:: ../images/wtd_phase_type_2.png
     :align: center
     :scale: 15 %
 
-Note that already finite mixtures of Erlang distributions are dense in the
-field of positive-valued distributions [#bladt]_ [#schb]_, so we believe
-that our approach may provide a versatile start point for many problems.
+The CV of such phase-type distributions with parallel Erlang channels can be
+larger or smaller than (or equal to) 1. Note that already finite mixtures
+of Erlang distributions are dense in the field of positive-valued
+distributions [#bladt]_ [#schb]_, so we believe that this approach may provide
+a versatile start point for many problems.
 
 Stochastic Processes
 ^^^^^^^^^^^^^^^^^^^^
 
 Based on these ideas we now construct a class of (non-Markovian) stochastic
-processes. Single reactions of (possibly) phase-type waiting times are now
+processes. Single reactions of phase-type waiting times are now
 assembled together into multi-reaction networks. Such processes can be
 implemented in MemoCell and inferred from cell count data.
 
@@ -221,10 +223,10 @@ interested in -- and a hidden layer -- which is governed by Markovian dynamics
 and contains all the fictitious variables and states to construct the more complex
 waiting times. Different reaction types are available in MemoCell and for
 each of them the same principle is used to generate Erlang and
-possible phase-type waiting times: A reaction is only executed (and seen
+possibly phase-type waiting times: A reaction is only executed (and seen
 on the observable layer) via the final jump into the absorbing variable;
 all the previous jumps between the transient states happen on the hidden
-layer (not seen on the observable layer).
+layer (and are not seen on the observable layer).
 
 .. image:: ../images/net_scheme_multi.png
     :align: center
@@ -307,8 +309,8 @@ parameters. These solutions are exact for the set of available reaction types
 and relatively fast to compute (compared to stochastic simulations). Thereby
 they form the basis of the Bayesian inference in MemoCell.
 
-To do this, MemoCell again exploits the analytical access via the Markov jump
-processes on the hidden layer. The approach of the probability
+To compute the moments, MemoCell again exploits the analytical access via the
+Markov jump processes on the hidden layer. The approach of the probability
 generating function :math:`G` is employed, leading to a closed ordinary
 differential equation system for the first and second (mixed and factorial)
 moments of the hidden layer variables; for more info, see API docs or the
@@ -318,11 +320,11 @@ numerically. Concretely one obtains time-dependent
 :math:`\mathrm{E}\big(W^{(i,j)}_t\big)`,
 :math:`\mathrm{E}\big(W^{(i,j)}_t \, (W^{(i,j)}_t-1)\big)` and
 :math:`\mathrm{E}\big(W^{(i,j)}_t \, W^{(k,l)}_t\big)` for all hidden variables
-(:math:`i,k \in \{1,...,v\}`, :math:`i \ne k`, :math:`j \in \{1,...,u_i\}`,
-:math:`l \in \{1,...,u_k\}`). These hidden layer moments are then
-automatically added up to obtain the means, variances and covariances
-on the main/observable layer. First we see that the mean for each cell type
-:math:`i` is given by
+(where :math:`i,k \in \{1,...,v\}`, :math:`i \ne k`,
+:math:`j \in \{1,...,u_i\}`, :math:`l \in \{1,...,u_k\}`). These hidden
+layer moments are then automatically added up to obtain the means, variances
+and covariances on the main/observable layer. First we see that the mean for
+each cell type :math:`i` is given by
 
 .. math::
     \mathrm{E}\big(W^{(i)}_t\big) = \sum\nolimits_{j\in\{1,...,u_i\}}
@@ -364,8 +366,9 @@ This means that the diverging channels :math:`i=(1, ..., c)` are competitive
 and have channel entry probabilities
 :math:`\lambda_i/(\lambda_1 + ... + \lambda_c)` where :math:`\lambda_i`
 is the rate of the first hidden step of channel :math:`i` (a property of
-the exponential distribution). However you can implement other behaviour as
-well using `simulation_variables`; for example a minimum or maximum of
+the exponential distribution; e.g., :math:`\lambda_1 = 3 \theta_2`).
+However you can implement other behaviour as well using
+`simulation_variables`; for example a minimum or maximum of
 different Erlang waiting times (as seen in [#min_max_ph]_).
 
 `NOTE`: Of course, you may use MemoCell for any system of interest
@@ -376,11 +379,11 @@ types.
 Bayesian Inference
 ^^^^^^^^^^^^^^^^^^
 
-MemoCell enables Bayesian inference for stochastic processes with
+MemoCell enables Bayesian inference of stochastic processes with
 phase-type reaction waiting times from cell count data. Based on the
 information contained in the data, posterior model and parameter probabilities
 are computed. From this, Bayesian-averaged inferences over the complete model
-space can derived; for estimates of waiting time distributions,
+space can be derived; for estimates of waiting time distributions,
 model topologies and more.
 
 Bayesian inference means to update some `prior` knowledge (about the process
@@ -442,7 +445,7 @@ averaged mean-only data).
 
 The most important step of post-processing are the Bayesian-averaged inferences
 over the entire model space. For any quantity of interest :math:`X`, one
-can compute its posterior distribution given the data :math:`p(X|D)`. If
+may want its posterior distribution given the data :math:`p(X|D)`. If
 :math:`p(X|\pmb{\theta}_k, M_k, D)=p(X|\pmb{\theta}_k, M_k)`,
 meaning the models with their parameters contain all information to compute
 :math:`X`, we can express the posterior of :math:`X` as
@@ -483,7 +486,7 @@ data.
 `NOTE`: Typically we are not interested in resolving the precise hidden layer
 structure for the waiting times, but rather in the resulting waiting time
 density or distribution function that they produce (and which shape the
-cell number dynamics). The same density may be constructed by different
+cell number dynamics). The `same` density may be constructed by `different`
 hidden states and transition schemes (phase-type distributions are not unique)
 and hence the hidden layer may be unidentifiable anyway.
 
@@ -496,8 +499,8 @@ on without re-estimating the full model set.
 in the data (more precisely: in the summary statistics of the data).
 There may be features in stochastic processes that are structurally or
 practically (given the resolution of the data) impossible to infer.
-If data is `not` informative, the posteriors look like the prior; on the other
-hand: if the data `is` informative the posterior contracts/shrinks/changes
+If data are `not` informative, the posteriors look like the prior; on the other
+hand: if the data `are` informative the posterior contracts/shrinks/changes
 compared to the prior (see information gain, Kullback-Leibler divergence).
 
 
@@ -517,14 +520,14 @@ can be used to model the sampling process (otherwise, the hypergeometric
 distribution should be used); we have
 
 .. math::
-    X | N \sim \mathrm{Bin}(N, \alpha)
+    X | N \sim \mathrm{Bin}(N, \gamma)
 
-where :math:`\alpha \in (0, 1]` is the subsampling fraction. Then, the main idea is
-to rescale the observed counts :math:`X` with the subsampling fraction :math:`\alpha`
+where :math:`\gamma \in (0, 1]` is the subsampling fraction. Then, the main idea is
+to rescale the observed counts :math:`X` with the subsampling fraction :math:`\gamma`
 and introduce
 
 .. math::
-    S = \frac{X}{\alpha}
+    R = \frac{X}{\gamma}
 
 as an estimate for :math:`N` for each cell type / variable of interest.
 
@@ -532,18 +535,18 @@ Based on the law of total expectation (and variance/covariance),
 one can directly show relations for the mean
 
 .. math::
-    \mathrm{E}(N) = \mathrm{E}(S),
+    \mathrm{E}(N) = \mathrm{E}(R),
 
 the variance
 
 .. math::
-    \mathrm{Var}(N) = \mathrm{Var}(S) - \frac{\alpha (1-\alpha)}{\alpha^2} \mathrm{E}(S)
+    \mathrm{Var}(N) = \mathrm{Var}(R) - \frac{\gamma (1-\gamma)}{\gamma^2} \mathrm{E}(R)
 
 and the covariance (between two different variables, each subsampled with
-:math:`\alpha_1` and :math:`\alpha_2`, respectively)
+:math:`\gamma_1` and :math:`\gamma_2`, respectively)
 
 .. math::
-    \mathrm{Cov}(N_1, N_2) = \mathrm{Cov}(S_1, S_2).
+    \mathrm{Cov}(N_1, N_2) = \mathrm{Cov}(R_1, R_2).
 
 These relations mean that the rescaled data correctly reflect the means and
 covariances of the original cell counts, whereas the variance needs to be
@@ -551,13 +554,13 @@ corrected as above (to remove the additional noise caused by the subsampling,
 right term on the rhs, from the biological variability, left term on the rhs).
 
 `Example`: We measure samples of :math:`X` as :math:`x \in \{7, 11, 4\}`
-with a subsampling fraction of 20 %, i.e. :math:`\alpha=0.2`. Then, realisations
-of :math:`S` are :math:`s \in \{35, 55, 20\}` and estimates for mean and variance
-of the rescaled data are :math:`\mathrm{E}(S)\approx 36.7`
-and :math:`\mathrm{Var}(S) \approx 308.3` (`ddof=1`). Hence, the subsampling
+with a subsampling fraction of 20 %, i.e. :math:`\gamma=0.2`. Then, realisations
+of :math:`R` are :math:`r \in \{35, 55, 20\}` and estimates for mean and variance
+of the rescaled data are :math:`\mathrm{E}(R)\approx 36.7`
+and :math:`\mathrm{Var}(R) \approx 308.3` (`ddof=1`). Hence, the subsampling
 corrected mean and variance estimates that we load to MemoCell are
-:math:`\mathrm{E}(N) = \mathrm{E}(S) \approx 36.7` and
-:math:`\mathrm{Var}(N) = \mathrm{Var}(S) -  \frac{\alpha (1-\alpha)}{\alpha^2} \mathrm{E}(S) \approx 161.7`.
+:math:`\mathrm{E}(N) = \mathrm{E}(R) \approx 36.7` and
+:math:`\mathrm{Var}(N) = \mathrm{Var}(R) -  \frac{\gamma (1-\gamma)}{\gamma^2} \mathrm{E}(R) \approx 161.7`.
 
 
 
