@@ -33,6 +33,7 @@ release = '0.1.0'
 # ones.
 extensions = [
     'sphinx_rtd_theme',
+    'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'numpydoc'
 ]
