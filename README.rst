@@ -6,8 +6,8 @@
     :target: https://pypi.python.org/pypi/memocell
     :alt: Latest PyPI version
 
-.. image:: https://travis-ci.com/mauricelanghinrichs/memocell.svg?branch=master.png
-   :target: https://travis-ci.com/mauricelanghinrichs/memocell.svg?branch=master
+.. image:: https://travis-ci.com/mauricelanghinrichs/memocell.svg?branch=master
+   :target: https://travis-ci.com/mauricelanghinrichs/memocell
    :alt: Latest Travis CI build status
 
 .. image:: https://readthedocs.org/projects/memocell/badge/?version=latest
