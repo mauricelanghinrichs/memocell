@@ -1,3 +1,19 @@
 
 # Defining the exact version will make sure things don't break
-.
+numpy
+scipy
+matplotlib
+sympy
+networkx
+corner
+dynesty
+seaborn
+cycler
+numba
+setuptools
+pydot
+psutil
+IPython
+tqdm
+
+numpydoc
