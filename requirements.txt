@@ -1,0 +1,2 @@
+# with this it will use deps from setup.py
+.
