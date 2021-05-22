@@ -13,3 +13,5 @@ tqdm
 psutil
 seaborn
 matplotlib
+corner
+cycler
