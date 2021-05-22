@@ -6,12 +6,12 @@ import re
 from setuptools import find_packages
 from setuptools import setup
 
-
-def read(filename):
-    filename = os.path.join(os.path.dirname(__file__), filename)
-    text_type = type(u"")
-    with io.open(filename, mode="r", encoding='utf-8') as fd:
-        return re.sub(text_type(r':[a-z]+:`~?(.*?)`'), text_type(r'``\1``'), fd.read())
+# inactive for the moment, make pypi description simple
+# def read(filename):
+#     filename = os.path.join(os.path.dirname(__file__), filename)
+#     text_type = type(u"")
+#     with io.open(filename, mode="r", encoding='utf-8') as fd:
+#         return re.sub(text_type(r':[a-z]+:`~?(.*?)`'), text_type(r'``\1``'), fd.read())
 
 
 setup(
@@ -24,8 +24,11 @@ setup(
     author_email="m.langhinrichs@icloud.com",
 
     description="Bayesian inference of stochastic cellular processes with and without memory in Python.",
-    long_description_content_type="text/markdown",
-    long_description=read("README.rst"),
+
+    # README is rst currently, switch to md / markdown for pypi:
+    # long_description_content_type="text/markdown"
+    long_description_content_type="test/x-rst"
+    long_description="Please visit MemoCell on `GitHub<https://github.com/mauricelanghinrichs/memocell>`_.",
 
     include_package_data=True,
     packages=find_packages(exclude=('tests',)),
