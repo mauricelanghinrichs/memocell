@@ -381,7 +381,7 @@ class MomentsSim(object):
         # we have net_hidden_node_numbers like {'Z_env': 1, 'Z_0': 2, 'Z_1': 3}
         pj_uniform = dict()
         for node_id in net_nodes_identifier.keys():
-            if not node_id is 'Z_env':
+            if node_id!='Z_env':
                 pj_uniform[node_id] = 1.0/float(net_hidden_node_numbers[node_id])
 
         # loop over moment_order for hidden net and find initial values as above
