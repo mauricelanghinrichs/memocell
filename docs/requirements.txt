@@ -7,3 +7,4 @@ sympy
 scipy
 numba
 dynesty
+six
