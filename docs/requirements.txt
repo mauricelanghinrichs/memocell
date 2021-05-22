@@ -3,3 +3,4 @@
 numpydoc
 networkx
 numpy
+sympy
