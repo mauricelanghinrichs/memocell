@@ -5,3 +5,4 @@ networkx
 numpy
 sympy
 scipy
+numba
