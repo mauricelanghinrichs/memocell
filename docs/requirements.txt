@@ -12,3 +12,4 @@ six
 tqdm
 psutil
 seaborn
+matplotlib
