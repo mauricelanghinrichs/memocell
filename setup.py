@@ -16,7 +16,7 @@ from setuptools import setup
 
 setup(
     name="memocell",
-    version="0.1.1",
+    version="0.1.2",
     url="https://github.com/mauricelanghinrichs/memocell.git",
     license='MIT',
 
@@ -27,7 +27,7 @@ setup(
 
     # README is rst currently, switch to md / markdown for pypi:
     # long_description_content_type="text/markdown"
-    long_description_content_type="test/x-rst"
+    long_description_content_type="test/x-rst",
     long_description="Please visit MemoCell on `GitHub<https://github.com/mauricelanghinrichs/memocell>`_.",
 
     include_package_data=True,
