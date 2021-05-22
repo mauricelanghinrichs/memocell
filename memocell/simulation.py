@@ -90,7 +90,7 @@ class Simulation(object):
         simulations directly correspond to each other (of course, for consistent/identical
         parameter choices), i.e. the mean, variance and covariance statistics
         for a set of :math:`N` stochastic simulations converge to the exact moment
-        simulations with :math:`N → ∞`.
+        simulations with :math:`N \\rightarrow \\infty`.
 
         Parameters
         ----------
