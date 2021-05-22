@@ -15,3 +15,4 @@ seaborn
 matplotlib
 corner
 cycler
+IPython
