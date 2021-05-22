@@ -1,5 +1,5 @@
 
-.. image:: images/MemoCellLogo.svg
+.. image:: images/MemoCellLogoWhite.svg
    :width: 200px
 
 .. image:: https://img.shields.io/pypi/v/memocell.svg
