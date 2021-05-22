@@ -27,7 +27,7 @@ setup(
 
     # README is rst currently, switch to md / markdown for pypi:
     # long_description_content_type="text/markdown"
-    long_description_content_type="test/x-rst",
+    long_description_content_type="text/x-rst",
     long_description="Please visit MemoCell on `GitHub <https://github.com/mauricelanghinrichs/memocell>`_.",
 
     include_package_data=True,
