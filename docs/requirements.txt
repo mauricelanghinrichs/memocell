@@ -11,3 +11,4 @@ dynesty
 six
 tqdm
 psutil
+seaborn
