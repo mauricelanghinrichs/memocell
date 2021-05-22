@@ -6,3 +6,4 @@ numpy
 sympy
 scipy
 numba
+dynesty
