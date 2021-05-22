@@ -10,3 +10,4 @@ numba
 dynesty
 six
 tqdm
+psutil
