@@ -24,12 +24,12 @@ setup(
     author_email="m.langhinrichs@icloud.com",
 
     description="Bayesian inference of stochastic cellular processes with and without memory in Python.",
-    long_description=read("README.rst"),
     long_description_content_type="text/markdown",
-
+    long_description=read("README.rst"),
+    
     include_package_data=True,
     packages=find_packages(exclude=('tests',)),
-    
+
     # package dependendies
     install_requires=['numpy>=1.16.5', 'sympy>=1.3', 'networkx>=2.2',
                         'scipy>=1.0.0', 'corner>=2.0.1', 'dynesty>=0.9',
