@@ -16,7 +16,7 @@ def read(filename):
 
 setup(
     name="memocell",
-    version="0.1.0",
+    version="0.1.1",
     url="https://github.com/mauricelanghinrichs/memocell.git",
     license='MIT',
 
@@ -26,7 +26,7 @@ setup(
     description="Bayesian inference of stochastic cellular processes with and without memory in Python.",
     long_description_content_type="text/markdown",
     long_description=read("README.rst"),
-    
+
     include_package_data=True,
     packages=find_packages(exclude=('tests',)),
 
