@@ -25,6 +25,7 @@ setup(
 
     description="Bayesian inference of stochastic cellular processes with and without memory in Python.",
     long_description=read("README.rst"),
+    long_description_content_type="text/markdown",
 
     packages=find_packages(exclude=('tests',)),
 
@@ -50,5 +51,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9'
     ],
 )
