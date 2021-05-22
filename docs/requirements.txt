@@ -1,5 +1,6 @@
 
-# Defining the exact version will make sure things don't break
+# this stuff was found by looking on the read the docs website
+# at the builds under the raw log files, reading the errors
 numpydoc
 networkx
 numpy
@@ -8,3 +9,4 @@ scipy
 numba
 dynesty
 six
+tqdm
