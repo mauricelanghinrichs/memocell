@@ -80,3 +80,29 @@ for different process numbers. Less can be more.
 Note, that the tqdm progress bar often updates in larger chunks in parallel mode, particularly when
 many parallel processes are used. This can be a bit misleading, but it is not relevant for the
 actual performance.
+
+Release Workflow
+^^^^^^^^^^^^^^^^
+
+Increment the version number in ``setup.py`` file to the version that shall be
+released now. Commit/push to GitHub.
+
+Go into the local MemoCell package folder and remove old egg files via
+``rm -rf build *.egg-info``. Also remove the previous distributions by
+removing the ``dist`` folder via finder or terminal.
+
+Then build the distribution/wheels via ``python setup.py sdist bdist_wheel``.
+Check with twine if it has run correctly via ``twine check dist/*``.
+
+Upload the release to pypi `test` registry via
+``twine upload --repository-url https://test.pypi.org/legacy/ dist/*``.
+
+If everything looks good, make a release on GitHub; tag versions starting
+with ``v<...>``. Upload the two files (source dist and wheels) from the
+``dist`` folder in that process.
+
+Finally, use ``twine upload dist/*`` to upload to the actual pypi registry.
+
+Travis should automatically trigger a build test after these processes.
+Check if it runs through and that the pypi and travis badges update
+accordingly on the GitHub homepage.
