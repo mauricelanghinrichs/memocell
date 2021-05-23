@@ -16,7 +16,7 @@ from setuptools import setup
 
 setup(
     name="memocell",
-    version="0.1.3",
+    version="0.1.4",
     url="https://github.com/mauricelanghinrichs/memocell.git",
     license='MIT',
 
@@ -40,7 +40,8 @@ setup(
                         'setuptools>=38.5.1', 'numba>=0.43.1',
                         # 'graphviz>=0.10.1', 'pygraphviz>=1.5', # should be installed separately before
                         'pydot>=1.4.1', 'psutil>=5.0.0',
-                        'IPython>=7.8.0', 'tqdm>=4.31.1'],
+                        'IPython>=7.8.0', 'tqdm>=4.31.1',
+                        'ipywidgets>=7.5.1'],
 
     # run pytest with "$ python setup.py pytest" in this directory
     test_suite='tests',
