@@ -81,11 +81,13 @@ Note, that the tqdm progress bar often updates in larger chunks in parallel mode
 many parallel processes are used. This can be a bit misleading, but it is not relevant for the
 actual performance.
 
+
 Release Workflow
 ^^^^^^^^^^^^^^^^
 
 Increment the version number in ``setup.py`` file to the version that shall be
-released now. Commit/push to GitHub.
+released now. Also adapt the version in ``memocell/__init__.py`` and
+``docs/conf.py``. Commit/push to GitHub.
 
 Go into the local MemoCell package folder and remove old egg files via
 ``rm -rf build *.egg-info``. Also remove the previous distributions by

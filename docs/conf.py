@@ -25,7 +25,7 @@ copyright = '2020, mlanghinrichs'
 author = 'mlanghinrichs'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1.0'
+release = '0.1.3'
 
 
 # -- General configuration ---------------------------------------------------
