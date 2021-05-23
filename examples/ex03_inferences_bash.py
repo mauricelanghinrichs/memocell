@@ -24,8 +24,8 @@ if __name__ == '__main__':
     nets = [make_net(n) for n in [1, 5, 10, 15, 20, 25, 30]]
     variables = [{'X_t': ('X_t', )}]*len(nets)
     initial_values_types = ['synchronous']*len(nets)
-    initial_values = [{('X_t',): 1.0, # mean (t=0)
-                       ('X_t', 'X_t'): 0.0} # variance (t=0)
+    initial_values = [{('X_t',): 1.0,
+                       ('X_t', 'X_t'): 0.0}
                      ]*len(nets)
     theta_bounds = [{'l': (0.0, 0.5)}]*len(nets)
     time_values = [np.linspace(0.0, 10.0, num=11)]*len(nets)
@@ -42,9 +42,9 @@ if __name__ == '__main__':
                             time_values=time_values, parallel=True)
 
     # save estimation with pickle
-    with open('me_est_run_data_10_div_nets_7.pickle', 'wb') as file_: # in_silico_estimation
+    with open('me_est_run_data_10_div_nets_7.pickle', 'wb') as file_:
         pickle.dump(est_res, file_)
 
-    # afterwards you can load and then analyse the estimation 
+    # afterwards you can load and then analyse the estimation
     # results via (inside jupyter notebook / lab or wherever)
     # est_res = pickle.load(open('me_est_run_data_10_div_nets_7.pickle', 'rb'))
