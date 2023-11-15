@@ -16,3 +16,4 @@ matplotlib
 corner
 cycler
 IPython
+sphinx_rtd_theme
