@@ -6,9 +6,9 @@
     :target: https://pypi.python.org/pypi/memocell
     :alt: Latest PyPI version
 
-.. image:: https://travis-ci.com/mauricelanghinrichs/memocell.svg?branch=master
-   :target: https://travis-ci.com/mauricelanghinrichs/memocell
-   :alt: Latest Travis CI build status
+.. image:: https://github.com/mauricelanghinrichs/memocell/actions/workflows/CI.yml/badge.svg
+   :target: https://github.com/mauricelanghinrichs/memocell/actions/workflows/CI.yml
+   :alt: Latest CI build status
 
 .. image:: https://codecov.io/gh/mauricelanghinrichs/memocell/branch/master/graph/badge.svg?token=feWWjm4Uow
    :target: https://codecov.io/gh/mauricelanghinrichs/memocell
