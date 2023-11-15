@@ -1,6 +1,6 @@
 """memocell - Bayesian inference of stochastic cellular processes with and without memory in Python."""
 
-__version__ = '0.1.4'
+__version__ = '0.1.5'
 __author__ = 'Maurice Langhinrichs <m.langhinrichs@icloud.com>'
 
 # __all__ applies to importing with "from memocell import *"

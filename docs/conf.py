@@ -21,11 +21,11 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'memocell'
-copyright = '2020, mlanghinrichs'
+copyright = '2023, mlanghinrichs'
 author = 'mlanghinrichs'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1.4'
+release = '0.1.5'
 
 
 # -- General configuration ---------------------------------------------------
