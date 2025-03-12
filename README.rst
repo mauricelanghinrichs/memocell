@@ -31,8 +31,7 @@ Getting Started
 Installation
 ^^^^^^^^^^^^
 
-MemoCell requires an installation of a recent Python version; Python can be
-installed via `Anaconda <https://docs.anaconda.com/anaconda/install/>`_.
+MemoCell requires an installation of a recent Python version.
 
 Make sure to have ``graphviz`` and ``pygraphviz`` installed before installing ``memocell``; for
 example by executing the following in the terminal::
